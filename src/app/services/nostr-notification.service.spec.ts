@@ -99,15 +99,13 @@ describe('NostrNotificationService', () => {
 
   it('should validate notification structure correctly', () => {
     const validNotification: NanoNymNotification = {
-      version: 1,
-      protocol: 'nanoNymNault',
-      R: '0123456789abcdef',
-      tx_hash: 'ABC123XYZ789',
-      amount: '1.5',
+      version: 2 as const,
+      protocol: 'nanonym' as const,
+      R: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
+      tx_hash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       amount_raw: '1500000000000000000000000000000'
     };
 
-    // Access private method via type assertion for testing
     const validateNotification = (service as any).validateNotification.bind(service);
 
     expect(validateNotification(validNotification)).toBe(true);
@@ -115,10 +113,10 @@ describe('NostrNotificationService', () => {
 
   it('should reject invalid notification - wrong version', () => {
     const invalidNotification = {
-      version: 2, // Wrong version
-      protocol: 'nanoNymNault',
-      R: '0123456789abcdef',
-      tx_hash: 'ABC123XYZ789'
+      version: 1,
+      protocol: 'nanonym' as const,
+      R: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
+      tx_hash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
     };
 
     const validateNotification = (service as any).validateNotification.bind(service);
@@ -127,10 +125,10 @@ describe('NostrNotificationService', () => {
 
   it('should reject invalid notification - wrong protocol', () => {
     const invalidNotification = {
-      version: 1,
-      protocol: 'wrongProtocol', // Wrong protocol
-      R: '0123456789abcdef',
-      tx_hash: 'ABC123XYZ789'
+      version: 2 as const,
+      protocol: 'wrongProtocol',
+      R: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
+      tx_hash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
     };
 
     const validateNotification = (service as any).validateNotification.bind(service);
@@ -139,9 +137,8 @@ describe('NostrNotificationService', () => {
 
   it('should reject invalid notification - missing required fields', () => {
     const invalidNotification = {
-      version: 1,
-      protocol: 'nanoNymNault'
-      // Missing R and tx_hash
+      version: 2 as const,
+      protocol: 'nanonym' as const
     };
 
     const validateNotification = (service as any).validateNotification.bind(service);
@@ -150,10 +147,10 @@ describe('NostrNotificationService', () => {
 
   it('should accept notification with optional fields', () => {
     const notificationWithMemo: NanoNymNotification = {
-      version: 1,
-      protocol: 'nanoNymNault',
-      R: '0123456789abcdef',
-      tx_hash: 'ABC123XYZ789',
+      version: 2 as const,
+      protocol: 'nanonym' as const,
+      R: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
+      tx_hash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       memo: 'Payment for services'
     };
 
@@ -226,11 +223,10 @@ describe('NostrNotificationService', () => {
 
     // Create notification
     const notification: NanoNymNotification = {
-      version: 1,
-      protocol: 'nanoNymNault',
-      R: 'deadbeef',
-      tx_hash: 'ABC123',
-      amount: '10.5'
+      version: 2 as const,
+      protocol: 'nanonym' as const,
+      R: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+      tx_hash: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
     };
 
     // Send notification

@@ -1276,11 +1276,10 @@ export class SendComponent implements OnInit {
     try {
       const senderNostrKey = this.nanoNymCrypto.generateEphemeralKey();
       const notification = {
-        version: 1,
-        protocol: "nanoNymNault",
+        version: 2 as const,
+        protocol: "nanonym" as const,
         R: this.bytesToHex(this.ephemeralPublicKey),
         tx_hash: txHash,
-        amount: this.amount?.toString() || "",
         amount_raw: this.rawAmount.toString(),
       };
 

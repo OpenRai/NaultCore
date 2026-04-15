@@ -46,8 +46,8 @@ describe('OrbitdbNotificationService Standalone', () => {
     await service.initialize();
 
     const mockNotification: NanoNymNotification = {
-      version: 1,
-      protocol: 'nanonym-1.0',
+      version: 2 as const,
+      protocol: 'nanonym' as const,
       R: 'mock_R_value_hex',
       tx_hash: 'mock_tx_hash_hex',
       amount_raw: '1000000000000000000000000000000',
@@ -99,8 +99,8 @@ describe('OrbitdbNotificationService with Relay', () => {
     await service.initialize();
 
     const mockNotification: NanoNymNotification = {
-      version: 1,
-      protocol: 'nanonym-1.0',
+      version: 2 as const,
+      protocol: 'nanonym' as const,
       R: 'mock_R_value_hex',
       tx_hash: 'mock_tx_hash_hex',
       amount_raw: '1000000000000000000000000000000',

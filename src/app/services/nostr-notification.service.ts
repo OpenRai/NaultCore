@@ -5,13 +5,12 @@ import * as Rx from "rxjs";
 import { NostrSyncStateService } from "./nostr-sync-state.service";
 
 export interface NanoNymNotification {
-  version: number;
-  protocol: string;
-  R: string; // Ephemeral public key (hex)
-  tx_hash: string; // Nano transaction hash
-  amount?: string; // Optional: XNO amount
-  amount_raw?: string; // Optional: raw amount
-  memo?: string; // Optional: encrypted memo
+  version: 2;
+  protocol: "nanonym";
+  R: string;
+  tx_hash: string;
+  amount_raw?: string;
+  memo?: string;
 }
 
 export interface RelayStatus {
@@ -488,7 +487,7 @@ export class NostrNotificationService {
       // ONLY log successful, valid NanoNym notifications
       console.log("[Nostr] ✅ Payment notification received:", {
         tx_hash: notification.tx_hash,
-        amount: notification.amount || "unknown",
+        amount_raw: notification.amount_raw || "unknown",
       });
 
       // Emit the notification for processing
@@ -513,10 +512,12 @@ export class NostrNotificationService {
     return (
       notification &&
       typeof notification === "object" &&
-      notification.version === 1 &&
-      notification.protocol === "nanoNymNault" &&
+      notification.version === 2 &&
+      notification.protocol === "nanonym" &&
       typeof notification.R === "string" &&
-      typeof notification.tx_hash === "string"
+      /^[0-9a-f]{64}$/.test(notification.R) &&
+      typeof notification.tx_hash === "string" &&
+      /^[0-9a-f]{64}$/.test(notification.tx_hash)
     );
   }
 

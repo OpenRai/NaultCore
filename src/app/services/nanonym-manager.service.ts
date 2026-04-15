@@ -224,13 +224,14 @@ export class NanoNymManagerService implements OnDestroy {
     const notificationUri = `nostr:${nip19.npubEncode(
       this.bytesToHex(provisionalKeys.nostr.public),
     )}`;
-    const identity = createNanoNymIdentity(seed, index, notificationUri);
+    const identity = createNanoNymIdentity(seed, index);
+    const nnymAddress = this.crypto.createNanoNymAddress(identity, notificationUri);
 
     // Create NanoNym object
     const nanoNym: NanoNym = {
       index,
       label: label || `NanoNym ${index}`,
-      nnymAddress: identity.address,
+      nnymAddress,
       status: "active",
       createdAt: Date.now(),
       keys: {

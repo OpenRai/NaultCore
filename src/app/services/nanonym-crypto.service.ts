@@ -1,10 +1,12 @@
 import { Injectable } from "@angular/core";
 import { nip19 } from "nostr-tools";
 import {
-  createNanoNymIdentity,
+  createNanoNymIdentity as coreCreateIdentity,
+  createNanoNymAddress,
   prepareNanoNymPayment,
   recoverStealthPayment,
 } from "@nanomyms/core";
+import type { NanoNymPaymentEvent } from "@nanomyms/protocol";
 import {
   NANO_NYM_VERSION,
   createNostrNotificationUri,
@@ -12,7 +14,6 @@ import {
   encodeNanoNymAddress as encodeNanoNymAddressV2,
 } from "@nanomyms/protocol";
 import {
-  deriveNanoNymAddress,
   deriveNanoNymKeys,
   derivePublicKeyFromScalar,
   deriveStealthAddress,
@@ -55,17 +56,15 @@ export class NanoNymCryptoService {
   createNanoNymIdentity(
     seed: string | Uint8Array,
     accountIndex: number,
-    notificationUri?: string,
   ) {
-    return createNanoNymIdentity(seed, accountIndex, notificationUri);
+    return coreCreateIdentity(seed, accountIndex);
   }
 
-  deriveNanoNymAddress(
-    seed: string | Uint8Array,
-    accountIndex: number,
-    notificationUri?: string,
+  createNanoNymAddress(
+    identity: ReturnType<typeof coreCreateIdentity>,
+    notificationUri: string,
   ): string {
-    return deriveNanoNymAddress(seed, accountIndex, { notificationUri });
+    return createNanoNymAddress(identity, notificationUri);
   }
 
   generateSharedSecret(
@@ -145,15 +144,7 @@ export class NanoNymCryptoService {
       spend: { private: Uint8Array; public: Uint8Array };
       view: { private: Uint8Array; public: Uint8Array };
     },
-    notification: {
-      version: number;
-      protocol: string;
-      R: string;
-      tx_hash: string;
-      amount?: string;
-      amount_raw?: string;
-      memo?: string;
-    },
+    notification: NanoNymPaymentEvent,
   ) {
     return recoverStealthPayment(
       {

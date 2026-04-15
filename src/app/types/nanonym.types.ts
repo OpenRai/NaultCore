@@ -88,11 +88,10 @@ export interface StealthAccount {
  * Notification payload from Nostr (NIP-17 decrypted content)
  */
 export interface NanoNymNotification {
-  version: number;
-  protocol: string;
-  R: string; // Hex-encoded ephemeral public key
+  version: 2;
+  protocol: "nanonym";
+  R: string;
   tx_hash: string;
-  amount?: string;
   amount_raw?: string;
   memo?: string;
 }

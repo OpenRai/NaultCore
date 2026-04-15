@@ -65,11 +65,10 @@ class MockNostrNotificationService {
   incomingNotifications$ = new BehaviorSubject({
     receiverNostrPrivate: new Uint8Array(32),
     notification: {
-      version: 1,
-      protocol: 'nanoNymNault',
+      version: 2 as const,
+      protocol: 'nanonym' as const,
       R: 'R_hex_value',
       tx_hash: 'tx_hash_value',
-      amount: '1000',
       amount_raw: '1000000000000000000000000000000',
       memo: 'test memo'
     }
@@ -211,11 +210,10 @@ describe('NanoNymManagerService', () => {
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32)); // Mock hex conversion
 
       const notification = {
-        version: 1,
-        protocol: 'nanoNymNault',
+        version: 2 as const,
+        protocol: 'nanonym' as const,
         R: 'R_hex_value',
         tx_hash: 'tx_hash_value',
-        amount: '1000',
         amount_raw: '1000000000000000000000000000000',
         memo: 'test memo'
       };
@@ -265,11 +263,10 @@ describe('NanoNymManagerService', () => {
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
       const notification = {
-        version: 1,
-        protocol: 'nanoNymNault',
+        version: 2 as const,
+        protocol: 'nanonym' as const,
         R: 'R_hex_value',
         tx_hash: 'tx_hash_value_locked',
-        amount: '1000',
         amount_raw: '1000000000000000000000000000000',
         memo: 'test memo locked'
       };
@@ -309,20 +306,18 @@ describe('NanoNymManagerService', () => {
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
       const notification1 = {
-        version: 1,
-        protocol: 'nanoNymNault',
+        version: 2 as const,
+        protocol: 'nanonym' as const,
         R: 'R_hex_value1',
         tx_hash: 'tx_hash_value_pending1',
-        amount: '1000',
         amount_raw: '1000000000000000000000000000000',
         memo: 'test memo pending1'
       };
       const notification2 = {
-        version: 1,
-        protocol: 'nanoNymNault',
+        version: 2 as const,
+        protocol: 'nanonym' as const,
         R: 'R_hex_value2',
         tx_hash: 'tx_hash_value_pending2',
-        amount: '2000',
         amount_raw: '2000000000000000000000000000000',
         memo: 'test memo pending2'
       };
@@ -403,11 +398,10 @@ describe('NanoNymManagerService', () => {
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
       const notification = {
-        version: 1,
-        protocol: 'nanoNymNault',
+        version: 2 as const,
+        protocol: 'nanonym' as const,
         R: 'R_hex_value',
         tx_hash: 'tx_hash_retry_test',
-        amount: '1000',
         amount_raw: '1000000000000000000000000000000',
         memo: 'test memo'
       };

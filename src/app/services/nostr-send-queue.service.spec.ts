@@ -9,12 +9,11 @@ describe("NostrSendQueueService", () => {
   let service: NostrSendQueueService;
 
   const mockNotification: NanoNymNotification = {
-    version: 1,
-    protocol: "nnym",
+    version: 2 as const,
+    protocol: "nanonym" as const,
     R: "abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234abcd1234",
     tx_hash:
       "ABCD1234ABCD1234ABCD1234ABCD1234ABCD1234ABCD1234ABCD1234ABCD1234",
-    amount: "1.5",
     amount_raw: "1500000000000000000000000000000",
   };
 

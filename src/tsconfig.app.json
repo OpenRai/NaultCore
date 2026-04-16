@@ -4,13 +4,13 @@
     "outDir": "../out-tsc/app",
     "baseUrl": "./",
     "paths": {
-      "@nanomyms/protocol": [
+      "@nanonyms/protocol": [
         "../packages/protocol/src/index.ts"
       ],
-      "@nanomyms/crypto": [
+      "@nanonyms/crypto": [
         "../packages/crypto/src/index.ts"
       ],
-      "@nanomyms/core": [
+      "@nanonyms/core": [
         "../packages/core/src/index.ts"
       ]
     },

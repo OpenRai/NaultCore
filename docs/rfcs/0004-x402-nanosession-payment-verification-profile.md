@@ -133,6 +133,28 @@ This is a single scalar-basepoint multiplication. It rejects malformed or tamper
 
 If all checks pass, the proof is valid.
 
+## Replay Resistance
+
+This profile does not permit blind re-use of a previously accepted proof.
+
+- A server MUST persist replay state for every accepted proof.
+- For single-payment authorization semantics, the server MUST reject any later proof reuse for the same `tx_hash`.
+- If a deployment intentionally allows one on-chain payment to authorize multiple requests, the server MUST implement explicit value accounting and MUST reject requests once the paid amount has been fully consumed.
+- A server SHOULD bind successful verification to a short-lived session token or challenge state rather than requiring the raw proof on every follow-up request.
+
+Tracking `tx_hash` is the minimum required replay defense for the common "one payment unlocks one resource or session" model.
+
+## Cryptographic Preconditions
+
+The security of this profile depends on RFC 0005 fixing the Ed25519 details that are intentionally deferred out of this document. Interoperable and auditable verification requires a single definition for:
+
+- valid point decoding and rejection of malformed or small-order points
+- subgroup/cofactor handling during shared-secret and stealth-point derivation
+- scalar generation, reduction, and clamping rules for $r$ and derived tweaks
+- domain-separated hashing for shared-secret and tweak derivation
+
+This RFC MUST remain Draft until RFC 0005 standardizes those rules.
+
 ## Security Properties
 
 **Non-transferability.** The proof binds $r$ to a specific stealth address derived from the server's NanoNym. An attacker who observes the proof cannot reuse it for a different server (different NanoNym, different $B_{\text{spend}}$/$B_{\text{view}}$) or claim a different transaction.
@@ -155,12 +177,15 @@ If all checks pass, the proof is valid.
 
 Sharing $r$ provides the minimum necessary disclosure for verification.
 
+Revealing $r$ in this profile is therefore a deliberate commitment-proof tradeoff, not a signature-nonce failure mode. Unlike ECDSA or Schnorr nonces, $r$ is not combined algebraically with the recipient's long-term private keys in a way that would expose them when disclosed; it is used only to let the verifier recompute this payment's stealth derivation. The real risks are operational rather than algebraic: clients MUST generate $r$ with a CSPRNG, transports MUST use TLS, servers MUST avoid logging raw proofs unnecessarily, and accepted proofs MUST be replay-protected as defined above.
+
 ## Privacy Properties
 
 - The client voluntarily discloses $r$ and `tx_hash` to the server. This is inherent to the proof model - the client is proving payment, not hiding it.
 - The server learns the stealth address for this specific payment only.
 - Third parties observing the HTTPS connection (but not the TLS plaintext) learn nothing.
 - The proof does not reveal the NanoNym owner's private keys or enable identification of other payments.
+- Reusing the same NanoNym for both this profile and the Nostr notification profile weakens cross-transport unlinkability. Deployments that care about that property SHOULD allocate distinct NanoNyms per transport profile or per relying party.
 
 ## Relationship to Other RFCs
 

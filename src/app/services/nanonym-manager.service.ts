@@ -27,7 +27,7 @@ const nacl = window["nacl"];
 import { AppSettingsService } from "./app-settings.service";
 import { OrbitdbNotificationService } from "./orbitdb-notification.service";
 import { nip19, nip59 } from "nostr-tools";
-import { createNanoNymIdentity, recoverStealthPayment } from "@nanomyms/core";
+import { createNanoNymIdentity, recoverStealthPayment } from "@nanonyms/core";
 
 @Injectable({
   providedIn: "root",

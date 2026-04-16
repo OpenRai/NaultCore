@@ -68,7 +68,7 @@ Goals:
 - otherwise use a bounded greedy selection
 - randomize send order to reduce deterministic patterns
 
-The extracted `@nanomyms/core` package exposes a pure `selectStealthInputs` helper for this.
+The extracted `@nanonyms/core` package exposes a pure `selectStealthInputs` helper for this.
 
 ## 6. Wallet Model
 
@@ -101,9 +101,9 @@ Those concerns belong to application adapters and infrastructure.
 
 NanoNymNault currently uses:
 
-- `@nanomyms/protocol` for address semantics
-- `@nanomyms/crypto` for deterministic derivation and stealth math
-- `@nanomyms/core` for pure use-case flows
+- `@nanonyms/protocol` for address semantics
+- `@nanonyms/crypto` for deterministic derivation and stealth math
+- `@nanonyms/core` for pure use-case flows
 - a Nostr adapter for Tier 1 notification delivery
 
 This is intentional. The protocol is generic; the wallet is opinionated.

@@ -95,6 +95,12 @@ This model inherits Nostr's relay availability assumptions. If the relays used b
 - The notification `npub` (secp256k1) is unlinkable to the spend/view keys (Ed25519) without knowledge of the seed.
 - The ephemeral scalar $r$ is never transmitted - $R$ (the public point) is sufficient for the recipient.
 
+## Cross-Transport Correlation
+
+This profile assumes the recipient-side privacy model defined here: the recipient holds $b_{\text{view}}$ and the sender discloses only $R$. If the same NanoNym is also reused in the x402 proof profile (RFC 0004), an x402 verifier learns $r$, $R$, and `tx_hash` for that payment. If that verifier can also observe or obtain the matching Nostr payload, it can correlate the two flows.
+
+For deployments where sender unlinkability across transports matters, operators SHOULD use distinct NanoNyms per transport profile or per counterparty class rather than reusing one NanoNym for both Nostr notifications and x402 proofs.
+
 ## Relationship to Other RFCs
 
 - **RFC 0001** provides the `nostr:npub1...` URI that this profile resolves.
@@ -103,9 +109,10 @@ This model inherits Nostr's relay availability assumptions. If the relays used b
 
 ## Package Boundary
 
-Nostr event construction, NIP-59 wrapping, NIP-44 encryption, and relay communication belong in `@nanomyms/nostr-adapter`. This package depends on `@nanomyms/protocol` for schema validation but contains no stealth derivation logic.
+Nostr event construction, NIP-59 wrapping, NIP-44 encryption, and relay communication belong in `@nanonyms/nostr-adapter`. This package depends on `@nanonyms/protocol` for schema validation but contains no stealth derivation logic.
 
 ## Open Questions
 
 - Whether to specify a recommended minimum number of relays for redundancy.
 - Whether to define a Nostr event `kind` specifically for NanoNym payment notifications or rely on the generic NIP-59 gift-wrap kind.
+- Whether RFC 0005 should explicitly require rejection of small-order points and document the subgroup/cofactor rules inherited by this profile.

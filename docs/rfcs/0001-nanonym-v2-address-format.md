@@ -8,7 +8,7 @@ Accepted for implementation.
 
 NanoNyms v2 embed a generic destination URI for Tier 1 payment notifications, replacing the Nostr-specific public key field from v1. NanoNymNault continues to use Nostr by storing a `nostr:...` URI in the NanoNym address, but the protocol address format itself is transport-agnostic.
 
-Since v1 was a Tech Preview, there is no backward-compatibility requirement for v1 in NanoNymNault or in the `@nanomyms/*` packages.
+Since v1 was a Tech Preview, there is no backward-compatibility requirement for v1 in NanoNymNault or in the `@nanonyms/*` packages.
 
 ## Motivation
 
@@ -17,7 +17,7 @@ The v1 NanoNym format embedded a Nostr-specific field into the protocol address,
 Goals:
 
 - A transport-agnostic NanoNym format
-- Reusable TypeScript packages published as `@nanomyms/*`
+- Reusable TypeScript packages published as `@nanonyms/*`
 - No relay clients or wallet infrastructure in the extracted packages
 - A clean protocol contract that any TypeScript project can use
 
@@ -26,8 +26,8 @@ Goals:
 NanoNyms are defined only as v2 from this point onward.
 
 - NanoNymNault will only create and consume v2 NanoNyms.
-- `@nanomyms/protocol` will only encode and decode v2 NanoNyms.
-- `@nanomyms/crypto` and `@nanomyms/core` will only speak in v2 terms.
+- `@nanonyms/protocol` will only encode and decode v2 NanoNyms.
+- `@nanonyms/crypto` and `@nanonyms/core` will only speak in v2 terms.
 - v1 is historical context only and is not implemented.
 
 ## Address Format
@@ -107,7 +107,7 @@ NanoNymNault remains a Nostr-based wallet, but Nostr moves to the adapter edge:
 
 ## Package Boundaries
 
-**`@nanomyms/protocol`**
+**`@nanonyms/protocol`**
 
 - NanoNym v2 address layout
 - Address encode/decode
@@ -115,7 +115,7 @@ NanoNymNault remains a Nostr-based wallet, but Nostr moves to the adapter edge:
 - Notification payload schemas (RFC 0002)
 - URI helper utilities
 
-**`@nanomyms/crypto`**
+**`@nanonyms/crypto`**
 
 - Deterministic seed normalization
 - Deterministic NanoNym key derivation
@@ -124,7 +124,7 @@ NanoNymNault remains a Nostr-based wallet, but Nostr moves to the adapter edge:
 - Scalar signing helpers
 - Pure helpers for building `nostr:` notification URIs
 
-**`@nanomyms/core`**
+**`@nanonyms/core`**
 
 - Pure use-case APIs: create NanoNym identities, prepare outgoing stealth payments, recover incoming stealth payments, select stealth inputs
 

@@ -5,14 +5,14 @@ import {
   createNanoNymAddress,
   prepareNanoNymPayment,
   recoverStealthPayment,
-} from "@nanomyms/core";
-import type { NanoNymPaymentEvent } from "@nanomyms/protocol";
+} from "@nanonyms/core";
+import type { NanoNymPaymentEvent } from "@nanonyms/protocol";
 import {
   NANO_NYM_VERSION,
   createNostrNotificationUri,
   decodeNanoNymAddress as decodeNanoNymAddressV2,
   encodeNanoNymAddress as encodeNanoNymAddressV2,
-} from "@nanomyms/protocol";
+} from "@nanonyms/protocol";
 import {
   deriveNanoNymKeys,
   derivePublicKeyFromScalar,
@@ -21,7 +21,7 @@ import {
   generateEphemeralKey,
   generateSharedSecret,
   signBlockWithScalar,
-} from "@nanomyms/crypto";
+} from "@nanonyms/crypto";
 
 @Injectable({
   providedIn: "root",

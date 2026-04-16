@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the current NanoNym derivation model used by NanoNymNault and the extracted `@nanomyms/*` packages.
+This document describes the current NanoNym derivation model used by NanoNymNault and the extracted `@nanonyms/*` packages.
 
 NanoNyms are **v2-only**:
 
@@ -70,7 +70,7 @@ But it is not sufficient for:
 
 ## Package Boundaries
 
-### `@nanomyms/protocol`
+### `@nanonyms/protocol`
 
 Owns:
 
@@ -85,7 +85,7 @@ Does not own:
 - Nostr clients
 - Angular services
 
-### `@nanomyms/crypto`
+### `@nanonyms/crypto`
 
 Owns:
 
@@ -101,7 +101,7 @@ Does not own:
 - storage
 - wallet UI state
 
-### `@nanomyms/core`
+### `@nanonyms/core`
 
 Owns:
 

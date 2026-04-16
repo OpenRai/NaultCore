@@ -71,6 +71,13 @@ Transport profiles (RFC 0003, RFC 0004, future RFCs) extend this schema for thei
 
 As a concrete example, the x402 profile (RFC 0004) adds the ephemeral scalar $r$ alongside $R$. This field is meaningful only when the verifier lacks the view private key. In the Nostr notification profile (RFC 0003), including $r$ would be a privacy leak. The base schema therefore carries $R$ only; profiles add exactly the fields their trust model requires.
 
+To reduce extension-field collisions across future profiles:
+
+1. The base-schema field names defined in this RFC are globally reserved.
+2. A profile RFC MAY reserve an unprefixed cryptographic symbol when that symbol is intrinsic to the proof model and is normatively defined by that RFC. The `r` field in RFC 0004 is the canonical example.
+3. All other profile-specific extension fields MUST use a stable profile prefix ending in `_`, such as `nostr_...` or `x402_...`.
+4. Each profile RFC MUST document every extension field it reserves.
+
 ## Versioning
 
 The schema version is `2`. This matches the NanoNym v2 address version defined in RFC 0001. The two version numbers are **independently governed** - the payload version happens to match the address version but is not required to track it. The value `2` is retained because it is already emitted by the existing production implementation; changing it to `1` would be a breaking change for no functional gain.
@@ -80,6 +87,8 @@ The schema version is `2`. This matches the NanoNym v2 address version defined i
 The field $R$ is an Ed25519 ephemeral public key corresponding to a per-payment ephemeral scalar $r$, such that $R = r \cdot G$ where $G$ is the Ed25519 basepoint. The scalar $r$ is generated fresh for each payment and serves as the stealth derivation input. The full stealth derivation procedure - how $r$ is generated, how the stealth address $SA$ is computed, and how the recipient recovers the corresponding private key - is specified in RFC 0005.
 
 This schema carries $R$ (the public point), not $r$ (the scalar). The scalar is secret to the payer and is disclosed only in profiles where the verifier lacks the view private key (see RFC 0004).
+
+This RFC depends on RFC 0005 to standardize the Ed25519 rules that make the above interoperable and auditable: point decoding and validation, subgroup/cofactor handling, scalar reduction and clamping, and domain-separated hashing for stealth derivation. Until RFC 0005 is finalized, this RFC remains intentionally Draft.
 
 ## Relationship to Other RFCs
 
@@ -91,7 +100,7 @@ This schema carries $R$ (the public point), not $r$ (the scalar). The scalar is 
 
 ## Package Boundary
 
-Schema validation (structure, field types, hex format, version check) belongs in `@nanomyms/protocol`. Stealth-related validation (verifying $R$ is on-curve, deriving stealth addresses) belongs in `@nanomyms/crypto`.
+Schema validation (structure, field types, hex format, version check) belongs in `@nanonyms/protocol`. Stealth-related validation (verifying $R$ is on-curve, deriving stealth addresses) belongs in `@nanonyms/crypto`.
 
 ## Open Questions
 

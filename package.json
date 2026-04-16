@@ -31,9 +31,9 @@
     "desktop:local": "electron-builder -p never",
     "e2e:pw": "npx playwright test",
     "e2e:pw:ui": "npx playwright test --ui",
-    "build:packages": "pnpm --recursive --filter @nanomyms/* build",
-    "clean:packages": "pnpm --recursive --filter @nanomyms/* clean",
-    "test:packages": "pnpm --recursive --filter @nanomyms/* test"
+    "build:packages": "pnpm --recursive --filter @nanonyms/* build",
+    "clean:packages": "pnpm --recursive --filter @nanonyms/* clean",
+    "test:packages": "pnpm --recursive --filter @nanonyms/* test"
   },
   "private": true,
   "dependencies": {

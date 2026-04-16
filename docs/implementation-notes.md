@@ -51,9 +51,9 @@ Wallet stores seeds as **64-character hex strings** (32 bytes), NOT BIP-39 mnemo
 
 The extracted packages are intentionally split:
 
-- `@nanomyms/protocol`: address codecs, checksum logic, URI-oriented protocol types
-- `@nanomyms/crypto`: deterministic derivation, shared-secret and stealth math, signing helpers
-- `@nanomyms/core`: pure use-case orchestration without transport or storage
+- `@nanonyms/protocol`: address codecs, checksum logic, URI-oriented protocol types
+- `@nanonyms/crypto`: deterministic derivation, shared-secret and stealth math, signing helpers
+- `@nanonyms/core`: pure use-case orchestration without transport or storage
 
 NanoNymNault-specific infrastructure remains in the app:
 
@@ -98,7 +98,7 @@ The protocol now stores a generic `notificationUri`. Scheme-specific handling be
 
 - packages should accept and emit `notificationUri`
 - only adapters should interpret `nostr:...`
-- no relay client code belongs in `@nanomyms/*`
+- no relay client code belongs in `@nanonyms/*`
 
 ### Performance Expectations (Rough Targets)
 

@@ -15,6 +15,7 @@ import { TranslocoService } from '@ngneat/transloco';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../../types/spendable-account.types';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
+import { TestIds } from '../../testing/test-ids';
 
 @Component({
   selector: 'app-accounts',
@@ -22,6 +23,7 @@ import { NanoNymManagerService } from '../../services/nanonym-manager.service';
   styleUrls: ['./accounts.component.css']
 })
 export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
+  readonly testIds = TestIds;
   accounts = this.walletService.wallet.accounts;
   isLedgerWallet = this.walletService.isLedgerWallet();
   isSingleKeyWallet = this.walletService.isSingleKeyWallet();

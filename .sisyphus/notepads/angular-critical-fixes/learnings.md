@@ -1,0 +1,22 @@
+- Learned how to safely detach event listeners in Angular component lifecycle when dealing with external event hub (Hermes) to prevent leaks.
+- Confirmed that adding DestroyRef and OnDestroy is a robust path for memory management when upgrading RxJS interop usage.
+- Next steps: incorporate takeUntilDestroyed in a future PR to fully leverage reactive cleanup for all subscriptions.
+- Fix ManageWalletComponent memory leak by using DestroyRef and takeUntilDestroyed:
+  - Imported DestroyRef and takeUntilDestroyed
+  - Injected DestroyRef in constructor
+  - Replaced walletService.wallet.selectedAccount$ subscription with takeUntilDestroyed(this.destroyRef)
+  - Ensured no wallet logic or storage operations changed
+Task: Convert six Angular services to providedIn: 'root' and remove from AppModule providers
+- Actions performed:
+  - util.service.ts, wallet.service.ts, notification.service.ts, api.service.ts, address-book.service.ts, modal.service.ts updated with @Injectable({ providedIn: 'root' })
+  - app.module.ts providers array updated to remove the six services
+  - app.module.ts imports cleaned of those six services to avoid unused-import diagnostics
+- Build verification:
+  - Ran build via nvm-wrapped npm (node v22) as per project standards
+  - Build succeeded with standard Angular optimization warnings only (no errors)
+- Diagnostics:
+  - LSP diagnostics reported only type-hint warnings; no compile errors introduced by DI changes
+- Notes:
+  - No changes to DI usage elsewhere; all services now singleton-scoped via root providers
+- Next steps:
+  - Monitor for any runtime issues related to existing instances or service lifecycles; if any, revert and re-check

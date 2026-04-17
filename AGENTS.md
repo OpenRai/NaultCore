@@ -27,25 +27,26 @@ This workflow must remain correct, test-covered, and never broken by any changes
 
 ### 3. Build Environment
 
-- **Package manager:** npm (NOT yarn/pnpm)
+- **Package manager:** pnpm (declared in `package.json` `"packageManager"` field)
 - **Node version:** v22 (via nvm - see .nvmrc)
 - **Python version:** 3.11 (for native module compilation)
-- **Build flags required:**
+- **Install:**
   ```bash
-  npm_config_arch=x64 \
-  PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11 \
-  npm ci
+  nvm exec pnpm install
   ```
+- **Workspace packages** (`@nanonyms/*`): always use `pnpm --filter` commands, never npm
 
-### 4. npm Usage
+### 4. pnpm Usage
 
-**ALWAYS** use `nvm exec npm [args]` (except in CI).  
+**ALWAYS** use `nvm exec pnpm [args]` (except in CI).  
 You may need to `source ~/.nvm/nvm.sh` if the alias isn't present.
 
-### 5. macOS npm Invocation Constraint
+Root-level scripts (`npm run build`, etc.) still work because `package.json` scripts call `npm run` internally — this is fine. But direct dependency management and workspace operations must use pnpm.
 
-- On macOS, ALL npm interactions for all tasks (build, test, serve, e2e) MUST be executed via `nvm exec npm ...`. Enforce this in all automation scripts (CI included when running on macOS) and in manual commands.
-- Update any scripts that call `npm` directly to prefix with `nvm exec` (e.g., `nvm exec npm run build`). If a script cannot be changed, wrap the npm call in a shell that runs under nvm, or document the exception with a justification.
+### 5. macOS pnpm Invocation Constraint
+
+- On macOS, ALL pnpm interactions for all tasks (build, test, serve, e2e) MUST be executed via `nvm exec pnpm ...`. Enforce this in all automation scripts and in manual commands.
+- CI workflows currently use `npm ci` for root install — this is acceptable for now but should migrate to `pnpm` for consistency.
 
 ### 5. Commit Message Format
 
@@ -82,3 +83,50 @@ All architectural decisions, protocol details, and implementation notes are in s
 - **Test suite:** `npm test` (requires Brave Browser + Node v22)
 - **Dev server:** `npm start` → http://localhost:4200/
 - **See docs/README.md for full documentation index**
+
+<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
+## Beads Issue Tracker
+
+This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+
+### Quick Reference
+
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work
+bd close <id>         # Complete work
+```
+
+### Rules
+
+- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
+- Run `bd prime` for detailed command reference and session close protocol
+- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+
+## Session Completion
+
+**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
+
+**MANDATORY WORKFLOW:**
+
+1. **File issues for remaining work** - Create issues for anything that needs follow-up
+2. **Run quality gates** (if code changed) - Tests, linters, builds
+3. **Update issue status** - Close finished work, update in-progress items
+4. **PUSH TO REMOTE** - This is MANDATORY:
+   ```bash
+   git pull --rebase
+   bd dolt push
+   git push
+   git status  # MUST show "up to date with origin"
+   ```
+5. **Clean up** - Clear stashes, prune remote branches
+6. **Verify** - All changes committed AND pushed
+7. **Hand off** - Provide context for next session
+
+**CRITICAL RULES:**
+- Work is NOT complete until `git push` succeeds
+- NEVER stop before pushing - that leaves work stranded locally
+- NEVER say "ready to push when you are" - YOU must push
+- If push fails, resolve and retry until it succeeds
+<!-- END BEADS INTEGRATION -->

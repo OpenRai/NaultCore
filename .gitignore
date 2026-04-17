@@ -21,21 +21,21 @@
 *.launch
 .settings/
 *.sublime-workspace
+.vscode/
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# AI tool state (local configs + node_modules — never track these)
+.kilo/
+.opencode/
 
 # misc
-/.angular/cache
+/.angular
 /.sass-cache
 /connect.lock
 /coverage
 /libpeerconnection.log
 npm-debug.log
+npm-test.out
+npm-test.err
 testem.log
 yarn-error.log
 /typings
@@ -60,5 +60,13 @@ playwright-report/
 test-results/
 tests-playwright-results/
 
+# Stray lockfile — this project uses pnpm, not bun
+bun.lock
+
 # Test secrets — never commit
 .env.test
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

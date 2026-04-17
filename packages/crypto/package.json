@@ -1,0 +1,32 @@
+{
+  "name": "@nanonyms/crypto",
+  "version": "0.1.0",
+  "description": "NanoNym deterministic cryptography primitives",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "node --input-type=module -e \"import('./dist/index.js').then(() => console.log('crypto ok'))\""
+  },
+  "dependencies": {
+    "@nanonyms/protocol": "workspace:*",
+    "@noble/curves": "1.2.0",
+    "@noble/hashes": "1.3.2",
+    "@noble/secp256k1": "^3.0.0",
+    "bip39": "^3.0.2",
+    "blakejs": "^1.1.0",
+    "tweetnacl": "^1.0.0"
+  }
+}

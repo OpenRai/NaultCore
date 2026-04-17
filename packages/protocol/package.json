@@ -1,0 +1,26 @@
+{
+  "name": "@nanonyms/protocol",
+  "version": "0.1.0",
+  "description": "NanoNym protocol types and address codecs",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "node --input-type=module -e \"import('./dist/index.js').then(() => console.log('protocol ok'))\""
+  },
+  "dependencies": {
+    "blakejs": "^1.1.0"
+  }
+}

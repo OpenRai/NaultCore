@@ -152,10 +152,13 @@ export class NanoNymAccountSelectionService {
 
   /**
    * Get current balance for a stealth account.
-   * Uses `balance` (refreshed from node) as primary; falls back to `amountRaw` (notification) for legacy data.
+   * Uses `balance` (refreshed from node) when non-zero; falls back to `amountRaw` (notification amount)
+   * for unopened accounts where on-chain balance is 0 but funds are incoming.
    */
   private getBalance(account: StealthAccount): BigNumber {
-    return new BigNumber(account.balance ?? account.amountRaw ?? 0);
+    const bal = new BigNumber(account.balance ?? 0);
+    if (!bal.isZero()) return bal;
+    return new BigNumber(account.amountRaw ?? 0);
   }
 
   /**

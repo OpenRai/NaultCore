@@ -466,7 +466,7 @@ export class NanoNymManagerService implements OnDestroy {
       console.log('[Manager] Recipient B_spend:', this.util.hex.fromUint8(nanoNym.keys.spendPublic));
       console.log('[Manager] Recipient B_view:', this.util.hex.fromUint8(nanoNym.keys.viewPublic));
 
-      const recovered = recoverStealthPayment(
+      const recovered = this.recoverStealthPayment(
         {
           spend: {
             privateKey: nanoNym.keys.spendPrivate,
@@ -893,5 +893,15 @@ export class NanoNymManagerService implements OnDestroy {
         // Silent fail
       }
     }
+  }
+
+  /**
+   * Protected wrapper around recoverStealthPayment to allow spying in tests.
+   */
+  protected recoverStealthPayment(
+    recipientKeys: Parameters<typeof recoverStealthPayment>[0],
+    notification: Parameters<typeof recoverStealthPayment>[1],
+  ): ReturnType<typeof recoverStealthPayment> {
+    return recoverStealthPayment(recipientKeys, notification);
   }
 }

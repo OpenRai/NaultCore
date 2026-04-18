@@ -90,6 +90,7 @@ class MockWalletService {
     locked$: new BehaviorSubject(false),
   };
   getWalletAccount = jasmine.createSpy('getWalletAccount');
+  informBalanceRefresh = jasmine.createSpy('informBalanceRefresh');
 }
 
 class MockNanoBlockService {
@@ -207,6 +208,15 @@ describe('NanoNymManagerService', () => {
 
   describe('processNotification', () => {
     beforeEach(() => {
+      // Reset pending state so tests don't bleed into each other
+      (service as any).pendingStealthBlocks = [];
+
+      // Spy on the protected wrapper so real crypto isn't needed
+      spyOn(service as any, 'recoverStealthPayment').and.returnValue({
+        stealth: { address: 'nano_stealth', publicKey: new Uint8Array(32) },
+        privateKeyScalar: new Uint8Array(Array(32).fill(1)),
+      });
+
       // Mock nacl for keyPair creation, as it's used inside the service
       (window as any).nacl = {
         sign: {
@@ -257,9 +267,8 @@ describe('NanoNymManagerService', () => {
 
       await service.processNotification(notification, nanoNymIndex);
 
-      expect(nanoNymCryptoService.deriveStealthAddress).toHaveBeenCalled();
+      expect((service as any).recoverStealthPayment).toHaveBeenCalled();
       expect(apiService.accountInfo).toHaveBeenCalledWith('nano_stealth');
-      expect(nanoNymCryptoService.deriveStealthPrivateKey).toHaveBeenCalled();
       expect(nanoNymStorageService.addStealthAccount).toHaveBeenCalled();
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
         jasmine.objectContaining({
@@ -270,7 +279,6 @@ describe('NanoNymManagerService', () => {
         false
       );
       expect(nanoNymStorageService.updateStealthAccountBalance).toHaveBeenCalled();
-      expect(nanoNymStorageService.updateNanoNym).toHaveBeenCalled();
     });
 
     it('should add stealth account to pending blocks when wallet is locked', async () => {

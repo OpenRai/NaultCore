@@ -13,6 +13,8 @@ import BigNumber from 'bignumber.js';
 import { NotificationService } from './notification.service';
 import { NoPaddingZerosPipe } from 'app/pipes/no-padding-zeros.pipe';
 import { NanoNymAccountSelectionService } from './nanonym-account-selection.service';
+import { AppSettingsService } from './app-settings.service';
+import { OrbitdbNotificationService } from './orbitdb-notification.service';
 
 class MockNanoNymStorageService {
   getNextIndex = jasmine.createSpy('getNextIndex').and.returnValue(0);
@@ -132,6 +134,18 @@ class MockWebsocketService {
   newTransactions$ = new BehaviorSubject(null);
 }
 
+class MockAppSettingsService {
+  settings = {
+    useOrbitDb: false,
+  };
+}
+
+class MockOrbitdbNotificationService {
+  incomingNotifications$ = new BehaviorSubject(null);
+  subscribeToNotifications = jasmine.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
+  unsubscribeFromNotifications = jasmine.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
+}
+
 describe('NanoNymManagerService', () => {
 
   let service: NanoNymManagerService;
@@ -170,6 +184,8 @@ describe('NanoNymManagerService', () => {
         { provide: NotificationService, useClass: MockNotificationService },
         { provide: NoPaddingZerosPipe, useClass: MockNoPaddingZerosPipe },
         { provide: NanoNymAccountSelectionService, useClass: MockNanoNymAccountSelectionService },
+        { provide: AppSettingsService, useClass: MockAppSettingsService },
+        { provide: OrbitdbNotificationService, useClass: MockOrbitdbNotificationService },
       ],
     });
 

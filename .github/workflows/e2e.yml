@@ -35,7 +35,7 @@ jobs:
       - name: Run Karma tests
         run: |
           CHROME_BIN=$(which chromium-browser || which chromium || echo "") \
-          npx ng test --watch=false --browsers=ChromeHeadlessNoSandbox
+          npm run test -- --browsers=ChromeHeadlessNoSandbox
 
   playwright-e2e:
     name: Playwright E2E Tests

@@ -6,7 +6,8 @@
  *   2. Create a NanoNym on the Accounts page
  *   3. Send XNO from a regular nano_ account to the NanoNym address
  *   4. Wait for Nostr notification and verify stealth funds appear
- *   5. Sweep all stealth funds back to account #0
+ *   5. Spend from the stealth account back to a regular nano_ address
+ *   6. Sweep all remaining stealth funds back to account #0
  *
  * IMPORTANT: Any test that creates stealth accounts MUST sweep remaining
  * funds back to nano_ account #0. Stealth funds without Tier 2 event storage
@@ -107,7 +108,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     await expect(seededPage.locator('text=/nnym_[a-z0-9]+/').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should send XNO to NanoNym and receive via stealth', async ({ seededPage }) => {
+  test('should send XNO to NanoNym, receive via stealth, then spend from stealth account', async ({ seededPage }) => {
     test.slow();
 
     // Step 1: Create a NanoNym
@@ -150,14 +151,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     await expect(seededPage.locator('[data-testid="accounts-row"]').first()).toBeVisible({ timeout: 15000 });
     await seededPage.waitForTimeout(5000);
 
-    // Step 6 (CLEANUP): Sweep any stealth funds back to account #0
-    // CRITICAL: prevents XNO from being permanently lost in stealth accounts
-    await sweepStealthToAccount0(seededPage);
-  });
-
-  test('should spend funds from NanoNym stealth account', async ({ seededPage }) => {
-    test.slow();
-
+    // Step 6: Spend from the stealth account back to a regular nano_ address
     await seededPage.locator('a[href="/send"]').click();
     await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
 
@@ -165,36 +159,32 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     await expect(fromDropdown).toBeVisible();
 
     const fromOptions = await fromDropdown.locator('option').allTextContents();
-    const hasStealth = fromOptions.some(opt =>
-      opt.toLowerCase().includes('nnym_') || opt.toLowerCase().includes('stealth')
-    );
-
-    test.skip(!hasStealth, 'No stealth accounts in from dropdown');
-
-    // Select the stealth account
     const stealthIndex = fromOptions.findIndex(opt =>
       opt.toLowerCase().includes('nnym_') || opt.toLowerCase().includes('stealth')
     );
-    await fromDropdown.selectOption({ index: stealthIndex });
 
-    // Send to a regular nano_ address
-    const nanoDest = fromOptions.find(opt =>
-      opt.match(/nano_/) && !opt.toLowerCase().includes('nnym_')
-    );
-    if (nanoDest) {
-      await seededPage.locator('[data-testid="send-address-input"]').fill(nanoDest.trim());
-      await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
-      await seededPage.locator('[data-testid="send-send-button"]').click();
+    if (stealthIndex >= 0) {
+      await fromDropdown.selectOption({ index: stealthIndex });
 
-      const privacyWarning = seededPage.locator('#nanonym-privacy-warning-modal');
-      if (await privacyWarning.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await seededPage.locator('#nanonym-privacy-warning-modal .uk-button-primary').click();
+      const nanoDest = fromOptions.find(opt =>
+        opt.match(/nano_/) && !opt.toLowerCase().includes('nnym_')
+      );
+      if (nanoDest) {
+        await seededPage.locator('[data-testid="send-address-input"]').fill(nanoDest.trim());
+        await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
+        await seededPage.locator('[data-testid="send-send-button"]').click();
+
+        const spendPrivacyWarning = seededPage.locator('#nanonym-privacy-warning-modal');
+        if (await spendPrivacyWarning.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await seededPage.locator('#nanonym-privacy-warning-modal .uk-button-primary').click();
+        }
+
+        await seededPage.waitForTimeout(5000);
       }
-
-      await seededPage.waitForTimeout(5000);
     }
 
-    // CLEANUP: Sweep any remaining stealth funds to account #0
+    // Step 7 (CLEANUP): Sweep any remaining stealth funds back to account #0
+    // CRITICAL: prevents XNO from being permanently lost in stealth accounts
     await sweepStealthToAccount0(seededPage);
   });
 });

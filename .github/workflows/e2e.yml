@@ -39,7 +39,7 @@ jobs:
       - name: Run Karma tests
         run: |
           CHROME_BIN=$(which chromium-browser || which chromium || echo "") \
-          pnpm run test -- --browsers=ChromeHeadlessNoSandbox
+          pnpm run test --browsers=ChromeHeadlessNoSandbox
 
   playwright-e2e:
     name: Playwright E2E Tests

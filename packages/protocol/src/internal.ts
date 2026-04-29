@@ -2,8 +2,8 @@ import { blake2b } from "blakejs";
 import {
   NANO_NYM_PREFIX,
   NANO_NYM_VERSION,
-} from "./types";
-import type { NanoNymAddress } from "./types";
+} from "./types.js";
+import type { NanoNymAddress } from "./types.js";
 
 const NANO_BASE32_ALPHABET = "13456789abcdefghijkmnopqrstuwxyz";
 const textEncoder = new TextEncoder();
@@ -76,7 +76,7 @@ export function decodeNanoNymAddress(address: string): NanoNymAddress {
   }
 
   const payload = decodeNanoBase32(address.slice(NANO_NYM_PREFIX.length));
-  if (payload.length < 99) {
+  if (payload.length < 69) {
     throw new Error(`Invalid NanoNym address: payload too short (${payload.length} bytes)`);
   }
   if (payload[0] !== NANO_NYM_VERSION) {

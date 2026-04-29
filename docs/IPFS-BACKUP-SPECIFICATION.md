@@ -1226,7 +1226,7 @@ A: Free for users. The provider pins your encrypted data at no charge.
 #### 1. Install Dependencies
 
 ```bash
-npm install ipfs-core@0.18.0 multiformats@13.0.0 blake2b-js@1.4.1
+nvm exec pnpm add ipfs-core@0.18.0 multiformats@13.0.0 blake2b-js@1.4.1
 ```
 
 #### 2. Add Path Derivation

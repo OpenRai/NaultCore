@@ -11,10 +11,15 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v1
 
-      - name: Install Node.js, NPM and Yarn
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
+      - name: Install Node.js and pnpm
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'pnpm'
 
       - name: Install APT dependencies
         run: |
@@ -25,5 +30,5 @@ jobs:
 
       - name: Install and Lint
         run: |
-          npm install
-          npm run lint
+          pnpm install --frozen-lockfile
+          pnpm run lint

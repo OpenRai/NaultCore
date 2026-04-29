@@ -3,7 +3,12 @@ const webpack = require('webpack');
 
 module.exports = {
   resolve: {
+    extensionAlias: {
+      ".js": [".ts", ".js"],
+      ".mjs": [".mts", ".mjs"]
+    },
     fallback: {
+      "buffer": require.resolve("buffer/"),
       "stream": require.resolve("stream-browserify"),
       "crypto": false
     },

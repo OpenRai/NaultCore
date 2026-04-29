@@ -1,21 +1,23 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+RUN corepack enable
 
-COPY tsconfig.json ./
-COPY src ./src
-RUN npm run build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY packages ./packages
+COPY nanonyms-relay/package.json ./nanonyms-relay/package.json
+RUN pnpm install --frozen-lockfile --filter nanonyms-relay
 
-FROM node:20-alpine
+COPY nanonyms-relay ./nanonyms-relay
+RUN pnpm --filter nanonyms-relay build
+RUN pnpm deploy --filter nanonyms-relay --prod /relay
 
-WORKDIR /app
+FROM node:22-alpine
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+WORKDIR /relay
+
+COPY --from=builder /relay ./
 
 RUN mkdir -p /data && chown -R node:node /data
 

@@ -20,8 +20,9 @@
   ],
   "scripts": {
     "build": "tsc -b tsconfig.json",
-    "clean": "rm -rf dist",
-    "test": "node --input-type=module -e \"import('./dist/index.js').then(() => console.log('core ok'))\""
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "test": "node --test test/*.test.mjs",
+    "pack:dry-run": "pnpm pack --pack-destination /tmp/nanonyms-pack"
   },
   "dependencies": {
     "@nanonyms/crypto": "workspace:*",

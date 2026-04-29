@@ -17,14 +17,14 @@ import type {
   PreparedNanoNymPayment,
   RecoveredStealthPayment,
   StealthBalanceLike,
-} from "./types";
+} from "./types.js";
 
 export type {
   NanoNymIdentity,
   PreparedNanoNymPayment,
   RecoveredStealthPayment,
   StealthBalanceLike,
-} from "./types";
+} from "./types.js";
 
 export function createNanoNymIdentity(
   seed: string | Uint8Array,

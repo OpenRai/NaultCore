@@ -13,10 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: 'pnpm'
 
       - uses: actions/setup-python@v5
         with:
@@ -30,12 +34,12 @@ jobs:
       - name: Install dependencies
         env:
           PYTHON: python3.11
-        run: npm ci --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Run Karma tests
         run: |
           CHROME_BIN=$(which chromium-browser || which chromium || echo "") \
-          npm run test -- --browsers=ChromeHeadlessNoSandbox
+          pnpm run test -- --browsers=ChromeHeadlessNoSandbox
 
   playwright-e2e:
     name: Playwright E2E Tests
@@ -46,10 +50,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: 'pnpm'
 
       - uses: actions/setup-python@v5
         with:
@@ -63,22 +71,22 @@ jobs:
       - name: Install dependencies
         env:
           PYTHON: python3.11
-        run: npm ci --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
-      # Playwright's bundled Chromium — best practice as of 2025-2026.
+      # Playwright's bundled Chromium - best practice as of 2025-2026.
       # Installs Chromium binary + all OS-level shared library deps in one step.
       # No need for separate apt installs or google-chrome PPAs.
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build application
-        run: npm run build
+        run: pnpm run build
 
       - name: Run Playwright tests
         env:
           NANO_TEST_SEED: ${{ secrets.NANO_TEST_SEED }}
           CI: 'true'
-        run: npx playwright test --reporter=html
+        run: pnpm exec playwright test --reporter=html
 
       - name: Upload Playwright report
         if: always()

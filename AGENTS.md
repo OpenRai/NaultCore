@@ -36,19 +36,46 @@ This workflow must remain correct, test-covered, and never broken by any changes
   ```
 - **Workspace packages** (`@nanonyms/*`): always use `pnpm --filter` commands, never npm
 
-### 4. pnpm Usage
+### 4. pnpm Usage (STRICT RULE - NO EXCEPTIONS)
 
-**ALWAYS** use `nvm exec pnpm [args]` (except in CI).  
-You may need to `source ~/.nvm/nvm.sh` if the alias isn't present.
+**NEVER use `npm` or `npx` for ANYTHING in this repo.**
+**ALWAYS** use `nvm exec pnpm [args]` for all commands.
 
-Root-level scripts (`npm run build`, etc.) still work because `package.json` scripts call `npm run` internally — this is fine. But direct dependency management and workspace operations must use pnpm.
+This includes: installing deps, running scripts, publishing, executing workspace commands, adding/removing packages, running tests, linting, building, etc. If you're thinking "should I run this with npm?", the answer is NO — use pnpm.
+
+Root-level scripts use pnpm internally. Do not invoke npm/npx directly.
+
+**Examples of CORRECT pnpm usage:**
+```bash
+# Install dependencies
+nvm exec pnpm install
+
+# Run workspace scripts
+nvm exec pnpm run build:packages
+nvm exec pnpm run test:packages
+
+# Run pnpm directly with filters
+nvm exec pnpm --recursive --filter @nanonyms/* build
+nvm exec pnpm --filter @nanonyms/core test
+nvm exec pnpm --recursive --filter @nanonyms/* publish
+```
+
+**Workspace publishing** (`@nanonyms/*` packages): Use the dedicated scripts in root `package.json` which call pnpm internally:
+```bash
+nvm exec pnpm run publish:packages
+```
+
+Alternatively use pnpm directly with custom flags:
+```bash
+nvm exec pnpm --recursive --filter @nanonyms/* publish -- --access public --tag stable
+```
 
 ### 5. macOS pnpm Invocation Constraint
 
 - On macOS, ALL pnpm interactions for all tasks (build, test, serve, e2e) MUST be executed via `nvm exec pnpm ...`. Enforce this in all automation scripts and in manual commands.
-- CI workflows currently use `npm ci` for root install — this is acceptable for now but should migrate to `pnpm` for consistency.
+- CI workflows use pnpm and the root `pnpm-lock.yaml`.
 
-### 5. Commit Message Format
+### 6. Commit Message Format
 
 - **Subject line:** WHAT you intend to change and WHY it matters (the purpose/problem)
 - **NOT:** Which files were modified
@@ -80,8 +107,8 @@ All architectural decisions, protocol details, and implementation notes are in s
 ## Quick Reference
 
 - **Live preview:** https://cbrunnkvist.github.io/NanoNymNault/
-- **Test suite:** `npm test` (requires Brave Browser + Node v22)
-- **Dev server:** `npm start` → http://localhost:4200/
+- **Test suite:** `nvm exec pnpm test` (requires Brave Browser + Node v22)
+- **Dev server:** `nvm exec pnpm start` → http://localhost:4200/
 - **See docs/README.md for full documentation index**
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->

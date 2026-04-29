@@ -10,8 +10,8 @@ Wallet browsers connect to this relay via WebSocket to post and fetch encrypted 
 
 ```bash
 cd nanonyms-relay
-npm install
-npm run dev
+nvm exec pnpm install
+nvm exec pnpm --filter nanonyms-relay dev
 ```
 
 This starts the relay with:
@@ -26,7 +26,7 @@ Data is stored in `./orbitdb_data/` (gitignored).
 Build and run:
 
 ```bash
-npm run docker:build
+nvm exec pnpm --filter nanonyms-relay docker:build
 docker-compose up -d
 ```
 

@@ -26,18 +26,18 @@ export default defineConfig({
       name: 'Chromium',
       use: {
         ...devices['Desktop Chrome'],
-        // In CI: no executablePath → Playwright uses its bundled Chromium (installed via npx playwright install --with-deps).
+        // In CI: no executablePath -> Playwright uses its bundled Chromium.
         // Locally: CHROME_BIN from .env.test or shell env (e.g. Brave Browser).
         ...(browserBin ? { launchOptions: { executablePath: browserBin } } : {}),
       },
     },
   ],
   webServer: {
-    // CI: npm start directly (setup-node@v4 puts node/npm on PATH).
+    // CI: pnpm is installed by the workflow.
     // Local: use nvm wrapper (AGENTS.md convention).
     command: isCI
-      ? 'npm start'
-      : 'unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && nvm exec npm start"',
+      ? 'pnpm start'
+      : 'unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && nvm exec pnpm start"',
     url: 'http://localhost:4200',
     reuseExistingServer: !isCI,
     timeout: 180000,

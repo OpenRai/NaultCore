@@ -8,7 +8,7 @@
     "dev": "ORBITDB_DATA_DIR=$(pwd)/orbitdb_data tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "docker:build": "docker build -t nanonym/relay:latest .",
+    "docker:build": "docker build -f Dockerfile -t nanonym/relay:latest ..",
     "docker:run": "docker run -p 4001:4001 -p 8081:8081 -p 3000:3000 -v nanonym-relay-data:/data -e ORBITDB_DATA_DIR=/data nanonym/relay:latest",
     "test": "vitest",
     "typecheck": "tsc --noEmit"

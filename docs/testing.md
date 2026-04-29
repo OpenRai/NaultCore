@@ -4,13 +4,13 @@
 
 ```bash
 # Karma unit tests
-source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec npm test
+source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
 
 # Playwright E2E (all tests)
-nvm exec npm run e2e:pw
+nvm exec pnpm run e2e:pw
 
 # Playwright E2E (roundtrip only, sequential)
-nvm exec npm run e2e:pw -- --grep 'roundtrip' --workers=1
+nvm exec pnpm run e2e:pw -- --grep 'roundtrip' --workers=1
 ```
 
 ## Environment
@@ -34,9 +34,9 @@ Implementation:
 - The sweep function sends the MAX balance from every stealth account back to account #0
 - If the sweep itself fails, the test should FAIL (not silently continue)
 
-## npm-driven tasks on macOS
+## pnpm-driven tasks on macOS
 
 Use the nvm wrapper as per AGENTS.md:
 ```bash
-source ~/.nvm/nvm.sh && nvm exec npm test
+source ~/.nvm/nvm.sh && nvm exec pnpm test
 ```

@@ -13,7 +13,7 @@ if (!dataDir) {
   console.error('  export ORBITDB_DATA_DIR=/path/to/storage');
   console.error('');
   console.error('For development, use:');
-  console.error('  npm run dev  (automatically sets to ./orbitdb_data/)');
+  console.error('  nvm exec pnpm --filter nanonyms-relay dev  (automatically sets to ./orbitdb_data/)');
   process.exit(1);
 }
 

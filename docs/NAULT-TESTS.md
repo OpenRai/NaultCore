@@ -48,7 +48,7 @@ Nault's test suite exists but provides minimal coverage. Tests are primarily "sm
 **Problem 3:** Chrome/Chromium not installed  
 **Root Cause:** Karma configured to use Chrome browser for test execution  
 **Status:** ✅ WORKAROUND - Brave Browser works as Chrome substitute via `CHROME_BIN` env var  
-**Command:** `CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" npm test`  
+**Command:** `CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test`
 
 **Test Results:**
 - Tests successfully execute with Brave as Chrome substitute

@@ -95,9 +95,8 @@ Receiver Wallet (comes online LATER)
 ### Running the Relay (Development)
 
 ```bash
-cd nanonyms-relay
-npm install
-npm run dev
+nvm exec pnpm install
+nvm exec pnpm --filter nanonyms-relay dev
 ```
 
 This starts:
@@ -170,14 +169,13 @@ Like Nano/Bitcoin peer discovery, but browser-compatible:
 **Wallet:**
 ```bash
 cd /Users/conny/Developer/NanoNymNault
-source ~/.nvm/nvm.sh && nvm exec npm start
+source ~/.nvm/nvm.sh && nvm exec pnpm start
 # http://localhost:4200/
 ```
 
 **Relay (once created):**
 ```bash
-cd nanonyms-relay
-npm run dev
+nvm exec pnpm --filter nanonyms-relay dev
 # WebSocket: ws://localhost:8081
 # Health: http://localhost:3000/health
 ```

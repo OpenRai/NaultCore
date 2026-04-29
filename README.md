@@ -271,17 +271,17 @@ nvm use  # Reads .nvmrc automatically
 # IMPORTANT: Use these exact flags for Apple Silicon compatibility
 npm_config_arch=x64 \
 PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11 \
-npm ci
+nvm exec pnpm install --frozen-lockfile
 
 # Run development server
-npm start
+nvm exec pnpm start
 # Access at http://localhost:4200/
 ```
 
 **Why these specific flags?**
 - `npm_config_arch=x64` - Electron 9.4.4 doesn't have ARM64 builds, use Rosetta emulation
 - `PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11` - Python 3.14 removed `distutils` which node-gyp requires
-- `npm ci` - Uses exact versions from package-lock.json (not `npm install`)
+- `nvm exec pnpm install --frozen-lockfile` - Uses exact versions from `pnpm-lock.yaml`
 - `nvm use` - Node v22 required for Angular and native module compatibility
 
 **Troubleshooting:**

@@ -1,21 +1,21 @@
 import * as bip39 from "bip39";
 import { blake2b } from "blakejs";
-import * as nacl from "tweetnacl";
+import nacl from "tweetnacl";
 import { ed25519 } from "@noble/curves/ed25519";
 import { bytesToHex } from "@noble/curves/abstract/utils";
 import { getPublicKey as getSecpPublicKey } from "@noble/secp256k1";
-import { publicKeyToNanoAddress } from "./nano-codec";
+import { publicKeyToNanoAddress } from "./nano-codec.js";
 import type {
   DerivedStealthAddress,
   EphemeralKeyPair,
   NanoNymKeys,
-} from "./types";
+} from "./types.js";
 
 const ED25519_L = BigInt(
   "0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed",
 );
 
-export type { DerivedStealthAddress, EphemeralKeyPair, NanoNymKeys } from "./types";
+export type { DerivedStealthAddress, EphemeralKeyPair, NanoNymKeys } from "./types.js";
 
 export function normalizeSeed(seed: string | Uint8Array): Uint8Array {
   if (seed instanceof Uint8Array) {

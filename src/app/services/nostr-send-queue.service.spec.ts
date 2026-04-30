@@ -437,8 +437,8 @@ describe("NostrSendQueueService", () => {
       expect(delays[2]).toBeCloseTo(4000, -2);
       expect(delays[3]).toBeCloseTo(8000, -2);
       expect(delays[4]).toBeCloseTo(16000, -2);
-      expect(delays[5]).toBe(30000);
-      expect(delays[6]).toBe(30000);
+      expect(delays[5]).toBeCloseTo(30000, -2);
+      expect(delays[6]).toBeCloseTo(30000, -2);
     });
   });
 

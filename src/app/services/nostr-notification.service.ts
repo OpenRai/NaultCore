@@ -509,14 +509,23 @@ export class NostrNotificationService {
   private validateNotification(
     notification: any,
   ): notification is NanoNymNotification {
+    if (
+      !notification ||
+      typeof notification !== "object" ||
+      notification.version !== 2 ||
+      notification.protocol !== "nanonym" ||
+      typeof notification.R !== "string" ||
+      typeof notification.tx_hash !== "string"
+    ) {
+      return false;
+    }
+
+    // Normalize hex fields to lowercase (Nano node RPC returns uppercase hashes)
+    notification.R = notification.R.toLowerCase();
+    notification.tx_hash = notification.tx_hash.toLowerCase();
+
     return (
-      notification &&
-      typeof notification === "object" &&
-      notification.version === 2 &&
-      notification.protocol === "nanonym" &&
-      typeof notification.R === "string" &&
       /^[0-9a-f]{64}$/.test(notification.R) &&
-      typeof notification.tx_hash === "string" &&
       /^[0-9a-f]{64}$/.test(notification.tx_hash)
     );
   }

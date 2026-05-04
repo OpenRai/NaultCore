@@ -158,6 +158,26 @@ describe('NostrNotificationService', () => {
     expect(validateNotification(notificationWithMemo)).toBe(true);
   });
 
+  it('should normalize uppercase hex fields and accept them', () => {
+    const uppercaseNotification = {
+      version: 2 as const,
+      protocol: 'nanonym' as const,
+      R: 'A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2E3F4A5B6C7D8E9F0A1B2',
+      tx_hash: 'D85532D95053827A915CC349CE23C2ADB6B5A19D74CEEFB9538037C15AB570A2',
+      amount_raw: '1e+26'
+    };
+
+    const validateNotification = (service as any).validateNotification.bind(service);
+    expect(validateNotification(uppercaseNotification)).toBe(true);
+
+    // Verify fields were normalized to lowercase
+    expect(uppercaseNotification.R).toBe('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2');
+    expect(uppercaseNotification.tx_hash).toBe('d85532d95053827a915cc349ce23c2adb6b5a19d74ceefb9538037c15ab570a2');
+
+    // amount_raw is not normalized by validation (handled by sender with toFixed(0))
+    expect(uppercaseNotification.amount_raw).toBe('1e+26');
+  });
+
   it('should convert bytes to hex correctly', () => {
     const bytes = new Uint8Array([0, 15, 255, 128, 64]);
     const expectedHex = '000fff8040';

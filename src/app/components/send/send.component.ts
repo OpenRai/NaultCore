@@ -1281,8 +1281,8 @@ export class SendComponent implements OnInit {
         version: 2 as const,
         protocol: "nanonym" as const,
         R: this.bytesToHex(this.ephemeralPublicKey),
-        tx_hash: txHash,
-        amount_raw: this.rawAmount.toString(),
+        tx_hash: txHash.toLowerCase(),
+        amount_raw: this.rawAmount.toFixed(0),
       };
 
       console.log("[Send] Preparing Nostr notification:", {

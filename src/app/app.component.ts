@@ -260,10 +260,15 @@ export class AppComponent implements OnInit {
   }
 
   applySwUpdate() {
-    this.updates.activateUpdate().then(() => {
+    const reloadOnControllerChange = () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
       window.location.reload();
-    }).catch((err) => {
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', reloadOnControllerChange);
+
+    this.updates.activateUpdate().catch((err) => {
       console.error('SW activation failed:', err);
+      navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
       window.location.reload();
     });
   }

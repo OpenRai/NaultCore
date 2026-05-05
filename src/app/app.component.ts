@@ -193,10 +193,17 @@ export class AppComponent implements OnInit {
     ).subscribe((event) => {
       console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
       this.notifications.sendInfo(
-        'An update was installed in the background and will be applied on next launch. <a href="#" (click)="applySwUpdate()">Apply immediately</a>',
-        { length: 10000 }
+        'App update available. <a href="javascript:window.location.reload()">Reload to apply</a>.',
+        { length: 0, identifier: 'sw-update' }
       );
     });
+
+    // Check for service worker updates on startup (don't wait for browser's schedule)
+    if (this.updates.isEnabled) {
+      this.updates.checkForUpdate().catch((err) => {
+        console.debug('SW update check failed:', err);
+      });
+    }
 
     // Notify user if service worker update failed
     this.updates.versionUpdates.pipe(
@@ -255,7 +262,12 @@ export class AppComponent implements OnInit {
   }
 
   applySwUpdate() {
-    this.updates.activateUpdate();
+    this.updates.activateUpdate().then(() => {
+      window.location.reload();
+    }).catch((err) => {
+      console.error('SW activation failed:', err);
+      window.location.reload();
+    });
   }
 
   toggleNav() {

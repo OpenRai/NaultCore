@@ -9,6 +9,12 @@
 >
   <div class="uk-width-1-1" style="position: relative; overflow-y: hidden;">
 
+    <!-- Service Worker Update Banner (non-dismissible) -->
+    <div *ngIf="updateAvailable" class="sw-update-banner">
+      <span class="sw-update-text">A new version of NanoNyms is available.</span>
+      <button class="sw-update-button" (click)="applySwUpdate()">Reload to update</button>
+    </div>
+
     <!-- Mobile top bar -->
     <div uk-grid class="mobile-top-bar uk-background-primary">
       <div class="uk-width-1-2 button-column">

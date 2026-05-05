@@ -28,6 +28,7 @@ import { TestIds } from './testing/test-ids';
 })
 export class AppComponent implements OnInit {
   readonly testIds = TestIds;
+  updateAvailable = false;
 
   constructor(
     public walletService: WalletService,
@@ -187,18 +188,15 @@ export class AppComponent implements OnInit {
     });
     this.desktop.send('deeplink-ready');
 
-    // Notify user if service worker update is available (Angular 17+ API)
+    // Show persistent banner when a service worker update is ready
     this.updates.versionUpdates.pipe(
       filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
     ).subscribe((event) => {
       console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
-      this.notifications.sendInfo(
-        'App update available. <a href="javascript:window.location.reload()">Reload to apply</a>.',
-        { length: 0, identifier: 'sw-update' }
-      );
+      this.updateAvailable = true;
     });
 
-    // Check for service worker updates on startup (don't wait for browser's schedule)
+    // Check for service worker updates on startup
     if (this.updates.isEnabled) {
       this.updates.checkForUpdate().catch((err) => {
         console.debug('SW update check failed:', err);

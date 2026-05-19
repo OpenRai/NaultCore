@@ -56,7 +56,7 @@ It does not contain funds, balances, transaction history, relay client configura
 | 33..64  | B_view             | 32 bytes | view pubkey      | Ed25519          |
 | 65..66  | notificationUriLen | 2 bytes  | URI length       | uint16 BE        |
 | 67..N   | notificationUri    | variable | Tier 1 route     | UTF-8            |
-| N+1..N+2| checksum           | 2 bytes  | integrity check  | BLAKE2b-derived  |
+| N+1..N+5| checksum           | 5 bytes  | integrity check  | BLAKE2b-derived  |
 +---------+--------------------+----------+------------------+------------------+
 ```
 

@@ -63,7 +63,7 @@ export function decodeNanoBase32(encoded: string): Uint8Array {
 }
 
 export function computeChecksum(payload: Uint8Array): Uint8Array {
-  return new Uint8Array(blake2b(payload, undefined, 5).slice(0, 2));
+  return new Uint8Array(blake2b(payload, undefined, 5));
 }
 
 export function encodeNanoNymAddress(input: NanoNymAddress): string {
@@ -131,7 +131,7 @@ function encodePayload(input: NanoNymAddress): Uint8Array {
   }
 
   const checksumOffset = 67 + uriBytes.length;
-  const payload = new Uint8Array(checksumOffset + 2);
+  const payload = new Uint8Array(checksumOffset + 5);
 
   payload[0] = NANO_NYM_VERSION;
   payload.set(input.spendPublicKey, 1);
@@ -148,9 +148,9 @@ function decodePayload(payload: Uint8Array): NanoNymAddress {
   const uriLength = (payload[65] << 8) | payload[66];
   const checksumOffset = 67 + uriLength;
 
-  if (payload.length !== checksumOffset + 2) {
+  if (payload.length !== checksumOffset + 5) {
     throw new Error(
-      `Invalid NanoNym payload length: expected ${checksumOffset + 2}, got ${payload.length}`,
+      `Invalid NanoNym payload length: expected ${checksumOffset + 5}, got ${payload.length}`,
     );
   }
 
@@ -168,7 +168,7 @@ function decodePayload(payload: Uint8Array): NanoNymAddress {
 
 function verifyChecksum(payload: Uint8Array, checksumOffset: number): void {
   const expected = computeChecksum(payload.slice(0, checksumOffset));
-  const actual = payload.slice(checksumOffset, checksumOffset + 2);
+  const actual = payload.slice(checksumOffset, checksumOffset + 5);
 
   if (!equalBytes(expected, actual)) {
     throw new Error("Invalid NanoNym address checksum");

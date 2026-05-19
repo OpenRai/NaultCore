@@ -5,6 +5,7 @@ import {
   NANO_NYM_PAYMENT_EVENT_VERSION,
   NANO_NYM_VERSION,
   computeChecksum,
+  encodeNanoBase32,
   decodeNanoNymAddress,
   encodeNanoNymAddress,
   isNanoNymAddress,
@@ -66,7 +67,30 @@ test("computes deterministic checksums", () => {
   const payload = new Uint8Array([1, 2, 3, 4, 5]);
 
   assert.deepEqual(computeChecksum(payload), computeChecksum(payload));
-  assert.equal(computeChecksum(payload).length, 2);
+  assert.equal(computeChecksum(payload).length, 5);
+});
+
+test("rejects legacy 2-byte checksum NanoNym payloads", () => {
+  const input = {
+    version: NANO_NYM_VERSION,
+    spendPublicKey: bytes(7),
+    viewPublicKey: bytes(8),
+    notificationUri: "nostr:npub1legacychecksum",
+  };
+  const uriBytes = new TextEncoder().encode(input.notificationUri);
+  const checksumOffset = 67 + uriBytes.length;
+  const legacyPayload = new Uint8Array(checksumOffset + 2);
+
+  legacyPayload[0] = input.version;
+  legacyPayload.set(input.spendPublicKey, 1);
+  legacyPayload.set(input.viewPublicKey, 33);
+  legacyPayload[65] = (uriBytes.length >>> 8) & 0xff;
+  legacyPayload[66] = uriBytes.length & 0xff;
+  legacyPayload.set(uriBytes, 67);
+  legacyPayload.set(computeChecksum(legacyPayload.slice(0, checksumOffset)).slice(0, 2), checksumOffset);
+
+  const legacyAddress = `nnym_${encodeNanoBase32(legacyPayload)}`;
+  assert.throws(() => decodeNanoNymAddress(legacyAddress), /payload length/);
 });
 
 test("validates NanoNym payment events", () => {

@@ -60,6 +60,7 @@ src/environments/version.ts
 playwright-report/
 test-results/
 tests-playwright-results/
+.playwright-mcp/
 
 # Stray lockfile — this project uses pnpm, not bun
 bun.lock

@@ -36,7 +36,7 @@ Implementation:
 
 ## pnpm-driven tasks on macOS
 
-Use the nvm wrapper as per AGENTS.md:
+Use the nvm wrapper as per AGENTS.md. For Karma unit tests, set `CHROME_BIN` to Brave:
 ```bash
-source ~/.nvm/nvm.sh && nvm exec pnpm test
+source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
 ```

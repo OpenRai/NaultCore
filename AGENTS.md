@@ -8,6 +8,18 @@
 
 ## Prime Directives
 
+## Read First: Critical Preflight
+
+Before running commands, check this block first.
+
+- **Karma unit tests require Brave on macOS** via `CHROME_BIN`.
+- **Canonical unit test command:**
+  ```bash
+  source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
+  ```
+- **All pnpm commands on macOS must run via** `source ~/.nvm/nvm.sh && nvm exec pnpm ...`
+- If command examples in docs disagree, follow this AGENTS.md preflight block.
+
 ### 1. Critical Invariant (NEVER BREAK)
 
 The core path must always work:
@@ -107,7 +119,7 @@ All architectural decisions, protocol details, and implementation notes are in s
 ## Quick Reference
 
 - **Live preview:** https://cbrunnkvist.github.io/NanoNymNault/
-- **Test suite:** `nvm exec pnpm test` (requires Brave Browser + Node v22)
+- **Test suite (macOS):** `source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test`
 - **Dev server:** `nvm exec pnpm start` → http://localhost:4200/
 - **See docs/README.md for full documentation index**
 

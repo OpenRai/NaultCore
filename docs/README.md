@@ -4,8 +4,7 @@ This is your guide to the NanoNymNault documentation structure.
 
 The current source of truth for NanoNym semantics is:
 
-- the v2 RFC
-- the protocol specification
+- the standard ORIS specs
 - the key derivation architecture
 
 Some older research and spike documents are preserved for context and may describe superseded ideas.
@@ -15,15 +14,15 @@ Some older research and spike documents are preserved for context and may descri
 ## Start Here
 
 - **[README.md](../README.md)** - Project overview and getting started
-- **[rfcs/0001-nanonym-v2-address-format.md](rfcs/0001-nanonym-v2-address-format.md)** - Current NanoNym v2 address format and `nnym_` byte layout
+- **[ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md)** - Current NanoNym v2 address format and `nnym_` byte layout
 - **[AGENTS.md](../AGENTS.md)** - Agent instructions (Prime Directives, build environment, commit format)
 
-## RFCs
+## Standards (OpenRai Initiative Standards)
 
-- **[rfcs/0001-nanonym-v2-address-format.md](rfcs/0001-nanonym-v2-address-format.md)** - Transport-agnostic NanoNym address layout and notification URI slot
-- **[rfcs/0002-nanonym-payment-event-schema.md](rfcs/0002-nanonym-payment-event-schema.md)** - Base payment event schema shared across transports and profiles
-- **[rfcs/0003-nostr-notification-transport-profile.md](rfcs/0003-nostr-notification-transport-profile.md)** - Nostr NIP-59/NIP-44 delivery profile for RFC 0002 payloads
-- **[rfcs/0004-x402-nanosession-payment-verification-profile.md](rfcs/0004-x402-nanosession-payment-verification-profile.md)** - HTTP 402 proof-of-payment profile using RFC 0002 plus `r`
+- **[ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md)** - Transport-agnostic NanoNym address layout and notification URI slot
+- **[ORIS-003](../references/OpenRai-Standards/rfcs/ORIS-003.md)** - Base payment event schema shared across transports and profiles
+- **[ORIS-004](../references/OpenRai-Standards/rfcs/ORIS-004.md)** - Nostr NIP-59/NIP-44 delivery profile for event payloads
+- **[ORIS-005](../references/OpenRai-Standards/rfcs/ORIS-005.md)** - HTTP 402 proof-of-payment profile
 
 ---
 
@@ -40,7 +39,7 @@ Some older research and spike documents are preserved for context and may descri
 
 ### Understanding the Protocol (WHAT)
 
-**[protocol-specification.md](protocol-specification.md)** - Protocol specification
+**[ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md)** - Protocol specification
 - NanoNym address format (`nnym_`)
 - v2-only URI-based address semantics
 - Send and receive workflows
@@ -122,9 +121,9 @@ Some older research and spike documents are preserved for context and may descri
 **I need to understand...**
 - **Why we chose Nostr instead of on-chain notifications** → project-context.md
 - **How to derive keys from a seed** → implementation-notes.md (Section 1)
-- **What the `nnym_` address format looks like** → rfcs/0001-nanonym-v2-address-format.md
+- **What the `nnym_` address format looks like** → [ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md)
 - **How to handle stealth account opening** → implementation-notes.md (Section 4)
-- **When to warn users about privacy impact** → protocol-specification.md (Section 7)
+- **When to warn users about privacy impact** → [ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md) (Section 4)
 - **What the current implementation status is** → roadmap.md
 - **How to write a proper commit message** → coding-standards.md
 

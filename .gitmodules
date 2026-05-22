@@ -13,3 +13,6 @@
 [submodule "references/nano-docs"]
 	path = references/nano-docs
 	url = https://github.com/nanocurrency/nano-docs.git
+[submodule "references/OpenRai-Standards"]
+	path = references/OpenRai-Standards
+	url = https://github.com/OpenRai/Standards

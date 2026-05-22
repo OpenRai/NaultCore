@@ -108,7 +108,7 @@ nvm exec pnpm --recursive --filter @nanonyms/* publish -- --access public --tag 
 All architectural decisions, protocol details, and implementation notes are in separate files:
 
 - **[docs/project-context.md](docs/project-context.md)** - WHY: Architectural decisions, privacy model, design rationale
-- **[docs/protocol-specification.md](docs/protocol-specification.md)** - WHAT: Address format, workflows, account model
+- **[references/OpenRai-Standards/rfcs/ORIS-002.md](references/OpenRai-Standards/rfcs/ORIS-002.md)** - WHAT: Address format, workflows, account model
 - **[docs/implementation-notes.md](docs/implementation-notes.md)** - HOW: Cryptography, key derivation, technical details
 - **[docs/coding-standards.md](docs/coding-standards.md)** - HOW: TypeScript patterns, testing conventions
 - **[docs/roadmap.md](docs/roadmap.md)** - STATUS: Implementation status and next steps
@@ -122,6 +122,29 @@ All architectural decisions, protocol details, and implementation notes are in s
 - **Test suite (macOS):** `source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test`
 - **Dev server:** `nvm exec pnpm start` → http://localhost:4200/
 - **See docs/README.md for full documentation index**
+
+---
+
+## Shared Ecosystem: nano-rspow Release Process
+
+When releasing a new version of the **`nano-rspow`** library/bindings:
+
+1. **Bump Version Numbers**:
+   - Bump version in root `Cargo.toml` (`[workspace.package] version = "X.Y.Z"`).
+   - Bump version in `nano-rspow-node/package.json` (`"version": "X.Y.Z"`).
+   - Python bindings dynamically read version from `Cargo.toml`.
+2. **Synchronize Lockfile**:
+   - Run `cargo check` to automatically rebuild the lockfile with the new versions.
+3. **Commit and Tag**:
+   - Commit version changes: `git commit -m "chore(release): bump version to X.Y.Z"`
+   - **CRITICAL**: Create and push the Git tag explicitly! `git push --follow-tags` does NOT push lightweight tags properly.
+     ```bash
+     git tag vX.Y.Z
+     git push origin vX.Y.Z
+     ```
+4. **Triggered Workflows**:
+   - **Node.js Bindings** (`node-publish.yml`): Compiles matrix bindings (macOS x86/arm, Windows, Linux) and publishes to NPM with `--provenance`.
+   - **Python Wheels** (`python-publish.yml`): Compiles wheels via `maturin` matrix (macOS x86/arm, Windows, Linux) + sdist, then publishes to PyPI via trusted publishing.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker

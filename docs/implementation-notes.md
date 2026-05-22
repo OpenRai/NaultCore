@@ -1,6 +1,6 @@
 # NanoNymNault: Implementation Notes
 
-This document contains **HOW** to implement the NanoNym protocol and its wallet adapters. For **WHAT** the protocol does, see [protocol-specification.md](protocol-specification.md).
+This document contains **HOW** to implement the NanoNym protocol and its wallet adapters. For **WHAT** the protocol does, see [ORIS-002](../references/OpenRai-Standards/rfcs/ORIS-002.md).
 
 ---
 

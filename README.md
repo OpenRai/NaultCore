@@ -4,13 +4,13 @@
 
 ## Start Here
 
-- **[RFC: NanoNym v2 Address Format](docs/rfcs/0001-nanonym-v2-address-format.md)** - The current draft spec for what a `nnym_` contains and how v2 works
-- **[RFC: NanoNym Payment Event Schema](docs/rfcs/0002-nanonym-payment-event-schema.md)** - Transport-agnostic payment payload shared by notification and verification profiles
-- **[RFC: Nostr Notification Transport Profile](docs/rfcs/0003-nostr-notification-transport-profile.md)** - Nostr gift-wrap delivery profile for NanoNym payment events
-- **[RFC: x402.NanoSession Payment Verification Profile](docs/rfcs/0004-x402-nanosession-payment-verification-profile.md)** - HTTP 402 payment proof profile using the same base schema
+- **[ORIS-002: NanoNyms](references/OpenRai-Standards/rfcs/ORIS-002.md)** - The canonical specification for what a `nnym_` contains and how v2 works
+- **[ORIS-003: NanoNym Payment Event Schema](references/OpenRai-Standards/rfcs/ORIS-003.md)** - Transport-agnostic payment payload shared by notification and verification profiles
+- **[ORIS-004: Nostr Transport Profile](references/OpenRai-Standards/rfcs/ORIS-004.md)** - Nostr gift-wrap delivery profile for NanoNym payment events
+- **[ORIS-005: x402 Exact Pre-payment Verification](references/OpenRai-Standards/rfcs/ORIS-005.md)** - HTTP 402 payment proof profile using the same base schema
 - **[Key Derivation Architecture](docs/KEY-DERIVATION.md)** - The current v2-only derivation model and package boundaries
 - **[Documentation Index](docs/README.md)** - Full map of NanoNymNault docs
-- **[Protocol Specification](docs/protocol-specification.md)** - End-to-end send, receive, and stealth-account workflow
+- **[ORIS-002: Protocol Specification](references/OpenRai-Standards/rfcs/ORIS-002.md)** - End-to-end send, receive, and stealth-account workflow
 
 
 ---
@@ -185,11 +185,10 @@ Because Nano and external notification systems use different cryptographic syste
 
 ### Documentation
 
-- **[docs/rfcs/0001-nanonym-v2-address-format.md](docs/rfcs/0001-nanonym-v2-address-format.md)** - Current NanoNym v2 draft spec with the `nnym_` binary layout
+- **[references/OpenRai-Standards/rfcs/ORIS-002.md](references/OpenRai-Standards/rfcs/ORIS-002.md)** - The canonical NanoNym v2 specification, workflows, and address semantics
 - **[docs/KEY-DERIVATION.md](docs/KEY-DERIVATION.md)** - Current v2-only derivation architecture
 - **[AGENTS.md](AGENTS.md)** - Agent instructions and Prime Directives
 - **[docs/README.md](docs/README.md)** - Complete documentation index
-- **[docs/protocol-specification.md](docs/protocol-specification.md)** - v2-only protocol workflows and address semantics
 - **[docs/ANALYSIS-CAMONANO-ALTERNATIVES.md](docs/ANALYSIS-CAMONANO-ALTERNATIVES.md)** - Deep dive into CamoNano, BIP protocols, and off-chain notification alternatives
 
 ---

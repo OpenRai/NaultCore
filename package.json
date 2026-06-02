@@ -23,7 +23,7 @@
     "wallet:dev": "pnpm run version && ng serve --open",
     "wallet:dev-ssl": "pnpm run version && ng serve --ssl --open",
     "version": "node scripts/generate-version.js",
-    "wallet:build": "pnpm run version && ng build --configuration production --base-href /NanoNymNault/",
+    "wallet:build": "pnpm run version && ng build --configuration production --base-href /NaultCore/",
     "wallet:build:naultcore": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng build --configuration naultcore --base-href /NaultCore/",
     "wallet:build-desktop": "pnpm run version && ng build --configuration=desktop --base-href ",
     "desktop:compile": "cd desktop-app && tsc && cd ..",

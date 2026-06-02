@@ -1,7 +1,9 @@
 import { NanoNymSendPage } from './nanonym-send.po';
 import { browser, logging, by, element, ExpectedConditions } from 'protractor';
 
-describe('NanoNym Send Functionality', () => {
+const featureNanonyms = process.env.FEATURE_NANONYMS !== 'false';
+
+(featureNanonyms ? describe : xdescribe)('NanoNym Send Functionality', () => {
   let page: NanoNymSendPage;
 
   beforeEach(() => {

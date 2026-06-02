@@ -1,7 +1,7 @@
 import { TestBed, fakeAsync, tick } from "@angular/core/testing";
 import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.service";
 
-describe("NostrSyncStateService", () => {
+(FEATURE_NANONYMS ? describe : xdescribe)("NostrSyncStateService", () => {
   let service: NostrSyncStateService;
 
   beforeEach(() => {

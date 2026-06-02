@@ -1,27 +1,36 @@
 import { Injectable } from "@angular/core";
-import { nip19 } from "nostr-tools";
-import {
-  createNanoNymIdentity as coreCreateIdentity,
-  createNanoNymAddress,
-  prepareNanoNymPayment,
-  recoverStealthPayment,
-} from "@nanonyms/core";
+
+// Type-only imports (erased at compile time)
 import type { NanoNymPaymentEvent } from "@nanonyms/protocol";
-import {
-  NANO_NYM_VERSION,
-  createNostrNotificationUri,
-  decodeNanoNymAddress as decodeNanoNymAddressV2,
-  encodeNanoNymAddress as encodeNanoNymAddressV2,
-} from "@nanonyms/protocol";
-import {
-  deriveNanoNymKeys,
-  derivePublicKeyFromScalar,
-  deriveStealthAddress,
-  deriveStealthPrivateKey,
-  generateEphemeralKey,
-  generateSharedSecret,
-  signBlockWithScalar,
-} from "@nanonyms/crypto";
+
+// Runtime value imports — conditional on FEATURE_NANONYMS
+let nip19: any;
+let coreCreateIdentity: any, createNanoNymAddress: any, prepareNanoNymPayment: any, recoverStealthPayment: any;
+let NANO_NYM_VERSION: any, createNostrNotificationUri: any, decodeNanoNymAddressV2: any, encodeNanoNymAddressV2: any;
+let deriveNanoNymKeys: any, derivePublicKeyFromScalar: any, deriveStealthAddress: any, deriveStealthPrivateKey: any;
+let generateEphemeralKey: any, generateSharedSecret: any, signBlockWithScalar: any;
+
+if (FEATURE_NANONYMS) {
+  nip19 = require("nostr-tools").nip19;
+  const coreMod = require("@nanonyms/core");
+  coreCreateIdentity = coreMod.createNanoNymIdentity;
+  createNanoNymAddress = coreMod.createNanoNymAddress;
+  prepareNanoNymPayment = coreMod.prepareNanoNymPayment;
+  recoverStealthPayment = coreMod.recoverStealthPayment;
+  const protocolMod = require("@nanonyms/protocol");
+  NANO_NYM_VERSION = protocolMod.NANO_NYM_VERSION;
+  createNostrNotificationUri = protocolMod.createNostrNotificationUri;
+  decodeNanoNymAddressV2 = protocolMod.decodeNanoNymAddress;
+  encodeNanoNymAddressV2 = protocolMod.encodeNanoNymAddress;
+  const cryptoMod = require("@nanonyms/crypto");
+  deriveNanoNymKeys = cryptoMod.deriveNanoNymKeys;
+  derivePublicKeyFromScalar = cryptoMod.derivePublicKeyFromScalar;
+  deriveStealthAddress = cryptoMod.deriveStealthAddress;
+  deriveStealthPrivateKey = cryptoMod.deriveStealthPrivateKey;
+  generateEphemeralKey = cryptoMod.generateEphemeralKey;
+  generateSharedSecret = cryptoMod.generateSharedSecret;
+  signBlockWithScalar = cryptoMod.signBlockWithScalar;
+}
 
 @Injectable({
   providedIn: "root",

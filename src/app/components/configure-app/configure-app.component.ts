@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2 } from '@angular/core';
+import {Component, OnInit, Renderer2} from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AppSettingsService} from '../../services/app-settings.service';
@@ -15,8 +15,8 @@ import {RepresentativeService} from '../../services/representative.service';
 import {NinjaService} from '../../services/ninja.service';
 import {QrModalService} from '../../services/qr-modal.service';
 import { TranslocoService } from '@ngneat/transloco';
-import {NanoNymManagerService} from '../../services/nanonym-manager.service';
 import { TestIds } from '../../testing/test-ids';
+import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 
 @Component({
   selector: 'app-configure-app',
@@ -26,6 +26,7 @@ import { TestIds } from '../../testing/test-ids';
 
 export class ConfigureAppComponent implements OnInit {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
 
   constructor(
     private walletService: WalletService,
@@ -616,7 +617,9 @@ export class ConfigureAppComponent implements OnInit {
       await UIkit.modal.confirm('<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">' + this.translocoService.translate('configure-app.you-are-about-to-delete-all-locally-stored-data-about-your') + '</span><br><br><b style="font-size: 18px;">' + this.translocoService.translate('reset-wallet.before-continuing-make-sure-you-have-saved-the-nano-seed') + '</b><br><br><span style="font-size: 18px;"><b>' + this.translocoService.translate('reset-wallet.you-will-not-be-able-to-recover-the-funds-without-a-backup') + '</b></span></p><br>');
       this.walletService.resetWallet();
       this.walletService.removeWalletData();
-      this.nanonymManager.resetAll(); // Clear all NanoNym data
+      if (FEATURE_NANONYMS && this.nanonymManager) {
+        this.nanonymManager.resetAll();
+      }
 
       this.notifications.sendSuccess(this.translocoService.translate('configure-app.successfully-deleted-all-wallet-data'));
     } catch (err) {}
@@ -634,7 +637,9 @@ export class ConfigureAppComponent implements OnInit {
       this.appSettings.clearAppSettings();
       this.repService.resetRepresentativeList();
       this.api.deleteCache();
-      this.nanonymManager.resetAll(); // Clear all NanoNym data
+      if (FEATURE_NANONYMS && this.nanonymManager) {
+        this.nanonymManager.resetAll();
+      }
 
       this.loadFromSettings();
 

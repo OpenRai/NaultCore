@@ -28,6 +28,7 @@ import { TestIds } from '../../testing/test-ids';
 })
 export class AccountDetailsComponent implements OnInit, OnDestroy {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
   zeroHash = '0000000000000000000000000000000000000000000000000000000000000000';
 
@@ -470,6 +471,10 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     // NEW: Detect account type
     if (accountID.startsWith('nnym_')) {
+      if (!FEATURE_NANONYMS) {
+        this.notifications.sendError('NanoNym addresses are not supported in this build.');
+        return;
+      }
       this.accountType = 'nanonym';
       await this.loadNanoNymDetails(accountID);
       return;

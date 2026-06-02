@@ -1,8 +1,22 @@
 import { Injectable } from "@angular/core";
-import { SimplePool, nip59, nip19 } from "nostr-tools";
-import type { Event } from "nostr-tools/lib/types/core";
 import * as Rx from "rxjs";
+
+// Type-only imports (erased at compile time)
+import type { Event } from "nostr-tools/lib/types/core";
+
+// Angular service imports (needed for DI tokens)
 import { NostrSyncStateService } from "./nostr-sync-state.service";
+
+// Runtime value imports — conditional on FEATURE_NANONYMS for heavy libraries
+let _SimplePool: any;
+let nip59: any, nip19: any;
+
+if (FEATURE_NANONYMS) {
+  const nostrTools = require("nostr-tools");
+  _SimplePool = nostrTools.SimplePool;
+  nip59 = nostrTools.nip59;
+  nip19 = nostrTools.nip19;
+}
 
 export interface NanoNymNotification {
   version: 2;
@@ -32,7 +46,7 @@ export class NostrNotificationService {
   ];
 
   // SimplePool for managing multiple relay connections
-  private pool: SimplePool;
+  private pool: any;
 
   // Observable for relay connection status
   public relayStatus$ = new Rx.BehaviorSubject<RelayStatus[]>([]);
@@ -75,13 +89,14 @@ export class NostrNotificationService {
   constructor(
     private syncStateService: NostrSyncStateService,
   ) {
+    if (!FEATURE_NANONYMS) return;
     this.pool = this.createPool();
     this.initializeRelays();
     this.setupVisibilityListener();
   }
 
-  private createPool(): SimplePool {
-    return new SimplePool({
+  private createPool(): any {
+    return new _SimplePool({
       enablePing: true,
       enableReconnect: true,
     });

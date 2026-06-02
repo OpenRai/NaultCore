@@ -1,33 +1,44 @@
 import { Injectable, OnDestroy } from "@angular/core";
 import BigNumber from "bignumber.js";
-import {
-  NanoNym,
-  StealthAccount,
-  NanoNymNotification,
-} from "../types/nanonym.types";
-import {
-  NanoNymAccount,
-  truncateNanoNymAddress,
-} from "../types/spendable-account.types";
-import { NanoNymStorageService } from "./nanonym-storage.service";
-import { NanoNymCryptoService } from "./nanonym-crypto.service";
-import { NostrNotificationService } from "./nostr-notification.service";
-import { NostrSyncStateService } from "./nostr-sync-state.service";
+import { Subscription, Subject, interval } from "rxjs";
 import { ApiService } from "./api.service";
 import { WalletService, WalletAccount } from "./wallet.service";
 import { WebsocketService } from "./websocket.service";
-import { Subscription, Subject, interval } from "rxjs";
 import { NanoBlockService } from "./nano-block.service";
 import { UtilService } from "./util.service";
 import { NotificationService } from "./notification.service";
 import { NoPaddingZerosPipe } from "../pipes/no-padding-zeros.pipe";
-import { tools as nanocurrencyWebTools } from "nanocurrency-web";
-const nacl = window["nacl"];
-
 import { AppSettingsService } from "./app-settings.service";
+
+// Type-only imports (erased at compile time, zero bundle cost)
+import type { NanoNym, StealthAccount, NanoNymNotification } from "../types/nanonym.types";
+import type { NanoNymAccount } from "../types/spendable-account.types";
+
+// Angular service imports (needed for DI tokens — always available via providedIn: 'root')
+import { NanoNymStorageService } from "./nanonym-storage.service";
+import { NanoNymCryptoService } from "./nanonym-crypto.service";
+import { NostrNotificationService } from "./nostr-notification.service";
+import { NostrSyncStateService } from "./nostr-sync-state.service";
 import { OrbitdbNotificationService } from "./orbitdb-notification.service";
-import { nip19, nip59 } from "nostr-tools";
-import { createNanoNymIdentity, recoverStealthPayment } from "@nanonyms/core";
+
+// Runtime value imports — conditional on FEATURE_NANONYMS for heavy libraries
+let nanocurrencyWebTools: any;
+let nip19: any, nip59: any;
+let createNanoNymIdentity: any, recoverStealthPayment: any;
+let truncateNanoNymAddress: any;
+
+if (FEATURE_NANONYMS) {
+  nanocurrencyWebTools = require("nanocurrency-web").tools;
+  const nostrTools = require("nostr-tools");
+  nip19 = nostrTools.nip19;
+  nip59 = nostrTools.nip59;
+  const coreMod = require("@nanonyms/core");
+  createNanoNymIdentity = coreMod.createNanoNymIdentity;
+  recoverStealthPayment = coreMod.recoverStealthPayment;
+  truncateNanoNymAddress = require("../types/spendable-account.types").truncateNanoNymAddress;
+}
+
+const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
 @Injectable({
   providedIn: "root",
@@ -65,6 +76,8 @@ export class NanoNymManagerService implements OnDestroy {
     private appSettings: AppSettingsService,
     private orbitdbService: OrbitdbNotificationService,
   ) {
+    if (!FEATURE_NANONYMS) return;
+
     // Subscribe to incoming Nostr notifications
     this.setupNotificationListener();
 

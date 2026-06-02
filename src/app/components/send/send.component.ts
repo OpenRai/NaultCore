@@ -17,21 +17,16 @@ import { environment } from "environments/environment";
 import { TranslocoService } from "@ngneat/transloco";
 import { HttpClient } from "@angular/common/http";
 import * as nanocurrency from "nanocurrency";
+import { SpendableAccount, formatSpendableAccountLabel, NanoNymAccount } from "../../types/spendable-account.types";
+import { StealthAccount } from "../../types/nanonym.types";
+import { TestIds } from '../../testing/test-ids';
 import { NanoNymCryptoService } from "../../services/nanonym-crypto.service";
 import { NostrNotificationService } from "../../services/nostr-notification.service";
 import { NanoNymManagerService } from "../../services/nanonym-manager.service";
-import {
-  SpendableAccount,
-  RegularAccount,
-  NanoNymAccount,
-  formatSpendableAccountLabel
-} from "../../types/spendable-account.types";
-import { StealthAccount } from "../../types/nanonym.types";
 import { NanoNymAccountSelectionService } from "../../services/nanonym-account-selection.service";
 import { OrbitdbNotificationService } from "../../services/orbitdb-notification.service";
-import { TestIds } from '../../testing/test-ids';
 
-const nacl = window["nacl"];
+const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
 @Component({
   selector: "app-send",
@@ -40,6 +35,7 @@ const nacl = window["nacl"];
 })
 export class SendComponent implements OnInit {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
 
   activePanel = "send";
@@ -109,7 +105,7 @@ export class SendComponent implements OnInit {
 
   // NanoNym spending state
   isSpendingFromNanoNym = false;
-  selectedStealthAccounts: any[] = [];
+  selectedStealthAccounts: StealthAccount[] = [];
   privacyWarningShown = false;
   privacyWarningDismissed = false;
   privacyWarningPending = false;
@@ -539,6 +535,13 @@ export class SendComponent implements OnInit {
 
     // Check for NanoNym address BEFORE nano_ validation
     if (this.toAccountID.startsWith("nnym_")) {
+      if (!FEATURE_NANONYMS) {
+        this.toAccountStatus = 0;
+        this.notificationService.sendError(
+          `NanoNym addresses are not supported in this build. Use NanoNymNault for privacy features.`,
+        );
+        return;
+      }
       this.isNanoNymAddress = true;
       try {
         this.nanoNymParsedKeys = this.nanoNymCrypto.decodeNanoNymAddress(this.toAccountID);
@@ -809,8 +812,8 @@ export class SendComponent implements OnInit {
    * Ensures all stealth accounts are opened (have frontier) before attempting send
    * Returns: true if all accounts are ready, false if unrecoverable failure
    */
-  private async ensureStealthAccountsOpened(stealthAccounts: StealthAccount[]): Promise<boolean> {
-    const unopenedAccounts: StealthAccount[] = [];
+  private async ensureStealthAccountsOpened(stealthAccounts: any[]): Promise<boolean> {
+    const unopenedAccounts: any[] = [];
 
     // Check which accounts are unopened
     for (const account of stealthAccounts) {
@@ -1039,7 +1042,7 @@ export class SendComponent implements OnInit {
           successCount++;
 
           // Update balance after each transaction to show incremental progress
-          const nanoNymAccount = this.selectedSpendableAccount as NanoNymAccount;
+          const nanoNymAccount = this.selectedSpendableAccount as any;
           await this.nanoNymManager.refreshBalances(nanoNymAccount.index);
           this.walletService.informBalanceRefresh();
           stealthAccount.done = true;
@@ -1067,7 +1070,7 @@ export class SendComponent implements OnInit {
         });
 
         // Refresh NanoNym balances
-        const nanoNymAccount = this.selectedSpendableAccount as NanoNymAccount;
+        const nanoNymAccount = this.selectedSpendableAccount as any;
         await this.nanoNymManager.refreshBalances(nanoNymAccount.index);
 
         this.resetForm();
@@ -1089,7 +1092,7 @@ export class SendComponent implements OnInit {
   setMaxAmount() {
     // Handle NanoNym accounts differently
     if (this.selectedSpendableAccount?.type === 'nanonym') {
-      const nanoNymAccount = this.selectedSpendableAccount as NanoNymAccount;
+      const nanoNymAccount = this.selectedSpendableAccount as any;
       this.amountExtraRaw = nanoNymAccount.balanceRaw;
 
       const nanoVal = this.util.nano.rawToNano(nanoNymAccount.balance).floor();
@@ -1334,7 +1337,7 @@ export class SendComponent implements OnInit {
    * Send flow when spending FROM a NanoNym (Section 8)
    */
   async sendFromNanoNym() {
-    const nanoNymAccount = this.selectedSpendableAccount as NanoNymAccount;
+    const nanoNymAccount = this.selectedSpendableAccount as any;
     const destinationID = this.getDestinationID();
 
     // Validate inputs
@@ -1369,8 +1372,8 @@ export class SendComponent implements OnInit {
 
       // Get updated account reference after refresh
       const updatedAccount = this.spendableAccounts.find(acc =>
-        acc.type === 'nanonym' && (acc as NanoNymAccount).index === nanoNymAccount.index
-      ) as NanoNymAccount;
+        acc.type === 'nanonym' && (acc as any).index === nanoNymAccount.index
+      ) as any;
 
       if (!updatedAccount) {
         this.preparingTransaction = false;
@@ -1532,7 +1535,7 @@ export class SendComponent implements OnInit {
    */
   private rebuildSpendableAccountsList(): void {
     // Convert regular wallet accounts to SpendableAccount format
-    const regularAccounts: RegularAccount[] = this.accounts.map(account => ({
+    const regularAccounts: any[] = this.accounts.map(account => ({
       type: 'regular' as const,
       id: account.id,
       label: account.addressBookName || `Account #${account.index}`,

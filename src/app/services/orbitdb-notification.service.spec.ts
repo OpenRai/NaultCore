@@ -11,7 +11,7 @@ import { NanoNymNotification } from './nostr-notification.service';
  *
  * TODO: Rewrite tests for new Tier2 backend
  */
-describe('OrbitdbNotificationService Standalone', () => {
+(FEATURE_NANONYMS ? describe : xdescribe)('OrbitdbNotificationService Standalone', () => {
   let service: OrbitdbNotificationService;
 
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('OrbitdbNotificationService Standalone', () => {
   }, 30000);
 });
 
-describe('OrbitdbNotificationService with Relay', () => {
+(FEATURE_NANONYMS ? describe : xdescribe)('OrbitdbNotificationService with Relay', () => {
   let service: OrbitdbNotificationService;
 
   beforeEach(() => {

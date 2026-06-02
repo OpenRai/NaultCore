@@ -13,9 +13,9 @@ import {
 } from '../../services';
 import { TranslocoService } from '@ngneat/transloco';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../../types/spendable-account.types';
+import { TestIds } from '../../testing/test-ids';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
-import { TestIds } from '../../testing/test-ids';
 
 @Component({
   selector: 'app-accounts',
@@ -24,6 +24,7 @@ import { TestIds } from '../../testing/test-ids';
 })
 export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
   accounts = this.walletService.wallet.accounts;
   isLedgerWallet = this.walletService.isLedgerWallet();
   isSingleKeyWallet = this.walletService.isSingleKeyWallet();
@@ -157,7 +158,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate([`account/${account.id}`], { queryParams: {'compact': 1} });
   }
 
-  navigateToNanoNym(account: NanoNymAccount) {
+  navigateToNanoNym(account: any) {
     const isSmallViewport = (window.innerWidth < 940);
 
     if (isSmallViewport) {

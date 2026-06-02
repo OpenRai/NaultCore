@@ -26,7 +26,7 @@ describe('NanoAccountIdComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('NanoNym address detection', () => {
+  (FEATURE_NANONYMS ? describe : xdescribe)('NanoNym address detection', () => {
     it('should detect nnym_ addresses as NanoNym type', () => {
       const nnymAddress = 'nnym_17jxt55u9s3rusu5qbm8bfjmmqgpucne4pkudohq3rsy4wow5ptszdwfju6meyqzr71judrhrghrf3z3hn9ssiyurfq13jnduosek8at1yahc8pkdgouhrtnxh8mzd6ngnxx6134hzqebiorqazba47grpmubyi';
       component.accountID = nnymAddress;

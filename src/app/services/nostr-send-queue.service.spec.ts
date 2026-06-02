@@ -5,7 +5,7 @@ import {
 } from "./nostr-send-queue.service";
 import { NanoNymNotification } from "./nostr-notification.service";
 
-describe("NostrSendQueueService", () => {
+(FEATURE_NANONYMS ? describe : xdescribe)("NostrSendQueueService", () => {
   let service: NostrSendQueueService;
 
   const mockNotification: NanoNymNotification = {

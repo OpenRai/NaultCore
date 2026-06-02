@@ -20,10 +20,14 @@
   },
   "files": [
     "main.ts",
-    "polyfills.ts"
+    "polyfills.ts",
+    "globals.d.ts"
   ],
   "include": [
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "../packages/protocol/src/**/*.ts",
+    "../packages/crypto/src/**/*.ts",
+    "../packages/core/src/**/*.ts"
   ],
   "exclude": [
     "**/node_modules/**"

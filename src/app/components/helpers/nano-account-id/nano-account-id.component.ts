@@ -24,7 +24,7 @@ export class NanoAccountIdComponent implements OnChanges {
     const accountID = this.accountID;
 
     // Detect NanoNym address
-    this.isNanoNymAddress = accountID?.startsWith('nnym_') || false;
+    this.isNanoNymAddress = FEATURE_NANONYMS && (accountID?.startsWith('nnym_') || false);
 
     const prefix = this.isNanoNymAddress ? 'nnym_' : 'nano_';
     const openingChars = 10;

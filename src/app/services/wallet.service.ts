@@ -16,7 +16,7 @@ import { NoPaddingZerosPipe } from 'app/pipes/no-padding-zeros.pipe';
 import { NanoNymManagerService } from './nanonym-manager.service';
 import { NanoNymStorageService } from './nanonym-storage.service';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../types/spendable-account.types';
-import { combineLatest, Observable } from 'rxjs';
+import { combineLatest, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
@@ -164,9 +164,13 @@ export class WalletService {
       const walletAccountIDs = this.wallet.accounts.map(a => a.id);
 
       // Include stealth account addresses in transaction detection
-      const stealthAccountIDs = this.nanoNymStorage.getAllNanoNyms()
-        .reduce((acc, nn) => acc.concat(nn.stealthAccounts.map(sa => sa.address)), [] as string[]);
-      const allAccountIDs = [...walletAccountIDs, ...stealthAccountIDs];
+      let allAccountIDs = walletAccountIDs;
+      let stealthAccountIDs: string[] = [];
+      if (FEATURE_NANONYMS && this.nanoNymStorage) {
+        stealthAccountIDs = this.nanoNymStorage.getAllNanoNyms()
+          .reduce((acc, nn) => acc.concat(nn.stealthAccounts.map(sa => sa.address)), [] as string[]);
+        allAccountIDs = [...walletAccountIDs, ...stealthAccountIDs];
+      }
 
       const isConfirmedIncomingTransactionForOwnWalletAccount = (
           (transaction.block.type === 'state')
@@ -206,7 +210,7 @@ export class WalletService {
         await this.processStateBlock(transaction);
 
         // If this is a stealth account transaction, refresh its balance
-        if (stealthAccountIDs.includes(transaction.block.account)) {
+        if (FEATURE_NANONYMS && stealthAccountIDs.includes(transaction.block.account)) {
           const nanoNyms = this.nanoNymStorage.getAllNanoNyms();
           for (const nn of nanoNyms) {
             const stealthAccount = nn.stealthAccounts.find(sa => sa.address === transaction.block.account);
@@ -391,12 +395,13 @@ export class WalletService {
     this.resetWallet();
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
-    // Use lazy injection to avoid circular dependency
-    try {
-      const nanonymManager = this.injector.get(NanoNymManagerService);
-      nanonymManager.resetAll();
-    } catch (error) {
-      console.warn('Could not reset NanoNym data:', error);
+    if (FEATURE_NANONYMS) {
+      try {
+        const nanonymManager = this.injector.get(NanoNymManagerService);
+        nanonymManager.resetAll();
+      } catch (error) {
+        console.warn('Could not reset NanoNym data:', error);
+      }
     }
 
     this.wallet.seed = seed;
@@ -520,12 +525,13 @@ export class WalletService {
     this.resetWallet();
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
-    // Use lazy injection to avoid circular dependency
-    try {
-      const nanonymManager = this.injector.get(NanoNymManagerService);
-      nanonymManager.resetAll();
-    } catch (error) {
-      console.warn('Could not reset NanoNym data:', error);
+    if (FEATURE_NANONYMS) {
+      try {
+        const nanonymManager = this.injector.get(NanoNymManagerService);
+        nanonymManager.resetAll();
+      } catch (error) {
+        console.warn('Could not reset NanoNym data:', error);
+      }
     }
 
     this.wallet.seed = seed;
@@ -609,12 +615,13 @@ export class WalletService {
     this.resetWallet();
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
-    // Use lazy injection to avoid circular dependency
-    try {
-      const nanonymManager = this.injector.get(NanoNymManagerService);
-      nanonymManager.resetAll();
-    } catch (error) {
-      console.warn('Could not reset NanoNym data:', error);
+    if (FEATURE_NANONYMS) {
+      try {
+        const nanonymManager = this.injector.get(NanoNymManagerService);
+        nanonymManager.resetAll();
+      } catch (error) {
+        console.warn('Could not reset NanoNym data:', error);
+      }
     }
 
     this.wallet.seedBytes = this.util.hex.toUint8(seed);
@@ -630,12 +637,13 @@ export class WalletService {
     this.resetWallet();
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
-    // Use lazy injection to avoid circular dependency
-    try {
-      const nanonymManager = this.injector.get(NanoNymManagerService);
-      nanonymManager.resetAll();
-    } catch (error) {
-      console.warn('Could not reset NanoNym data:', error);
+    if (FEATURE_NANONYMS) {
+      try {
+        const nanonymManager = this.injector.get(NanoNymManagerService);
+        nanonymManager.resetAll();
+      } catch (error) {
+        console.warn('Could not reset NanoNym data:', error);
+      }
     }
 
     this.wallet.type = 'ledger';
@@ -649,12 +657,13 @@ export class WalletService {
     this.resetWallet();
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
-    // Use lazy injection to avoid circular dependency
-    try {
-      const nanonymManager = this.injector.get(NanoNymManagerService);
-      nanonymManager.resetAll();
-    } catch (error) {
-      console.warn('Could not reset NanoNym data:', error);
+    if (FEATURE_NANONYMS) {
+      try {
+        const nanonymManager = this.injector.get(NanoNymManagerService);
+        nanonymManager.resetAll();
+      } catch (error) {
+        console.warn('Could not reset NanoNym data:', error);
+      }
     }
 
     this.wallet.type = expanded ? 'expandedKey' : 'privateKey';
@@ -1279,8 +1288,6 @@ export class WalletService {
    * Returns a unified view for display on Accounts page and other UIs
    */
   getSpendableAccounts(): SpendableAccount[] {
-    const nano = new BigNumber(this.nano);
-
     // Convert regular wallet accounts to RegularAccount format
     const regularAccounts: RegularAccount[] = this.wallet.accounts.map(account => ({
       type: 'regular' as const,
@@ -1294,9 +1301,13 @@ export class WalletService {
       walletAccount: account
     }));
 
+    if (!FEATURE_NANONYMS || !this.nanoNymStorage) {
+      return regularAccounts;
+    }
+
     // Get NanoNym accounts from storage
     const nanoNyms = this.nanoNymStorage.getAllNanoNyms();
-    const nanoNymAccounts: NanoNymAccount[] = nanoNyms.map(nn => {
+    const nanoNymAccounts = nanoNyms.map(nn => {
       const balanceInNano = this.util.nano.rawToMnano(nn.balance);
       const truncatedAddress = nn.nnymAddress.substring(0, 12) + '...' + nn.nnymAddress.substring(nn.nnymAddress.length - 8);
 
@@ -1305,8 +1316,8 @@ export class WalletService {
         id: nn.nnymAddress,
         label: nn.label,
         balance: nn.balance,
-        balanceRaw: nn.balance, // NanoNyms already store in raw
-        pending: new BigNumber(0), // Stealth accounts auto-receive
+        balanceRaw: nn.balance,
+        pending: new BigNumber(0),
         balanceFiat: balanceInNano.times(this.price.price.lastPrice).toNumber(),
         index: nn.index,
         nanoNym: nn,
@@ -1323,6 +1334,9 @@ export class WalletService {
    */
   getTotalBalanceIncludingNanoNyms(): BigNumber {
     const regularBalance = this.wallet.balance;
+    if (!FEATURE_NANONYMS || !this.nanoNymStorage) {
+      return regularBalance;
+    }
     const nanoNyms = this.nanoNymStorage.getAllNanoNyms();
     const nanoNymBalance = nanoNyms.reduce(
       (sum, nn) => sum.plus(nn.balance),
@@ -1336,12 +1350,15 @@ export class WalletService {
    * Auto-updates when wallet accounts or NanoNyms change
    */
   get spendableAccounts$(): Observable<SpendableAccount[]> {
-    return combineLatest([
-      this.wallet.refresh$,
-      this.nanoNymStorage.nanonyms$
-    ]).pipe(
-      map(() => this.getSpendableAccounts())
-    );
+    if (FEATURE_NANONYMS && this.nanoNymStorage) {
+      return combineLatest([
+        this.wallet.refresh$,
+        this.nanoNymStorage.nanonyms$
+      ]).pipe(
+        map(() => this.getSpendableAccounts())
+      );
+    }
+    return this.wallet.refresh$.pipe(map(() => this.getSpendableAccounts()));
   }
 
   /**
@@ -1349,12 +1366,15 @@ export class WalletService {
    * Auto-updates when either regular account balances or NanoNym balances change
    */
   get totalBalance$(): Observable<BigNumber> {
-    return combineLatest([
-      this.wallet.refresh$,
-      this.nanoNymStorage.nanonyms$
-    ]).pipe(
-      map(() => this.getTotalBalanceIncludingNanoNyms())
-    );
+    if (FEATURE_NANONYMS && this.nanoNymStorage) {
+      return combineLatest([
+        this.wallet.refresh$,
+        this.nanoNymStorage.nanonyms$
+      ]).pipe(
+        map(() => this.getTotalBalanceIncludingNanoNyms())
+      );
+    }
+    return this.wallet.refresh$.pipe(map(() => this.getTotalBalanceIncludingNanoNyms()));
   }
 
   /**

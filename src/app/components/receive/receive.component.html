@@ -98,6 +98,7 @@
                       }}
                       XNO)
                     </option>
+                    <ng-container *ngIf="featureNanonyms">
                     <option
                       *ngFor="let nanoNym of nanoNymAccounts"
                       [value]="nanoNym.id"
@@ -109,10 +110,11 @@
                       }}
                       XNO)
                     </option>
+                    </ng-container>
                   </select>
                 </div>
                 <!-- NanoNym Badge -->
-                <div *ngIf="isSelectedAccountNanoNym" class="uk-inline uk-width-auto uk-margin-small-top">
+                <div *ngIf="featureNanonyms && isSelectedAccountNanoNym" class="uk-inline uk-width-auto uk-margin-small-top">
                   <span class="account-label nanonym" uk-tooltip title="Privacy-preserving NanoNym address">
                     🔒 NanoNym
                   </span>

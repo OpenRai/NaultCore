@@ -14,12 +14,11 @@ import { WebsocketService } from "../../services/websocket.service";
 import * as QRCode from "qrcode";
 import BigNumber from "bignumber.js";
 import { TranslocoService } from "@ngneat/transloco";
-import { NanoNymManagerService } from "../../services/nanonym-manager.service";
-import { NanoNymStorageService } from "../../services/nanonym-storage.service";
-import { NanoNym } from "../../types/nanonym.types";
-import { SpendableAccount, NanoNymAccount } from "../../types/spendable-account.types";
+import { SpendableAccount } from "../../types/spendable-account.types";
 import { Subscription } from "rxjs";
 import { TestIds } from '../../testing/test-ids';
+import { NanoNymManagerService } from "../../services/nanonym-manager.service";
+import { NanoNymStorageService } from "../../services/nanonym-storage.service";
 
 @Component({
   selector: "app-receive",
@@ -28,9 +27,10 @@ import { TestIds } from '../../testing/test-ids';
 })
 export class ReceiveComponent implements OnInit, OnDestroy {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
   accounts = this.walletService.wallet.accounts;
-  nanoNymAccounts: NanoNymAccount[] = [];
+  nanoNymAccounts: any[] = [];
   isSelectedAccountNanoNym = false;
 
   timeoutIdClearingRecentlyCopiedState: any = null;
@@ -113,12 +113,13 @@ export class ReceiveComponent implements OnInit, OnDestroy {
       (accounts) => {
         this.nanoNymAccounts = accounts.filter(
           (acc) => acc.type === "nanonym"
-        ) as NanoNymAccount[];
+        );
       }
     );
 
     // Subscribe to notification processing events
-    this.notificationSub = this.nanoNymManager.notificationProcessed$.subscribe(
+    if (FEATURE_NANONYMS && this.nanoNymManager) {
+      this.notificationSub = this.nanoNymManager.notificationProcessed$.subscribe(
       async (event) => {
         console.log("Payment received notification:", event);
 
@@ -132,6 +133,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
         await this.nanoNymManager.refreshBalances(event.nanoNymIndex);
       },
     );
+    }
 
     // Update selected account if changed in the sidebar
     this.walletService.wallet.selectedAccount$.subscribe(async (acc) => {

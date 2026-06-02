@@ -103,6 +103,29 @@
                   "with": "src/environments/environment.desktop.ts"
                 }
               ]
+            },
+            "naultcore": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false,
+              "buildOptimizer": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.naultcore.ts"
+                }
+              ],
+              "serviceWorker": true,
+              "ngswConfigPath": "ngsw-config.json"
             }
           },
           "defaultConfiguration": ""
@@ -118,6 +141,9 @@
             },
             "desktop": {
               "buildTarget": "nault:build:desktop"
+            },
+            "naultcore": {
+              "buildTarget": "nault:build:naultcore"
             }
           }
         },

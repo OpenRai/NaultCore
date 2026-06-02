@@ -1,4 +1,5 @@
-import {Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2} from '@angular/core';
+import {Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector} from '@angular/core';
+import {Title} from '@angular/platform-browser';
 import {WalletService} from './services/wallet.service';
 import {AddressBookService} from './services/address-book.service';
 import {AppSettingsService} from './services/app-settings.service';
@@ -17,7 +18,6 @@ import { environment } from 'environments/environment';
 import { DeeplinkService } from './services/deeplink.service';
 import { TranslocoService } from '@ngneat/transloco';
 import { version } from 'environments/version';
-import { NanoNymManagerService } from './services/nanonym-manager.service';
 import { TestIds } from './testing/test-ids';
 
 
@@ -28,6 +28,7 @@ import { TestIds } from './testing/test-ids';
 })
 export class AppComponent implements OnInit {
   readonly testIds = TestIds;
+  readonly featureNanonyms = FEATURE_NANONYMS;
   updateAvailable = false;
 
   constructor(
@@ -48,10 +49,14 @@ export class AppComponent implements OnInit {
     private renderer: Renderer2,
     private deeplinkService: DeeplinkService,
     private translate: TranslocoService,
-    private nanoNymManager: NanoNymManagerService) {
+    private titleService: Title,
+    private injector: Injector) {
       router.events.subscribe(() => {
         this.closeNav();
       });
+
+      // Set page title based on build variant
+      this.titleService.setTitle(FEATURE_NANONYMS ? 'NanoNymNault' : 'NaultCore');
     }
 
   @ViewChild('selectButton') selectButton: ElementRef;
@@ -133,7 +138,13 @@ export class AppComponent implements OnInit {
     await this.walletService.reloadBalances();
 
     // Start monitoring all NanoNyms on app start
-    await this.nanoNymManager.startMonitoringAll();
+    if (FEATURE_NANONYMS) {
+      try {
+        const { NanoNymManagerService } = require('./services/nanonym-manager.service');
+        const manager = this.injector.get(NanoNymManagerService);
+        await manager.startMonitoringAll();
+      } catch (e) { /* NanoNym manager not available */ }
+    }
 
     // Workaround fix for github pages when Nault is refreshed (or externally linked) and there is a subpath for example to the send screen.
     // This data is saved from the 404.html page

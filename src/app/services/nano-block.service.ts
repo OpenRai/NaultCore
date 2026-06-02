@@ -579,7 +579,7 @@ export class NanoBlockService {
     let signed: Uint8Array;
 
     // Check if this is a stealth account (has isStealthAccount flag)
-    if (walletAccount.isStealthAccount) {
+    if (FEATURE_NANONYMS && walletAccount.isStealthAccount) {
       // For stealth accounts, use scalar-based signing (@noble/ed25519)
       // The privateKey is already a scalar (not a seed), so we cannot use nacl which would hash it
       console.log('[NanoBlock] Signing stealth account block using scalar signing');

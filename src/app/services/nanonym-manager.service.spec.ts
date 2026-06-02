@@ -147,7 +147,7 @@ class MockOrbitdbNotificationService {
   unsubscribeFromNotifications = jasmine.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
 }
 
-describe('NanoNymManagerService', () => {
+(FEATURE_NANONYMS ? describe : xdescribe)('NanoNymManagerService', () => {
 
   let service: NanoNymManagerService;
   let nanoNymStorageService: MockNanoNymStorageService;

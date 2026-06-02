@@ -4,7 +4,7 @@ import { NanoNymCryptoService } from './nanonym-crypto.service';
 import { NostrSyncStateService } from './nostr-sync-state.service';
 import { UtilService } from './util.service';
 
-describe('NostrNotificationService', () => {
+(FEATURE_NANONYMS ? describe : xdescribe)('NostrNotificationService', () => {
   let service: NostrNotificationService;
   let cryptoService: NanoNymCryptoService;
   let syncStateService: NostrSyncStateService;

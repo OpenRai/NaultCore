@@ -1,6 +1,8 @@
 const path = require('path');
 const webpack = require('webpack');
 
+const FEATURE_NANONYMS = process.env.FEATURE_NANONYMS !== 'false';
+
 module.exports = {
   resolve: {
     extensionAlias: {
@@ -14,12 +16,17 @@ module.exports = {
     },
     alias: {
       "node:stream": require.resolve("stream-browserify"),
-      "@nanonyms/protocol": path.resolve(__dirname, "packages/protocol/src/index.ts"),
-      "@nanonyms/crypto": path.resolve(__dirname, "packages/crypto/src/index.ts"),
-      "@nanonyms/core": path.resolve(__dirname, "packages/core/src/index.ts"),
+      ...(FEATURE_NANONYMS ? {
+        "@nanonyms/protocol": path.resolve(__dirname, "packages/protocol/src/index.ts"),
+        "@nanonyms/crypto": path.resolve(__dirname, "packages/crypto/src/index.ts"),
+        "@nanonyms/core": path.resolve(__dirname, "packages/core/src/index.ts"),
+      } : {}),
     }
   },
   plugins: [
+    new webpack.DefinePlugin({
+      FEATURE_NANONYMS: JSON.stringify(FEATURE_NANONYMS),
+    }),
     new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
       resource.request = resource.request.replace(/^node:/, '');
     }),

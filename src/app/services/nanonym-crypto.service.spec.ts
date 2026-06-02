@@ -2,7 +2,7 @@ import { TestBed } from "@angular/core/testing";
 import { NanoNymCryptoService } from "./nanonym-crypto.service";
 import { UtilService } from "./util.service";
 
-describe("NanoNymCryptoService", () => {
+(FEATURE_NANONYMS ? describe : xdescribe)("NanoNymCryptoService", () => {
   let service: NanoNymCryptoService;
 
   beforeEach(() => {

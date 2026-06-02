@@ -160,6 +160,12 @@ export class AppSettingsService {
     }
     this.settings = Object.assign(this.settings, settings);
 
+    // Force NanoNym-dependent settings off when feature is disabled
+    if (!FEATURE_NANONYMS) {
+      this.settings.useNostr = false;
+      this.settings.useOrbitDb = false;
+    }
+
     if (this.settings.language === null) {
       const browserCultureLang = getBrowserCultureLang();
       const browserLang = getBrowserLang();

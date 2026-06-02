@@ -21,6 +21,10 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 
+// Skip all NanoNym E2E tests when FEATURE_NANONYMS is disabled (NaultCore build)
+const featureNanonyms = process.env.FEATURE_NANONYMS !== 'false';
+test.skip(!featureNanonyms, 'NanoNym features are disabled in this build (NaultCore)');
+
 /**
  * Sweep all stealth account funds back to nano_ account #0.
  *

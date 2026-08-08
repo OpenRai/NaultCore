@@ -20,8 +20,9 @@ import * as nanocurrency from 'nanocurrency';
 import { MusigService } from '../../services/musig.service';
 import { environment } from 'environments/environment';
 import { TestIds } from '../../testing/test-ids';
+import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 
-const INDEX_MAX = 4294967295;
+const INDEX_MAX = ACCOUNT_INDEX_MAX;
 // navigation source for cancel command (excluding camera source because too complicated to fix)
 enum navSource {'remote', 'multisig'}
 @Component({

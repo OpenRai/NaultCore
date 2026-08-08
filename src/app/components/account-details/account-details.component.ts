@@ -146,6 +146,11 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
+  getAccountDisplayLabel(): string {
+    const label = this.addressBookEntry || (this.walletAccount ? ('Account #' + this.walletAccount.index) : '');
+    return this.util.account.prefixNonStandardLabel(label, this.walletAccount?.nonStandardIndex);
+  }
+
   async ngOnInit() {
     const params = this.router.snapshot.queryParams;
     if ('sign' in params) {

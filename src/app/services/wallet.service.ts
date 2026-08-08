@@ -37,6 +37,7 @@ export interface WalletAccount {
   receivePow: boolean;
   isStealthAccount?: boolean;  // Flag for stealth account scalar-based signing
   publicKeyHex?: string;  // Public key hex for stealth account signature verification
+  nonStandardIndex?: boolean;  // Flag for accounts derived with out-of-range index (non-standard 4+ byte derivation)
 }
 
 export interface Block {
@@ -382,7 +383,11 @@ export class WalletService {
     }
 
     if (walletJson.accounts && walletJson.accounts.length) {
-      walletJson.accounts.forEach(account => this.loadWalletAccount(account.index, account.id));
+      walletJson.accounts.forEach(account => {
+        this.loadWalletAccount(account.index, account.id).then(loaded => {
+          if (account.nonStandardIndex) loaded.nonStandardIndex = true;
+        });
+      });
     }
 
     this.wallet.selectedAccountId = walletJson.selectedAccountId || null;
@@ -496,13 +501,42 @@ export class WalletService {
       this.wallet.seed = decryptedSeed;
       this.wallet.seedBytes = this.util.hex.toUint8(this.wallet.seed);
       this.wallet.accounts.forEach(a => {
-        if (this.wallet.type === 'seed') {
-          a.secret = this.util.account.generateAccountSecretKeyBytes(this.wallet.seedBytes, a.index);
-        } else {
+        if (this.wallet.type !== 'seed') {
           a.secret = this.wallet.seedBytes;
+          a.keyPair = this.util.account.generateAccountKeyPair(a.secret, this.wallet.type === 'expandedKey');
+          return;
         }
-        a.keyPair = this.util.account.generateAccountKeyPair(a.secret, this.wallet.type === 'expandedKey');
+
+        if (this.util.account.isNonStandardAccountIndex(a.index)) {
+          // Legacy overflow account: re-derive using original (bypassed) derivation
+          a.secret = this.util.account.generateAccountSecretKeyBytes(this.wallet.seedBytes, a.index, true);
+          a.keyPair = this.util.account.generateAccountKeyPair(a.secret);
+
+          // Verify derived address matches stored address
+          const derivedAddress = this.util.account.getPublicAccountID(a.keyPair.publicKey);
+          if (derivedAddress !== a.id) {
+            console.error(`[Migration] Non-standard account index ${a.index}: derived address ${derivedAddress} does not match stored ${a.id}`);
+          } else {
+            console.warn(`[Migration] Account at non-standard index ${a.index} verified — derived address matches. Consider migrating funds to a standard index.`);
+          }
+          a.nonStandardIndex = true;
+        } else {
+          a.secret = this.util.account.generateAccountSecretKeyBytes(this.wallet.seedBytes, a.index);
+          a.keyPair = this.util.account.generateAccountKeyPair(a.secret);
+        }
       });
+
+      const nonStandardCount = this.wallet.accounts.filter(acct => acct.nonStandardIndex).length;
+      if (nonStandardCount > 0) {
+        this.notifications.sendWarning(
+          `${nonStandardCount} account(s) use non-standard derivation indices. ` +
+          `Please send their funds to standard accounts and remove them.`,
+          { length: 0, identifier: 'non-standard-index' }
+        );
+        // Trigger UI refresh so account labels pick up the nonStandardIndex flag
+        this.wallet.refresh$.next(true);
+        this.wallet.refresh$.next(false);
+      }
 
       this.wallet.locked = false;
       this.wallet.locked$.next(false);
@@ -1026,6 +1060,12 @@ export class WalletService {
     if (this.isSingleKeyWallet()) {
       throw new Error(`Wallet consists of a single private key.`);
     } else if (this.wallet.type === 'seed') {
+      if (this.util.account.isNonStandardAccountIndex(index)) {
+        throw new Error(
+          `Account index ${index} is out of range (0-${this.util.account.ACCOUNT_INDEX_MAX}). ` +
+          `Please choose a valid index.`
+        );
+      }
       newAccount = await this.createSeedAccount(index);
     } else if (this.isLedgerWallet()) {
       try {
@@ -1194,7 +1234,11 @@ export class WalletService {
   generateWalletExport() {
     const data: any = {
       type: this.wallet.type,
-      accounts: this.wallet.accounts.map(a => ({ id: a.id, index: a.index })),
+      accounts: this.wallet.accounts.map(a => ({
+        id: a.id,
+        index: a.index,
+        ...(a.nonStandardIndex && { nonStandardIndex: true }),
+      })),
       selectedAccountId: this.wallet.selectedAccount ? this.wallet.selectedAccount.id : null,
     };
 
@@ -1292,7 +1336,10 @@ export class WalletService {
     const regularAccounts: RegularAccount[] = this.wallet.accounts.map(account => ({
       type: 'regular' as const,
       id: account.id,
-      label: account.addressBookName || `Account #${account.index}`,
+      label: this.util.account.prefixNonStandardLabel(
+        account.addressBookName || `Account #${account.index}`,
+        account.nonStandardIndex
+      ),
       balance: account.balance,
       balanceRaw: account.balanceRaw,
       pending: account.pending,

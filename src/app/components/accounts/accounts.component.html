@@ -88,15 +88,7 @@
                   <div class="uk-width-expand">
                     <div class="uk-width-1-1">
                       <div class="account-index" *ngIf="viewAdvanced"><span>#</span>{{ account.index }}</div>
-                      <div class="account-label">{{
-                          account.addressBookName
-                        ? account.addressBookName
-                        : (
-                            viewAdvanced
-                          ? ('general.account' | transloco)
-                          : ('general.account' | transloco) + ' #' + account.index
-                        )
-                      }}</div>
+                      <div class="account-label">{{ getAccountLabel(account) }}</div>
                     </div>
                     <div class="nano-address-clickable nano-address-monospace uk-text-truncate">
                       <app-nano-account-id [accountID]="account.id" middle="auto"></app-nano-account-id>

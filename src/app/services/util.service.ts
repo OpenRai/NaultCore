@@ -58,6 +58,9 @@ export class UtilService {
     mnemonicToSeedSync: mnemonicToSeedSync,
   };
   account = {
+    ACCOUNT_INDEX_MAX: ACCOUNT_INDEX_MAX,
+    isNonStandardAccountIndex: isNonStandardAccountIndex,
+    prefixNonStandardLabel: prefixNonStandardLabel,
     generateAccountSecretKeyBytes: generateAccountSecretKeyBytes,
     generateAccountKeyPair: generateAccountKeyPair,
     getPublicAccountID: getPublicAccountID,
@@ -278,7 +281,27 @@ function mnemonicToSeedSync(mnemonic, password = null) {
 }
 
 /** Account Functions **/
-function generateAccountSecretKeyBytes(seedBytes, accountIndex) {
+export const ACCOUNT_INDEX_MAX = 4294967295; // 2^32 - 1, max 4-byte unsigned integer for Nano HD derivation
+
+function isNonStandardAccountIndex(index: number): boolean {
+  return !Number.isInteger(index) || index < 0 || index > ACCOUNT_INDEX_MAX;
+}
+
+const NON_STANDARD_LABEL_PREFIX = '\u26A0\uFE0F '; // ⚠️ with variation selector
+
+function prefixNonStandardLabel(label: string, nonStandard: boolean): string {
+  if (!nonStandard) return label;
+  if (label.charAt(0) === '\u26A0') return label;
+  return NON_STANDARD_LABEL_PREFIX + label;
+}
+
+function generateAccountSecretKeyBytes(seedBytes, accountIndex, bypassRangeCheck = false) {
+  if (!bypassRangeCheck && (accountIndex < 0 || accountIndex > ACCOUNT_INDEX_MAX || !Number.isInteger(accountIndex))) {
+    throw new Error(
+      `Account index ${accountIndex} out of range (0-${ACCOUNT_INDEX_MAX}). ` +
+      `Nano derivation requires a 32-bit unsigned integer index.`
+    );
+  }
   const accountBytes = hexToUint8(decToHex(accountIndex, 4));
   const context = blake.blake2bInit(32);
   blake.blake2bUpdate(context, seedBytes);
@@ -552,6 +575,9 @@ const util = {
     mnemonicToSeedSync: mnemonicToSeedSync,
   },
   account: {
+    ACCOUNT_INDEX_MAX: ACCOUNT_INDEX_MAX,
+    isNonStandardAccountIndex: isNonStandardAccountIndex,
+    prefixNonStandardLabel: prefixNonStandardLabel,
     generateAccountSecretKeyBytes: generateAccountSecretKeyBytes,
     generateAccountKeyPair: generateAccountKeyPair,
     getPublicAccountID: getPublicAccountID,

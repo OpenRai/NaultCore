@@ -8,6 +8,7 @@ import {UtilService} from '../../services/util.service';
 import { wallet } from 'nanocurrency-web';
 import { TranslocoService } from '@ngneat/transloco';
 import { TestIds } from '../../testing/test-ids';
+import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 
 enum panels {
   'landing',
@@ -17,8 +18,6 @@ enum panels {
   'backup',
   'final',
 }
-
-const INDEX_MAX = 4294967295; // seed index
 
 @Component({
   selector: 'app-configure-wallet',
@@ -57,7 +56,7 @@ export class ConfigureWalletComponent implements OnInit {
   walletPasswordModel = '';
   walletPasswordConfirmModel = '';
   validIndex = true;
-  indexMax = INDEX_MAX;
+  indexMax = ACCOUNT_INDEX_MAX;
 
   selectedImportOption = 'seed';
 
@@ -426,7 +425,7 @@ export class ConfigureWalletComponent implements OnInit {
       if (!this.util.nano.isValidIndex(index)) {
         invalid = true;
       }
-      if (index > INDEX_MAX) {
+      if (index > ACCOUNT_INDEX_MAX) {
         invalid = true;
       }
     } else {

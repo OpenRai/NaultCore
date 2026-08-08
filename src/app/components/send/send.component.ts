@@ -1538,7 +1538,10 @@ export class SendComponent implements OnInit {
     const regularAccounts: any[] = this.accounts.map(account => ({
       type: 'regular' as const,
       id: account.id,
-      label: account.addressBookName || `Account #${account.index}`,
+      label: this.util.account.prefixNonStandardLabel(
+        account.addressBookName || `Account #${account.index}`,
+        account.nonStandardIndex
+      ),
       balance: account.balance,
       balanceRaw: account.balanceRaw,
       pending: account.pending,

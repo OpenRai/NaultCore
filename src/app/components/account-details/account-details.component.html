@@ -11,11 +11,7 @@
       <div class="logo"></div>
       <div class="card-contents">
         <div class="account-name-container">
-          <div class="name">{{
-              addressBookEntry
-            ? addressBookEntry
-            : (('general.account' | transloco) + ' #' + walletAccount.index)
-          }}</div>
+          <div class="name">{{ getAccountDisplayLabel() }}</div>
           <div #selectButton class="select-button closed" (click)="mobileAccountMenuModal.show()">
             <div class="circle"></div>
             <div class="circle"></div>
@@ -95,15 +91,7 @@
               <div class="uk-width-1-1" *ngIf="!showEditAddressBook">
                 <div class="uk-width-1-1">
                   <div uk-grid>
-                  <h3 class="uk-width-auto uk-card-title uk-text-truncate" style="max-width: calc(100% - 35px);">{{
-                      addressBookEntry
-                    ? addressBookEntry
-                    : (
-                        walletAccount
-                      ? (('general.account' | transloco) + ' #' + walletAccount.index)
-                      : ('account-details.no-label-set' | transloco)
-                    )
-                  }}</h3>
+                  <h3 class="uk-width-auto uk-card-title uk-text-truncate" style="max-width: calc(100% - 35px);">{{ getAccountDisplayLabel() }}</h3>
                     <div class="uk-width-auto" style="padding-left: 10px; margin-top: 3px;">
                       <a style="display: contents;"><span uk-icon="icon: pencil;" uk-tooltip (click)="showEditAddressBook = !showEditAddressBook" [title]="'general.edit' | transloco"></span></a>
                     </div>
@@ -127,6 +115,15 @@
 
           </div>
         </div>
+      </div>
+
+      <div *ngIf="walletAccount?.nonStandardIndex" class="uk-alert-danger" uk-alert>
+        <p>
+          <strong>Non-standard account index.</strong>
+          This account was derived with an out-of-range index ({{ walletAccount.index }}) and uses a non-standard derivation path.
+          It cannot be reproduced on other wallets.
+          <strong>Send all funds to a standard account, then remove this account from your wallet.</strong>
+        </p>
       </div>
 
       <div class="uk-card-header uk-form-horizontal uk-width-expand" *ngIf="settings.settings.serverAPI">

@@ -9,13 +9,14 @@ import {
   ModalService,
   NotificationService,
   RepresentativeService,
-  WalletService
+  WalletService,
 } from '../../services';
 import { TranslocoService } from '@ngneat/transloco';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../../types/spendable-account.types';
 import { TestIds } from '../../testing/test-ids';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
+import { UtilService } from '../../services/util.service';
 
 @Component({
   selector: 'app-accounts',
@@ -57,7 +58,8 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     private ledger: LedgerService,
     private translocoService: TranslocoService,
     private nanoNymStorage: NanoNymStorageService,
-    private nanoNymManager: NanoNymManagerService) { }
+    private nanoNymManager: NanoNymManagerService,
+    private util: UtilService) { }
 
   async ngOnInit() {
     this.reloadRepWarning$.subscribe(a => {
@@ -92,6 +94,10 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  getAccountLabel(account: RegularAccount): string {
+    return account.label;
+  }
+
   async createAccount() {
     if (this.walletService.isLocked()) {
       const wasUnlocked = await this.walletService.requestWalletUnlock();
@@ -111,6 +117,11 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.viewAdvanced && this.newAccountIndex != null) {
       const index = parseInt(this.newAccountIndex, 10);
       if (index < 0) return this.notificationService.sendWarning(this.translocoService.translate('accounts.invalid-account-index-must-be-positive-number'));
+      if (index > this.util.account.ACCOUNT_INDEX_MAX) {
+        return this.notificationService.sendWarning(
+          `Account index must be between 0 and ${this.util.account.ACCOUNT_INDEX_MAX}`
+        );
+      }
       const existingAccount = this.walletService.wallet.accounts.find(a => a.index === index);
       if (existingAccount) {
         return this.notificationService.sendWarning(

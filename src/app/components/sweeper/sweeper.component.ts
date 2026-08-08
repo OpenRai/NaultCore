@@ -12,8 +12,9 @@ import { wallet } from 'nanocurrency-web';
 import * as bip39 from 'bip39';
 import {Router} from '@angular/router';
 import { TestIds } from '../../testing/test-ids';
+import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 
-const INDEX_MAX = 4294967295; // seed index
+const INDEX_MAX = ACCOUNT_INDEX_MAX;
 const SWEEP_MAX_INDEX = 100; // max index keys to sweep
 const SWEEP_MAX_PENDING = 100; // max pending blocks to process per run
 

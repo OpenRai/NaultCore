@@ -271,23 +271,7 @@ export class AppComponent implements OnInit {
   }
 
   applySwUpdate() {
-    const reloadOnControllerChange = () => {
-      navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
-      window.location.reload();
-    };
-    navigator.serviceWorker.addEventListener('controllerchange', reloadOnControllerChange);
-
-    this.updates.activateUpdate().then(() => {
-      // If controllerchange hasn't fired within 3s, force reload anyway
-      setTimeout(() => {
-        navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
-        window.location.reload();
-      }, 3000);
-    }).catch((err) => {
-      console.error('SW activation failed:', err);
-      navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
-      window.location.reload();
-    });
+    window.location.reload();
   }
 
   toggleNav() {

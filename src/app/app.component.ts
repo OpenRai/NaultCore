@@ -270,8 +270,24 @@ export class AppComponent implements OnInit {
     this.settings.setAppSetting('walletVersion', 2); // Update wallet version so we do not patch in the future.
   }
 
-  applySwUpdate() {
-    window.location.reload();
+  async applySwUpdate() {
+    // The PWA-native way: tell the waiting SW to skipWaiting(), then reload
+    // when it takes control. Angular's SwUpdate.activateUpdate() is unreliable.
+    const reg = await navigator.serviceWorker.getRegistration();
+    const waiting = reg?.waiting;
+    if (waiting) {
+      const onControllerChange = () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        window.location.reload();
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+      waiting.postMessage({ type: 'SKIP_WAITING' });
+      // Fallback if controllerchange never fires
+      setTimeout(() => window.location.reload(), 1500);
+    } else {
+      // No waiting worker — just reload to pick up whatever is pending
+      window.location.reload();
+    }
   }
 
   toggleNav() {

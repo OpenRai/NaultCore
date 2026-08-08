@@ -12,7 +12,9 @@
     <!-- Service Worker Update Banner (non-dismissible) -->
     <div *ngIf="updateAvailable" class="sw-update-banner">
       <span class="sw-update-text">A new version is available.</span>
-      <button class="sw-update-button" (click)="applySwUpdate()">Reload to update</button>
+      <button class="sw-update-button" (click)="applySwUpdate()" [disabled]="updateApplying">
+        {{ updateApplying ? 'Updating\u2026' : 'Reload to update' }}
+      </button>
     </div>
 
     <!-- Mobile top bar -->

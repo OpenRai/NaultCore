@@ -30,6 +30,7 @@ export class AppComponent implements OnInit {
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   updateAvailable = false;
+  updateApplying = false;
 
   constructor(
     public walletService: WalletService,
@@ -271,9 +272,7 @@ export class AppComponent implements OnInit {
   }
 
   applySwUpdate() {
-    // Angular's activateUpdate() maps the client to the latest SW version
-    // but does NOT call skipWaiting() — the new SW takes effect on next
-    // navigation. So: activate, then reload to trigger the new version.
+    this.updateApplying = true;
     this.updates.activateUpdate().then(() => window.location.reload());
   }
 

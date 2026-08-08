@@ -277,7 +277,13 @@ export class AppComponent implements OnInit {
     };
     navigator.serviceWorker.addEventListener('controllerchange', reloadOnControllerChange);
 
-    this.updates.activateUpdate().catch((err) => {
+    this.updates.activateUpdate().then(() => {
+      // If controllerchange hasn't fired within 3s, force reload anyway
+      setTimeout(() => {
+        navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
+        window.location.reload();
+      }, 3000);
+    }).catch((err) => {
       console.error('SW activation failed:', err);
       navigator.serviceWorker.removeEventListener('controllerchange', reloadOnControllerChange);
       window.location.reload();

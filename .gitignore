@@ -66,9 +66,13 @@ tests-playwright-results/
 bun.lock
 
 # Test secrets — never commit
+.env
 .env.test
 
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
 .beads-credential-key
+
+# Beads / Dolt files (added by bd init)
+.beads/proxieddb/

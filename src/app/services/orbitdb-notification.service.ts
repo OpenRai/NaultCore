@@ -12,7 +12,7 @@ import { nip59 } from 'nostr-tools';
  * TODO: Replace with new Tier2 implementation (Waku, Gun.js, or similar)
  * The interface patterns are preserved for drop-in replacement.
  *
- * See: docs/SESSION-HANDOFF.md for context
+ * The implementation remains feature-gated pending a future integration task.
  */
 @Injectable({
   providedIn: 'root'

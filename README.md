@@ -1,393 +1,46 @@
-# NanoNyms
+# NaultCore
 
-**Privacy-preserving, reusable payment codes for [Nano](https://www.nano.org/) using stealth addresses and off-chain coordination**
+NaultCore modernizes the original [Nault](https://github.com/Nault/Nault) Nano wallet. It preserves Nault-compatible wallet behavior and the Nano protocol boundary.
 
-## Start Here
+It is for people who want a maintained web wallet for Nano. Contributors can improve the Nault codebase without changing normal wallet storage, block signing, or seed recovery.
 
-- **[ORIS-002: NanoNyms](references/OpenRai-Standards/rfcs/ORIS-002.md)** - The canonical specification for what a `nnym_` contains and how v2 works
-- **[ORIS-003: NanoNym Payment Event Schema](references/OpenRai-Standards/rfcs/ORIS-003.md)** - Transport-agnostic payment payload shared by notification and verification profiles
-- **[ORIS-004: Nostr Transport Profile](references/OpenRai-Standards/rfcs/ORIS-004.md)** - Nostr gift-wrap delivery profile for NanoNym payment events
-- **[ORIS-005: x402 Exact Pre-payment Verification](references/OpenRai-Standards/rfcs/ORIS-005.md)** - HTTP 402 payment proof profile using the same base schema
-- **[Key Derivation Architecture](docs/KEY-DERIVATION.md)** - The current v2-only derivation model and package boundaries
-- **[Documentation Index](docs/README.md)** - Full map of NanoNymNault docs
-- **[ORIS-002: Protocol Specification](references/OpenRai-Standards/rfcs/ORIS-002.md)** - End-to-end send, receive, and stealth-account workflow
+## What NaultCore includes
 
+- Standard Nano wallet workflows: create or import a wallet, manage accounts, send, receive, and recover from a seed.
+- Browser and desktop build targets from the Nault codebase.
+- Current Angular, Node, and pnpm tooling for ongoing maintenance.
 
----
+## NanoNyms
 
-## Elevator Pitch
+NaultCore keeps a NanoNyms integration behind a disabled feature flag. NaultCore does not enable it for normal development, builds, or E2E tests.
 
-NanoNymNault is a fork of **[Nault](https://github.com/Nault/Nault)** (the popular web-based Nano wallet) that enables **private, unlinkable payments** over the regular Nano blockchain using a reusable pseudonym called a **NanoNym** (address prefix: `nnym_`).
+The NanoNym design and protocol are documented elsewhere. Do not enable or remove this integration unless a task explicitly targets it.
 
-The NanoNym protocol is now **v2-only**. A `nnym_` embeds two public keys plus a generic Tier 1 notification URI. NanoNymNault currently uses `nostr:...` URIs, but the protocol itself is no longer Nostr-specific.
+## Develop
 
-### What does it do for users?
-
-**For Recipients (merchants, streamers, donation pages):**
-1. Generate one or more **NanoNyms** (displayed as `nnym_abc123...xyz` addresses)
-2. Share publicly (on website, social media, stream overlay, printed invoices, etc.)
-3. Receive unlimited number of payments through the NanoNym, all that:
-   - Go to different blockchain addresses (unlinkable)
-   - Don't reveal your balance
-   - Don't show your payment history
-4. Your wallet automatically detects incoming payments and shows a unified balance
-
-**For Senders:**
-1. Paste recipient's NanoNym (`nnym_` address) into the send field (or scan a QR code)
-2. Enter amount and send (just like a normal Nano transaction)
-3. Behind the scenes:
-   - Wallet derives a unique stealth address for this payment
-   - Sends XNO on Nano blockchain (looks like any other transaction)
-   - Sends an encrypted Tier 1 notification via Nostr (free, instant, private in NanoNymNault)
-4. Recipient automatically receives and can spend funds
-
-It's a true _win-win_ for both senders and receivers: both gain significantly enhanced privacy protection, without any involvement of third-party payment processors or fees.
-
----
-
-## Key Benefits
-
-✅ **Privacy:** No one can link multiple payments to the same recipient <br/>
-✅ **Simplicity:** Recipients share ONE NanoNym (not a new address for each payment) <br/>
-✅ **Multiple NanoNyms:** Generate as many as needed from a single seed <br/>
-✅ **Off-chain notifications:** No blockchain bloat or notification transaction costs <br/>
-✅ **Compatibility:** Falls back to regular `nano_` addresses for non-compliant wallets <br/>
-✅ **Web-based:** Works in browser, no installation needed (just like Nault) <br/>
-
----
-
-## What is a NanoNym?
-
-**NanoNym** = **Nano** + **onym** (Ancient Greek ὄνυμα "name")
-
-A NanoNym is a **reusable pseudonym** for receiving payments privately. Think of it like:
-- A pen name for authors (hides real identity)
-- A stage name for performers (public-facing but not your real name)
-- A business name (represents you but isn't personally identifiable)
-
-**Technical details:**
-- Encoded as `nnym_` addresses (~160 characters)
-- Contains two public keys (spend, view) plus a Tier 1 notification URI
-- All NanoNyms are structurally identical and infinitely reusable
-- Multiple NanoNyms can be derived from a single seed
-
----
-
-## NanoNym Use Cases
-
-### Use Case 1: Long-Term Public NanoNym
-```
-Generate: "General Donations"
-Print on: Website footer, business card, stream overlay
-Use for: Years of recurring donations
-```
-
-### Use Case 2: Per-Transaction NanoNym
-```
-Generate: "Customer #1234 - Invoice #5678"
-Display: On checkout screen (ephemeral display)
-Use for: Single purchase
-Archive: After payment received
-```
-
-### Use Case 3: Per-Department NanoNyms
-```
-Generate: "Sales Q1 2025"
-Generate: "Consulting Services"
-Generate: "Product Returns"
-Use for: Accounting categorization and revenue tracking
-```
-
-**All NanoNyms work identically** - the difference is only in how you choose to use them!
-
----
-
-## How It Works (High Level)
-
-```text
-Nault Wallet (existing web wallet)
-  + NanoNym v2 protocol (`nnym_` with notification URI)
-  + Tier 1 adapter (`nostr:...` in NanoNymNault today)
-  + stealth-address cryptography
-  = NanoNymNault (private payment wallet)
-```
-
-**Users don't need to:**
-- Run a Nostr relay
-- Understand Nostr
-- Download anything extra
-- Change how they use Nano
-
-**It just works** — privacy built-in, seamlessly.
-
----
-
-## Comparison to Standard Nano
-
-| Feature | Standard Nano Address | NanoNym (`nnym_`) |
-|---------|----------------------|-------------------|
-| **Address reuse** | Publicly links all transactions | Each payment goes to unique address |
-| **Balance privacy** | Anyone can see your balance | Balance hidden across multiple addresses |
-| **Sender anonymity** | Sender account visible | Sender can remain anonymous |
-| **Multiple addresses from one seed** | Limited by wallet | Unlimited NanoNyms |
-| **Notifications** | None needed | Off-chain via Nostr (automatic) |
-| **Use case** | General payments | Privacy-conscious users, merchants, donations |
-
----
-
-## Technical Foundation
-
-NanoNymNault combines three proven technologies:
-
-1. **CamoNano Protocol:** Battle-tested cryptography for stealth addresses (Monero-inspired, adapted for Nano)
-2. **Tier 1 notification routing:** NanoNym v2 stores a generic URI; NanoNymNault currently uses Nostr (NIP-17)
-3. **Nault Wallet:** Mature, trusted web-based Nano wallet
-
-**Key Innovation:** By moving notifications off-chain (via Nostr), we solve CamoNano's timing correlation vulnerability while eliminating notification transaction costs.
-
----
-
-## Key Management: Simple & Secure
-
-### Your Nano Seed is Your Master Key
-
-NanoNymNault is designed so you only need to manage one secret: **your 24-word Nano seed phrase**.
-
-From this single seed, the wallet securely generates all the necessary components for both your Nano funds and your private notification routing.
-
-```
-Your Nano Seed (24 words)
-    ↓
-    ├─→ All your Nano accounts & funds
-    └─→ All your private notification routes
-```
-
-Think of your seed as a master key. It can create a perfectly matched, but separate, set of keys for different systems. NanoNymNault currently uses that to derive a Nostr destination, while the protocol itself only requires a notification URI. This means you get the convenience of a single backup without compromising on security.
-
-**Bottom line: Back up your one Nano seed, and you can always recover everything.**
-
-### For Advanced Notification Integrations (Future Feature)
-
-We may support users who want to connect an existing external notification identity instead of using the wallet-derived default.
-
-Because Nano and external notification systems use different cryptographic systems and identity models, the wallet cannot generally infer an external notification secret from your Nano seed. In that advanced scenario, you would need to provide the external notification secret separately. For most users, this will not be necessary.
-
-### Current Status
-
-**Phase 1 (Implemented):** Simple, one-seed-only model.
-**Phase 2 (Planned):** Optional support for linking an existing external notification route.
-
----
-
-## Project Status
-
-🚀 **Core Features Implemented** - Send, receive, and spend from NanoNyms working
-
-### Documentation
-
-- **[references/OpenRai-Standards/rfcs/ORIS-002.md](references/OpenRai-Standards/rfcs/ORIS-002.md)** - The canonical NanoNym v2 specification, workflows, and address semantics
-- **[docs/KEY-DERIVATION.md](docs/KEY-DERIVATION.md)** - Current v2-only derivation architecture
-- **[AGENTS.md](AGENTS.md)** - Agent instructions and Prime Directives
-- **[docs/README.md](docs/README.md)** - Complete documentation index
-- **[docs/ANALYSIS-CAMONANO-ALTERNATIVES.md](docs/ANALYSIS-CAMONANO-ALTERNATIVES.md)** - Deep dive into CamoNano, BIP protocols, and off-chain notification alternatives
-
----
-
-
-
----
-
-## Current Status & Next Steps
-
-**✅ What's Working:**
-- Sending TO NanoNyms (full flow: generate stealth address → send XNO → send Nostr notification)
-- Receiving payments (notifications decrypt, stealth addresses derived, balances displayed)
-- Spending FROM NanoNyms (stealth account selection, multi-account sends, privacy warnings)
-- NanoNym management (generate, label, archive/reactivate, view details)
-- Multi-relay Nostr redundancy (3-5 relays simultaneously)
-- Stealth account opening (three-phase defense-in-depth: immediate, background retry, just-in-time)
-
-**🔜 Planned Enhancements:**
-- Privacy Mode (optional timing randomization between multi-account sends)
-- Stealth account consolidation/sweep tools
-- Enhanced privacy scoring and per-send impact summary
-- Tier 2 backup mechanisms (downloadable encrypted backups)
-- Automated E2E tests (Playwright or similar)
-
-**See:** [docs/roadmap.md](docs/roadmap.md) for detailed implementation status.
-
----
-
-## Security & Privacy
-
-### Privacy Properties
-
-✅ **Against blockchain observers:** Cannot link payments to receiver
-✅ **Against Nostr relays:** Cannot read notification contents (NIP-17 encryption)
-✅ **Against network observers:** Cannot correlate Nostr activity with Nano transactions
-✅ **Against timing analysis:** NIP-17 uses randomized timestamps
-
-### Security Considerations
-
-- All cryptography uses well-audited libraries
-- Nostr NIP-17 provides authenticated encryption (AEAD)
-- Multi-relay redundancy prevents single point of failure
-- View keys can be separated from spend keys (watch-only wallets)
-- Single seed backs up unlimited NanoNyms
-
-**Security Audit:** Recommended before mainnet launch (if budget permits)
-
----
-
-## Getting Started (Coming Soon)
-
-### For Users
-```bash
-# Installation instructions will be provided when ready
-# For now, the project is in active development
-```
-
-### For Developers
-
-#### Prerequisites
-- **Node.js v22** (via nvm - check .nvmrc)
-- **Python 3.11** (for native module compilation)
-
-#### Building the Reference Nault Wallet
-
-The project is forked from Nault. To build and run the stock Nault wallet locally:
+NaultCore uses Node 22 and pnpm. On macOS, run pnpm through nvm.
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/NanoNymNault.git
-cd NanoNymNault/references/Nault
-
-# Ensure correct Node version
 source ~/.nvm/nvm.sh
-nvm use  # Reads .nvmrc automatically
-
-# Install dependencies
-# IMPORTANT: Use these exact flags for Apple Silicon compatibility
-npm_config_arch=x64 \
-PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11 \
-nvm exec pnpm install --frozen-lockfile
-
-# Run development server
-nvm exec pnpm start
-# Access at http://localhost:4200/
+nvm exec pnpm install
+FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore
 ```
 
-**Why these specific flags?**
-- `npm_config_arch=x64` - Electron 9.4.4 doesn't have ARM64 builds, use Rosetta emulation
-- `PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11` - Python 3.14 removed `distutils` which node-gyp requires
-- `nvm exec pnpm install --frozen-lockfile` - Uses exact versions from `pnpm-lock.yaml`
-- `nvm use` - Node v22 required for Angular and native module compatibility
+Open `http://localhost:4200/`.
 
-**Troubleshooting:**
-- If port 4200 is in use: `lsof -ti:4200 | xargs kill -9`
-- If Python error: Install Python 3.11 via `brew install python@3.11`
-- If Node version error: Install via `nvm install 22`
+## Test
 
-#### Testing
+Karma unit tests require Brave on macOS:
 
-**For test running instructions, test strategy, and debugging:** See **[TESTING.md](TESTING.md)**
+```bash
+source ~/.nvm/nvm.sh
+CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
+```
 
----
+See [AGENTS.md](AGENTS.md) for repository rules and the canonical commands.
 
 ## Contributing
 
-This project is in early development. Contributions, feedback, and testing are welcome!
+Keep changes compatible with Nault wallet behavior. In particular, wallet recovery must remain deterministic: the same seed and account index must always derive the same keys.
 
-**Areas where help is needed:**
-- Cryptography review
-- Nostr integration testing
-- UI/UX design for privacy features
-- Documentation and tutorials
-- Security auditing
-
----
-
-## Acknowledgments
-
-**Standing on the shoulders of giants:**
-
-- **Nault Team** - Excellent web-based Nano wallet foundation
-- **CamoNano Project** - Pioneering stealth addresses for Nano
-  - [nanopyrs](https://github.com/CamoNano/nanopyrs) - Reference implementation
-  - [camonanowallet](https://github.com/expiredhotdog/camonanowallet) - First full wallet
-- **Monero Community** - Original stealth address inspiration
-- **Nostr Protocol** - Decentralized messaging infrastructure
-- **Bitcoin BIPs** - Protocol design patterns (BIP-352, BIP-77, BIP-47)
-
----
-
-## License
-
-See the [LICENSE](LICENSE) document for details.
-
----
-
-## Contact & Community
-
-- **GitHub Issues:** [Report bugs or suggest features](https://github.com/cbrunnkvist/NanoNymNault/issues)
-- **Reddit Thread:** [r/nanocurrency/...](https://www.reddit.com/r/nanocurrency/comments/1owqljy/announcing_nanonyms_a_new_approach_to_nano/)
-
----
-
-## Disclaimer
-
-⚠️ **This software is experimental and under active development.**
-
-- Not yet audited by security professionals
-- Use at your own risk
-- Start with small amounts for testing
-- Privacy guarantees depend on proper usage (see documentation)
-
----
-
-## FAQ
-
-**Q: Is this a new cryptocurrency?**
-A: No! NanoNymNault uses the existing Nano (XNO) cryptocurrency. It's just a wallet with enhanced privacy features.
-
-**Q: What's the difference between a NanoNym and a regular Nano address?**
-A: A NanoNym is a reusable pseudonym that generates unique stealth addresses for each payment. Regular `nano_` addresses publicly link all transactions.
-
-**Q: Can I generate multiple NanoNyms?**
-A: Yes! You can generate unlimited NanoNyms from a single seed. Use them for different purposes (donations, sales, per-customer, etc.).
-
-**Q: Are NanoNyms "ephemeral" or "permanent"?**
-A: All NanoNyms are structurally identical and reusable. You decide how to use them - print one for long-term use, or generate unique ones per transaction.
-
-**Q: Do I need to run a Nostr relay?**
-A: No. The wallet connects to existing public Nostr relays (1000+ available). You can optionally run your own for extra privacy.
-
-**Q: Will regular Nano wallets be able to send to my NanoNym?**
-A: No, only NanoNymNault-compatible wallets can send to NanoNyms (`nnym_` addresses). For compatibility, your wallet will also display a regular `nano_` fallback address (though this won't provide privacy).
-
-**Q: What happens if Nostr notifications fail?**
-A: The wallet uses 3-5 relays simultaneously for redundancy. Even if some relays fail, notifications should get through. Senders can also manually resend notifications if needed.
-
-**Q: How is this different from CamoNano?**
-A: NanoNymNault uses CamoNano's cryptography but replaces on-chain notifications (which cost XNO 0.00049 and leak timing info) with free, encrypted off-chain Nostr notifications.
-
-**Q: Can I use this for everyday payments?**
-A: The primary use case is for recipients who want to share a public address (merchants, donations, streamers) without revealing their payment history. For everyday peer-to-peer payments, standard Nano addresses are simpler.
-
-**Q: Is this more private than Monero?**
-A: No. Monero has additional privacy features (ring signatures, confidential amounts) that hide sender, receiver, AND amounts. NanoNymNault only hides receiver unlinkability and optionally sender identity. It's a practical privacy improvement for Nano, not full anonymity.
-
-**Q: How do I back up my NanoNyms?**
-A: Your seed phrase backs up ALL NanoNyms automatically. During recovery, the wallet will re-derive all your NanoNyms and scan for payments.
-
----
-
-## Developer Preview
-
-**Try the latest development version:** https://cbrunnkvist.github.io/NanoNymNault/
-
-This developer preview is automatically deployed from the `main` branch. It reflects the latest implemented features and may contain experimental functionality. Use with caution and test with small amounts only.
-
----
-
-**Built with 🔐 for the Nano community**
+Use the repository pnpm and test conventions. Do not commit or publish changes unless the task explicitly authorizes it.

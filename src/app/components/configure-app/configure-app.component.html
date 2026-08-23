@@ -33,7 +33,7 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.fiat-currency' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-the-currency-pair-used-when-showing-fiat-values')"></span></label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedCurrency" id="form-horizontal-select">
-                    <option *ngFor="let currency of currencies" [value]="currency.value">{{ currency.name }}</option>
+                    <option *ngFor="let currency of currencies" [value]="currency.value">{{ currency.name | transloco }}</option>
                   </select>
                 </div>
               </div>
@@ -48,7 +48,7 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.night-mode' | transloco }}</label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedNightModeOption" id="form-horizontal-select">
-                    <option *ngFor="let nightModeOption of nightModeOptions" [value]="nightModeOption.value">{{ nightModeOption.name }}</option>
+                    <option *ngFor="let nightModeOption of nightModeOptions" [value]="nightModeOption.value">{{ nightModeOption.name | transloco }}</option>
                   </select>
                 </div>
               </div>
@@ -63,7 +63,7 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.identicons' | transloco }}</label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedIdenticonOption" id="form-horizontal-select">
-                    <option *ngFor="let identiconOption of identiconOptions" [value]="identiconOption.value">{{ identiconOption.name }}</option>
+                    <option *ngFor="let identiconOption of identiconOptions" [value]="identiconOption.value">{{ identiconOption.name | transloco }}</option>
                   </select>
                 </div>
               </div>
@@ -129,7 +129,7 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedInactivityMinutes">
-                      <option *ngFor="let option of inactivityOptions" [value]="option.value">{{ option.name }}</option>
+                      <option *ngFor="let option of inactivityOptions" [value]="option.value">{{ option.name | transloco: option.params }}</option>
                     </select>
                   </div>
                 </div>
@@ -146,7 +146,7 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedStorage">
-                      <option *ngFor="let storage of storageOptions" [value]="storage.value">{{ storage.name }}</option>
+                      <option *ngFor="let storage of storageOptions" [value]="storage.value">{{ storage.name | transloco }}</option>
                     </select>
                   </div>
                 </div>
@@ -165,7 +165,7 @@
                     <select class="uk-select" [(ngModel)]="selectedPoWOption">
                       <option *ngFor="let pow of powOptions" [value]="pow.value">
                         <ng-element *ngIf="pow.value === 'server'">{{ getRemotePoWOptionName() }}</ng-element>
-                        <ng-element *ngIf="pow.value !== 'server'">{{ pow.name }}</ng-element>
+                        <ng-element *ngIf="pow.value !== 'server'">{{ pow.name | transloco }}</ng-element>
                       </option>
                     </select>
                   </div>
@@ -186,7 +186,7 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedMultiplierOption">
-                      <option *ngFor="let multiplier of multiplierOptions" [value]="multiplier.value">{{ multiplier.name }}</option>
+                      <option *ngFor="let multiplier of multiplierOptions" [value]="multiplier.value">{{ multiplier.name | transloco }}</option>
                     </select>
                   </div>
                 </div>
@@ -203,7 +203,7 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedPendingOption">
-                      <option *ngFor="let pending of pendingOptions" [value]="pending.value">{{ pending.name }}</option>
+                      <option *ngFor="let pending of pendingOptions" [value]="pending.value">{{ pending.name | transloco }}</option>
                     </select>
                   </div>
                 </div>
@@ -240,7 +240,7 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedDecentralizedAliasesOption">
-                      <option *ngFor="let decentralizedAliasesOption of decentralizedAliasesOptions" [value]="decentralizedAliasesOption.value">{{ decentralizedAliasesOption.name }}</option>
+                      <option *ngFor="let decentralizedAliasesOption of decentralizedAliasesOptions" [value]="decentralizedAliasesOption.value">{{ decentralizedAliasesOption.name | transloco }}</option>
                     </select>
                   </div>
                 </div>

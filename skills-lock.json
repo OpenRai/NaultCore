@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "modern-web-guidance": {
+      "source": "googlechrome/modern-web-guidance",
+      "sourceType": "github",
+      "skillPath": "skills/modern-web-guidance/SKILL.md",
+      "computedHash": "cf4101aff5b4f8959d9b89497b3a28e8941031591f7ff0a5783297d6b37ba8c3"
+    }
+  }
+}

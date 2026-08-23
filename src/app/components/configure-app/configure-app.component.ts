@@ -59,13 +59,13 @@ export class ConfigureAppComponent implements OnInit {
   selectedDenomination = this.denominations[0].value;
 
   storageOptions = [
-    { name: this.translocoService.translate('configure-app.storage-options.browser-local-storage'), value: 'localStorage' },
-    { name: this.translocoService.translate('configure-app.storage-options.none'), value: 'none' },
+    { name: 'configure-app.storage-options.browser-local-storage', value: 'localStorage' },
+    { name: 'configure-app.storage-options.none', value: 'none' },
   ];
   selectedStorage = this.storageOptions[0].value;
 
   currencies = [
-    { name: this.translocoService.translate('configure-app.currencies.none'), value: '' },
+    { name: 'configure-app.currencies.none', value: '' },
     { name: 'USD - US Dollar', value: 'USD' },
     { name: 'BTC - Bitcoin', value: 'BTC' },
     { name: 'AUD - Australian Dollar', value: 'AUD' },
@@ -103,15 +103,15 @@ export class ConfigureAppComponent implements OnInit {
   selectedCurrency = this.currencies[0].value;
 
   nightModeOptions = [
-    { name: this.translocoService.translate('configure-app.night-mode-options.enabled'), value: 'enabled' },
-    { name: this.translocoService.translate('configure-app.night-mode-options.disabled'), value: 'disabled' },
+    { name: 'configure-app.night-mode-options.enabled', value: 'enabled' },
+    { name: 'configure-app.night-mode-options.disabled', value: 'disabled' },
   ];
   selectedNightModeOption = this.nightModeOptions[0].value;
 
   identiconOptions = [
-    { name: this.translocoService.translate('configure-app.identicon-options.none'), value: 'none' },
-    { name: this.translocoService.translate('configure-app.identicon-options.nanoidenticons-by-keerifox'), value: 'nanoidenticons' },
-    { name: this.translocoService.translate('configure-app.identicon-options.natricon-by-appditto'), value: 'natricon' },
+    { name: 'configure-app.identicon-options.none', value: 'none' },
+    { name: 'configure-app.identicon-options.nanoidenticons-by-keerifox', value: 'nanoidenticons' },
+    { name: 'configure-app.identicon-options.natricon-by-appditto', value: 'natricon' },
   ];
   selectedIdenticonOption = this.identiconOptions[0].value;
 
@@ -119,27 +119,27 @@ export class ConfigureAppComponent implements OnInit {
   useOrbitDb = false;
 
   inactivityOptions = [
-    { name: this.translocoService.translate('configure-app.identicon-options.never'), value: 0 },
-    { name: this.translocoService.translate('configure-app.identicon-options.1-minute'), value: 1 },
-    { name: this.translocoService.translate('configure-app.identicon-options.x-minutes', { minutes: 5 }), value: 5 },
-    { name:  this.translocoService.translate('configure-app.identicon-options.x-minutes', { minutes: 15 }), value: 15 },
-    { name:  this.translocoService.translate('configure-app.identicon-options.x-minutes', { minutes: 30 }), value: 30 },
-    { name: this.translocoService.translate('configure-app.identicon-options.1-hour'), value: 60 },
-    { name: this.translocoService.translate('configure-app.identicon-options.x-hours', { hours: 6 }), value: 360 },
+    { name: 'configure-app.identicon-options.never', value: 0 },
+    { name: 'configure-app.identicon-options.1-minute', value: 1 },
+    { name: 'configure-app.identicon-options.x-minutes', value: 5, params: { minutes: 5 } },
+    { name: 'configure-app.identicon-options.x-minutes', value: 15, params: { minutes: 15 } },
+    { name: 'configure-app.identicon-options.x-minutes', value: 30, params: { minutes: 30 } },
+    { name: 'configure-app.identicon-options.1-hour', value: 60 },
+    { name: 'configure-app.identicon-options.x-hours', value: 360, params: { hours: 6 } },
   ];
   selectedInactivityMinutes = this.inactivityOptions[4].value;
 
   powOptions = [
-    { name: this.translocoService.translate('configure-app.pow-options.best-option-available'), value: 'best' },
-    { name: this.translocoService.translate('configure-app.pow-options.client-side-gpu-webgl'), value: 'clientWebGL' },
-    { name: this.translocoService.translate('configure-app.pow-options.client-side-cpu-slowest'), value: 'clientCPU' },
-    { name: this.translocoService.translate('configure-app.pow-options.external-selected-server'), value: 'server' },
-    { name: this.translocoService.translate('configure-app.pow-options.external-custom-server'), value: 'custom' },
+    { name: 'configure-app.pow-options.best-option-available', value: 'best' },
+    { name: 'configure-app.pow-options.client-side-gpu-webgl', value: 'clientWebGL' },
+    { name: 'configure-app.pow-options.client-side-cpu-slowest', value: 'clientCPU' },
+    { name: 'configure-app.pow-options.external-selected-server', value: 'server' },
+    { name: 'configure-app.pow-options.external-custom-server', value: 'custom' },
   ];
   selectedPoWOption = this.powOptions[0].value;
 
   multiplierOptions = [
-    { name: this.translocoService.translate('configure-app.multiplier-options.default-1x-or-1-64x'), value: 1 },
+    { name: 'configure-app.multiplier-options.default-1x-or-1-64x', value: 1 },
     { name: '2x', value: 2 },
     { name: '4x', value: 4 },
     { name: '8x', value: 8 },
@@ -150,15 +150,15 @@ export class ConfigureAppComponent implements OnInit {
   selectedMultiplierOption: number = this.multiplierOptions[0].value;
 
   pendingOptions = [
-    { name: this.translocoService.translate('configure-app.pending-options.automatic-largest-amount-first'), value: 'amount' },
-    { name: this.translocoService.translate('configure-app.pending-options.automatic-oldest-transaction-first'), value: 'date' },
-    { name: this.translocoService.translate('configure-app.pending-options.manual'), value: 'manual' },
+    { name: 'configure-app.pending-options.automatic-largest-amount-first', value: 'amount' },
+    { name: 'configure-app.pending-options.automatic-oldest-transaction-first', value: 'date' },
+    { name: 'configure-app.pending-options.manual', value: 'manual' },
   ];
   selectedPendingOption = this.pendingOptions[0].value;
 
   decentralizedAliasesOptions = [
-    { name: this.translocoService.translate('configure-app.decentralized-aliases-options.disabled'), value: 'disabled' },
-    { name: this.translocoService.translate('configure-app.decentralized-aliases-options.enabled'), value: 'enabled' },
+    { name: 'configure-app.decentralized-aliases-options.disabled', value: 'disabled' },
+    { name: 'configure-app.decentralized-aliases-options.enabled', value: 'enabled' },
   ];
   selectedDecentralizedAliasesOption = this.decentralizedAliasesOptions[0].value;
 
@@ -586,7 +586,7 @@ export class ConfigureAppComponent implements OnInit {
   }
 
   getRemotePoWOptionName() {
-    const optionName = 'External - Selected Server';
+    const optionName = this.translocoService.translate('configure-app.pow-options.external-selected-server');
 
     if ( (this.selectedServer === 'random') || (this.selectedServer === 'offline') ) {
       return optionName;

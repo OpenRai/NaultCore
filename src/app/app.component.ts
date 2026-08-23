@@ -19,6 +19,7 @@ import { DeeplinkService } from './services/deeplink.service';
 import { TranslocoService } from '@ngneat/transloco';
 import { version } from 'environments/version';
 import { TestIds } from './testing/test-ids';
+import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 
 
 @Component({
@@ -51,7 +52,8 @@ export class AppComponent implements OnInit {
     private deeplinkService: DeeplinkService,
     private translate: TranslocoService,
     private titleService: Title,
-    private injector: Injector) {
+    private injector: Injector,
+    e2eUnlockBridge: E2eUnlockBridgeService) {
       router.events.subscribe(() => {
         this.closeNav();
       });

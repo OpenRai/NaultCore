@@ -15,6 +15,12 @@ export type WalletFixtures = {
   testWallet: E2ETestWallet;
 };
 
+export async function unlockWalletThroughBridge(page: Page, password = e2eWalletPassword): Promise<void> {
+  await page.waitForFunction(() => typeof window.__NAULTCORE_E2E__?.unlock === 'function');
+  const unlocked = await page.evaluate(value => window.__NAULTCORE_E2E__!.unlock(value), password);
+  expect(unlocked).toBe(true);
+}
+
 export const test = base.extend<WalletFixtures>({
   testWallet: [async ({}, use) => {
     await use(getE2ETestWallet());
@@ -24,11 +30,8 @@ export const test = base.extend<WalletFixtures>({
     await page.goto('/accounts');
     const lockedWallet = page.locator('.nav-status-row:has-text("Wallet Locked")');
     await expect(lockedWallet).toBeVisible({ timeout: 15000 });
-    await lockedWallet.click();
-    const passwordInput = page.locator('#unlock-wallet-modal input[type="password"]');
-    await expect(passwordInput).toBeVisible({ timeout: 5000 });
-    await passwordInput.fill(e2eWalletPassword);
-    await page.locator('[data-testid="wallet-widget-unlock-button"]').click();
+    await unlockWalletThroughBridge(page);
+    await expect(lockedWallet).not.toBeVisible();
     await expect(page.locator('[data-testid="accounts-page-root"]')).toBeVisible({ timeout: 30000 });
 
     for (const account of testWallet.accounts) {

@@ -6,10 +6,19 @@ import { e2eStorageStatePath, getE2ETestWallet } from './tests-playwright/test-w
 // Falls back gracefully if the file doesn't exist (CI uses secrets instead).
 dotenv.config({ path: '.env.test', quiet: true });
 dotenv.config({ path: '.env', quiet: true });
+const featureNanonyms = process.env.FEATURE_NANONYMS === 'true';
+process.env.FEATURE_NANONYMS = featureNanonyms ? 'true' : 'false';
 getE2ETestWallet();
 
 const isCI = !!process.env.CI;
 const browserBin = process.env.CHROME_BIN || undefined;
+
+function getWebServerCommand(): string {
+  const featureFlag = featureNanonyms ? 'true' : 'false';
+  return isCI
+    ? `FEATURE_NANONYMS=${featureFlag} pnpm exec ng serve --configuration naultcore-e2e`
+    : `unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=${featureFlag} nvm exec pnpm exec ng serve --configuration naultcore-e2e"`;
+}
 
 export default defineConfig({
   testDir: './tests-playwright',
@@ -52,9 +61,7 @@ export default defineConfig({
   webServer: {
     // CI: pnpm is installed by the workflow.
     // Local: use nvm wrapper (AGENTS.md convention).
-    command: isCI
-      ? 'pnpm start'
-      : 'unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && nvm exec pnpm start"',
+    command: getWebServerCommand(),
     url: 'http://localhost:4200',
     reuseExistingServer: !isCI,
     timeout: 180000,

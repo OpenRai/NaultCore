@@ -10,7 +10,9 @@
  *
  * Real on-chain Nano transactions (feeless!) — no mocks.
  */
-import { test, expect } from './fixtures';
+import { test, expect, unlockWalletThroughBridge } from './fixtures';
+
+const skipOnchain = process.env.SKIP_ONCHAIN_E2E === 'true';
 
 test.describe('nano_ roundtrip: send between own accounts', () => {
 
@@ -34,6 +36,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     const before = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
     await seededPage.reload();
     await seededPage.waitForURL('**/accounts', { timeout: 30000 });
+    await unlockWalletThroughBridge(seededPage);
     await expect.poll(hasReadyWork, { timeout: 120000 }).toBe(true);
     const after = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
     expect(before).not.toBeNull();
@@ -51,6 +54,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
   });
 
   test('should send XNO to second account via external address', async ({ seededPage }) => {
+    test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
     test.slow();
 
     // Get the second account's address
@@ -77,6 +81,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
   });
 
   test('should transfer XNO between own accounts', async ({ seededPage }) => {
+    test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
     test.slow();
 
     await seededPage.locator('a[href="/send"]').click();

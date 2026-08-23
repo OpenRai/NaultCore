@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 
 test('basic app load and navigation check', async ({ seededPage }) => {
   const page = seededPage;
-  await expect(page).toHaveTitle(/NanoNymNault/);
+  await expect(page).toHaveTitle(/NaultCore/);
   
   await expect(page.getByText('Loading NanoNyms...')).not.toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-testid="accounts-page-root"]')).toBeVisible();

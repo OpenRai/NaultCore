@@ -58,6 +58,7 @@ import { QrModalComponent } from './components/qr-modal/qr-modal.component';
 import { QrModalService } from './services/qr-modal.service';
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import {MusigService} from './services/musig.service';
+import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 
 // QR code module
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
@@ -148,6 +149,7 @@ import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
     QrModalService,
     DeeplinkService,
     MusigService,
+    E2eUnlockBridgeService,
     NoPaddingZerosPipe
   ],
   bootstrap: [AppComponent]

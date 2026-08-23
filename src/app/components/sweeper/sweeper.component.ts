@@ -257,7 +257,7 @@ export class SweeperComponent implements OnInit {
     // make an extra check on valid destination
     if (this.validDestination && nanocurrency.checkAddress(this.destinationAccount)) {
       this.appendLog('Transfer started: ' + address);
-      const work = await this.workPool.getWork(previous, 1, address); // send threshold
+      const work = await this.workPool.getWork(previous, 1, address, true); // send threshold
       // create the block with the work found
       const block = nanocurrency.createBlock(privKey, {balance: '0', representative: this.representative,
       work: work, link: this.destinationAccount, previous: previous});

@@ -314,6 +314,8 @@ export class WalletService {
         const isNewBlock = this.addPendingBlock(walletAccount.id, transaction.hash, txAmount, transaction.account);
 
         if (isNewBlock === true) {
+          const root = walletAccount.frontier || this.util.account.getAccountPublicKey(walletAccount.id);
+          this.workPool.noteReceiveExpected(walletAccount.id, root);
           this.wallet.pending = this.wallet.pending.plus(txAmount);
           this.wallet.pendingRaw = this.wallet.pendingRaw.plus(txAmount.mod(this.nano));
           this.wallet.pendingFiat += this.util.nano.rawToMnano(txAmount).times(this.price.price.lastPrice).toNumber();
@@ -984,13 +986,13 @@ export class WalletService {
       }
     }
 
-    // Reconcile durable work against the current frontier. Account identity is
-    // part of the key so work is never reused after a frontier changes.
+    // Every account keeps a send-tier demand. Receive hints are separate,
+    // short-lived scheduler inputs and never weaken this durable safety net.
     this.workPool.syncAccountRoots(this.wallet.accounts.map(account => ({
       account: account.id,
       root: account.frontier || this.util.account.getAccountPublicKey(account.id),
-      multiplier: account.receivePow ? 1 / 64 : 1,
-      priority: account.receivePow ? 80 : 10,
+      multiplier: 1,
+      priority: 10,
     })));
 
     this.wallet.balance = walletBalance;

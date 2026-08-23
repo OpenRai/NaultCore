@@ -29,6 +29,8 @@ export class WalletWidgetComponent implements OnInit {
     activeElapsedMs: 0,
     lastError: null,
     phase: 'idle',
+    activeTier: null,
+    receiveHints: 0,
   };
 
   unlockPassword = '';

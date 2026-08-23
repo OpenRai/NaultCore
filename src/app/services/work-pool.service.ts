@@ -28,6 +28,8 @@ export interface WorkPoolState {
   activeElapsedMs: number;
   lastError: string | null;
   phase: 'idle' | 'local' | 'remote';
+  activeTier: 'send' | 'receive' | null;
+  receiveHints: number;
 }
 
 interface WorkRequest {
@@ -35,8 +37,17 @@ interface WorkRequest {
   root: string;
   multiplier: number;
   priority: number;
+  tier: 'send' | 'receive';
+  hinted: boolean;
+  hintConsumed: boolean;
   resolve: (work: string) => void;
   reject: (error: Error) => void;
+}
+
+interface ReceiveWorkHint {
+  account: string;
+  root: string;
+  expiresAt: number;
 }
 
 interface PersistedWorkCache {
@@ -56,6 +67,8 @@ export class WorkPoolService {
     activeElapsedMs: 0,
     lastError: null,
     phase: 'idle',
+    activeTier: null,
+    receiveHints: 0,
   });
 
   // Existing callers still see this property, but entries are now account/root scoped.
@@ -64,8 +77,10 @@ export class WorkPoolService {
   private requests: WorkRequest[] = [];
   private inFlight = new Map<string, Promise<string>>();
   private accountRoots = new Map<string, string>();
+  private receiveHints = new Map<string, ReceiveWorkHint>();
   private worker: Worker | null = null;
   private workerRequestId = 0;
+  private activeWorkerRequestId = 0;
   private activeStartedAt = 0;
   private activeRequest: WorkRequest | null = null;
   private loaded = false;
@@ -74,6 +89,7 @@ export class WorkPoolService {
   private remoteRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private remoteRetryAttempt = 0;
   private remoteFallbackStarted = false;
+  private readonly receiveHintTtlMs = 60_000;
 
   constructor(
     private api: ApiService,
@@ -119,6 +135,12 @@ export class WorkPoolService {
     this.loaded = true;
     this.accountRoots = new Map(demands.map(demand => [demand.account, demand.root.toUpperCase()]));
     const validAccounts = new Set(this.accountRoots.keys());
+    this.pruneReceiveHints();
+    for (const [key, hint] of this.receiveHints) {
+      if (!validAccounts.has(hint.account) || this.accountRoots.get(hint.account) !== hint.root) {
+        this.receiveHints.delete(key);
+      }
+    }
     this.requests = this.requests.filter(request => {
       const expectedRoot = request.account ? this.accountRoots.get(request.account) : undefined;
       if (request.account && (!expectedRoot || expectedRoot !== request.root)) {
@@ -133,10 +155,7 @@ export class WorkPoolService {
         this.removeFromCache(this.activeRequest.root, this.activeRequest.account);
       }
     }
-    this.workCache = this.workCache.filter(entry => {
-      if (!entry.account) return true;
-      return validAccounts.has(entry.account) && this.accountRoots.get(entry.account) === entry.root;
-    });
+    this.pruneWorkCache();
     this.persist();
     for (const demand of demands) {
       this.addWorkToCache(demand.root, demand.multiplier, demand.account, demand.priority ?? 0);
@@ -148,6 +167,53 @@ export class WorkPoolService {
     return this.findValidEntry(hash.toUpperCase(), multiplier, account) !== null;
   }
 
+  /**
+   * Records a short-lived, one-shot indication that this frontier is likely to
+   * be consumed by a receive block. The standing send-tier demand remains in
+   * place; this only lets a cheaper job run first when no hard work is ready.
+   */
+  public noteReceiveExpected(account: string, hash: string): void {
+    const root = hash.toUpperCase();
+    const knownRoot = this.accountRoots.get(account);
+    if (knownRoot && knownRoot !== root) return;
+    if (this.workExists(root, 1, account)) return;
+
+    this.receiveHints.set(this.receiveHintKey(account, root), {
+      account,
+      root,
+      expiresAt: Date.now() + this.receiveHintTtlMs,
+    });
+    this.enqueue({
+      account,
+      root,
+      multiplier: 1 / 64,
+      priority: 20,
+      tier: 'receive',
+      hinted: true,
+      hintConsumed: false,
+      resolve: () => undefined,
+      reject: () => undefined,
+    });
+    this.publishState();
+  }
+
+  /** Removes an unused hint and stops only its lower-tier background work. */
+  public revokeReceiveHint(account: string, hash?: string): void {
+    const root = hash?.toUpperCase();
+    for (const [key, hint] of this.receiveHints) {
+      if (hint.account === account && (!root || hint.root === root)) {
+        this.receiveHints.delete(key);
+      }
+    }
+    this.requests = this.requests.filter(request =>
+      !(request.hinted && request.account === account && (!root || request.root === root)));
+    if (this.activeRequest?.hinted && this.activeRequest.account === account &&
+        (!root || this.activeRequest.root === root)) {
+      this.cancelActiveRequest(new Error('Receive work hint revoked'));
+    }
+    this.publishState();
+  }
+
   /** Starts precomputation without blocking the caller. */
   public addWorkToCache(hash: string, multiplier = 1, account: string | null = null, priority = 0): void {
     const root = hash.toUpperCase();
@@ -157,6 +223,9 @@ export class WorkPoolService {
       root,
       multiplier,
       priority,
+      tier: multiplier < 1 ? 'receive' : 'send',
+      hinted: false,
+      hintConsumed: false,
       resolve: () => undefined,
       reject: () => undefined,
     });
@@ -164,6 +233,7 @@ export class WorkPoolService {
 
   public removeFromCache(hash: string, account: string | null = null): void {
     const root = hash.toUpperCase();
+    if (account) this.revokeReceiveHint(account, root);
     this.workCache = this.workCache.filter(entry =>
       entry.root !== root || (account !== null && entry.account !== account));
     this.persist();
@@ -173,6 +243,7 @@ export class WorkPoolService {
       this.worker = null;
       this.activeRequest.reject(new Error('PoW request invalidated by frontier change'));
       this.activeRequest = null;
+      this.activeWorkerRequestId = 0;
       this.processNext();
     }
     this.publishState();
@@ -181,6 +252,7 @@ export class WorkPoolService {
   public clearCache(): boolean {
     this.cancelPendingRequests(new Error('PoW cache cleared'));
     this.workCache = [];
+    this.receiveHints.clear();
     this.persist();
     this.publishState();
     return true;
@@ -189,22 +261,56 @@ export class WorkPoolService {
   public deleteCache(): void {
     this.cancelPendingRequests(new Error('PoW cache deleted'));
     this.workCache = [];
+    this.receiveHints.clear();
     localStorage.removeItem(this.storeKey);
     this.publishState();
   }
 
-  /** Returns matching durable work, waiting for the scheduler when needed. */
-  public async getWork(hash: string, multiplier = 1, account: string | null = null): Promise<string> {
+  /**
+   * Returns matching work, waiting for the scheduler when needed. Only explicit
+   * user actions may preempt background receive and precomputation work.
+   */
+  public async getWork(hash: string, multiplier = 1, account: string | null = null, interactive = false): Promise<string> {
     const root = hash.toUpperCase();
+    if (interactive && multiplier >= 1 && account) this.revokeReceiveHint(account, root);
+    if (multiplier < 1 && account) this.receiveHints.delete(this.receiveHintKey(account, root));
     const cached = this.findValidEntry(root, multiplier, account);
     if (cached) return cached.work;
+
+    if (interactive) this.preemptBackgroundForInteractiveWork(root, multiplier, account);
 
     const key = this.requestKey(root, multiplier, account);
     const existing = this.inFlight.get(key);
     if (existing) return existing;
 
+    const pending = this.findPendingRequest(root, multiplier, account);
+    if (pending) {
+      if (pending.hinted) {
+        pending.hinted = false;
+        pending.hintConsumed = true;
+      }
+      pending.priority = interactive ? 100 : Math.max(pending.priority, 50);
+      this.requests.sort((a, b) => b.priority - a.priority);
+      this.ensureWorker();
+      this.processNext();
+      const promise = this.attachRequestListener(pending);
+      this.inFlight.set(key, promise);
+      promise.finally(() => this.inFlight.delete(key)).catch(() => undefined);
+      return promise;
+    }
+
     const promise = new Promise<string>((resolve, reject) => {
-      this.enqueue({ account, root, multiplier, priority: 100, resolve, reject });
+      this.enqueue({
+        account,
+        root,
+        multiplier,
+        priority: interactive ? 100 : 50,
+        tier: multiplier < 1 ? 'receive' : 'send',
+        hinted: false,
+        hintConsumed: false,
+        resolve,
+        reject,
+      });
     });
     this.inFlight.set(key, promise);
     promise.finally(() => this.inFlight.delete(key)).catch(() => undefined);
@@ -213,7 +319,8 @@ export class WorkPoolService {
 
   private enqueue(request: WorkRequest): void {
     const duplicate = this.requests.some(item =>
-      item.root === request.root && item.account === request.account && item.multiplier === request.multiplier);
+      item.root === request.root && item.account === request.account && item.multiplier === request.multiplier &&
+      item.hinted === request.hinted);
     if (duplicate) return;
     this.requests.push(request);
     this.requests.sort((a, b) => b.priority - a.priority);
@@ -230,6 +337,7 @@ export class WorkPoolService {
       const error = new Error(event.message || 'PoW worker failed');
       const request = this.activeRequest;
       this.activeRequest = null;
+      this.activeWorkerRequestId = 0;
       this.clearActiveTimers();
       this.worker?.terminate();
       this.worker = null;
@@ -240,8 +348,25 @@ export class WorkPoolService {
   }
 
   private processNext(): void {
-    if (this.activeRequest || this.requests.length === 0) return;
-    const request = this.requests.shift()!;
+    if (this.activeRequest) return;
+    let request: WorkRequest | undefined;
+    while (this.requests.length && !request) {
+      const candidate = this.requests.shift()!;
+      if (candidate.hinted && !candidate.hintConsumed) {
+        if (!this.consumeReceiveHint(candidate)) continue;
+        candidate.hintConsumed = true;
+      }
+      const cached = this.findValidEntry(candidate.root, candidate.multiplier, candidate.account);
+      if (cached) {
+        candidate.resolve(cached.work);
+        continue;
+      }
+      request = candidate;
+    }
+    if (!request) {
+      this.publishState();
+      return;
+    }
     this.activeRequest = request;
     this.activeStartedAt = Date.now();
     this.state$.next({ ...this.state$.value, phase: 'local', lastError: null });
@@ -252,16 +377,19 @@ export class WorkPoolService {
       request.multiplier,
       workDifficultyToThreshold('send'),
     );
-    this.worker!.postMessage({ id: ++this.workerRequestId, root: request.root, threshold });
+    this.activeWorkerRequestId = ++this.workerRequestId;
+    this.worker!.postMessage({ id: this.activeWorkerRequestId, root: request.root, threshold });
     this.slowTimer = setTimeout(() => this.startRemoteFallback(request, threshold), 15_000);
     this.publishState();
   }
 
   private onWorkerMessage(message: {id: number; ok: boolean; work?: string; error?: string}): void {
+    if (message.id !== this.activeWorkerRequestId) return;
     const request = this.activeRequest;
     if (!request) return;
     this.clearActiveTimers();
     this.activeRequest = null;
+    this.activeWorkerRequestId = 0;
     if (message.ok && message.work) {
       const threshold = this.util.nano.difficultyFromMultiplier(
         request.multiplier,
@@ -274,8 +402,10 @@ export class WorkPoolService {
         threshold,
         createdAt: Date.now(),
       };
-      this.workCache = this.workCache.filter(item => !(item.account === entry.account && item.root === entry.root));
+      this.workCache = this.workCache.filter(item =>
+        !(item.account === entry.account && item.root === entry.root && item.threshold === entry.threshold));
       this.workCache.push(entry);
+      this.pruneWorkCache();
       if (this.workCache.length > this.cacheLength) {
         this.workCache.sort((a, b) => b.createdAt - a.createdAt);
         this.workCache.length = this.cacheLength;
@@ -308,7 +438,7 @@ export class WorkPoolService {
         this.clearActiveTimers();
         this.worker?.terminate();
         this.worker = null;
-        this.onWorkerMessage({ id: this.workerRequestId, ok: true, work });
+        this.onWorkerMessage({ id: this.activeWorkerRequestId, ok: true, work });
         return;
       }
       throw new Error('Remote PoW response failed validation');
@@ -334,25 +464,57 @@ export class WorkPoolService {
     if (this.activeRequest) {
       this.activeRequest.reject(error);
       this.activeRequest = null;
+      this.activeWorkerRequestId = 0;
     }
     this.clearActiveTimers();
     this.worker?.terminate();
     this.worker = null;
   }
 
+  private cancelActiveRequest(error: Error): void {
+    if (!this.activeRequest) return;
+    this.clearActiveTimers();
+    this.worker?.terminate();
+    this.worker = null;
+    this.activeRequest.reject(error);
+    this.activeRequest = null;
+    this.activeWorkerRequestId = 0;
+  }
+
+  /** Foreground wallet actions must never wait behind speculative work. */
+  private preemptBackgroundForInteractiveWork(root: string, multiplier: number, account: string | null): void {
+    const active = this.activeRequest;
+    if (!active || active.priority >= 100) return;
+    if (active.root === root && active.multiplier === multiplier && active.account === account) return;
+
+    this.clearActiveTimers();
+    this.worker?.terminate();
+    this.worker = null;
+    this.activeRequest = null;
+    this.activeWorkerRequestId = 0;
+    this.requests.push(active);
+    this.requests.sort((a, b) => b.priority - a.priority);
+    this.publishState();
+  }
+
   private findValidEntry(root: string, multiplier: number, account: string | null): StoredWorkEntry | null {
     const threshold = this.util.nano.difficultyFromMultiplier(multiplier, workDifficultyToThreshold('send'));
     const matches = this.workCache.filter(entry =>
       entry.root === root && (account === null || entry.account === account));
+    const invalidEntries: StoredWorkEntry[] = [];
     for (const entry of matches) {
       try {
+        if (!this.util.nano.validateWork(root, entry.threshold, entry.work)) {
+          invalidEntries.push(entry);
+          continue;
+        }
         if (this.util.nano.validateWork(root, threshold, entry.work)) return entry;
       } catch {
-        // Remove invalid persisted work below.
+        invalidEntries.push(entry);
       }
     }
-    if (matches.length > 0) {
-      this.workCache = this.workCache.filter(entry => !matches.includes(entry));
+    if (invalidEntries.length > 0) {
+      this.workCache = this.workCache.filter(entry => !invalidEntries.includes(entry));
       this.persist();
     }
     return null;
@@ -360,6 +522,54 @@ export class WorkPoolService {
 
   private requestKey(root: string, multiplier: number, account: string | null): string {
     return `${account || '*'}:${root}:${multiplier}`;
+  }
+
+  private receiveHintKey(account: string, root: string): string {
+    return `${account}:${root}`;
+  }
+
+  private consumeReceiveHint(request: WorkRequest): boolean {
+    if (!request.account) return false;
+    const key = this.receiveHintKey(request.account, request.root);
+    const hint = this.receiveHints.get(key);
+    this.receiveHints.delete(key);
+    return !!hint && hint.expiresAt > Date.now() && this.accountRoots.get(hint.account) === hint.root;
+  }
+
+  private pruneReceiveHints(): void {
+    const now = Date.now();
+    for (const [key, hint] of this.receiveHints) {
+      if (hint.expiresAt <= now) this.receiveHints.delete(key);
+    }
+  }
+
+  /** Removes durable entries that cannot be used by any current wallet frontier. */
+  private pruneWorkCache(): void {
+    if (this.accountRoots.size === 0) return;
+    this.workCache = this.workCache.filter(entry =>
+      !!entry.account && this.accountRoots.get(entry.account) === entry.root);
+  }
+
+  private findPendingRequest(root: string, multiplier: number, account: string | null): WorkRequest | undefined {
+    return this.activeRequest?.root === root && this.activeRequest.account === account &&
+      this.activeRequest.multiplier === multiplier
+      ? this.activeRequest
+      : this.requests.find(request => request.root === root && request.account === account && request.multiplier === multiplier);
+  }
+
+  private attachRequestListener(request: WorkRequest): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const previousResolve = request.resolve;
+      const previousReject = request.reject;
+      request.resolve = work => {
+        previousResolve(work);
+        resolve(work);
+      };
+      request.reject = error => {
+        previousReject(error);
+        reject(error);
+      };
+    });
   }
 
   private isEntryShape(entry: StoredWorkEntry): boolean {
@@ -380,6 +590,7 @@ export class WorkPoolService {
   }
 
   private publishState(): void {
+    this.pruneReceiveHints();
     if (!this.activeRequest && this.stateTimer) {
       clearInterval(this.stateTimer);
       this.stateTimer = null;
@@ -392,6 +603,8 @@ export class WorkPoolService {
       activeElapsedMs: this.activeRequest ? Date.now() - this.activeStartedAt : 0,
       lastError: this.state$.value.lastError,
       phase: this.activeRequest ? this.state$.value.phase : 'idle',
+      activeTier: this.activeRequest?.tier || null,
+      receiveHints: this.receiveHints.size,
     });
   }
 }

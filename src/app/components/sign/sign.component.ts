@@ -514,7 +514,7 @@ export class SignComponent implements OnInit {
           this.notificationService.sendInfo(`Generating Proof of Work...`, { identifier: 'pow', length: 0 });
         }
 
-        const tempWork = await this.workPool.getWork(workBlock, this.selectedThreshold, this.toAccountID || this.signatureAccount);
+        const tempWork = await this.workPool.getWork(workBlock, this.selectedThreshold, this.toAccountID || this.signatureAccount, this.selectedThreshold >= 1);
         if (tempWork.length === 16 ) {
           block.work = tempWork;
         }
@@ -575,7 +575,7 @@ export class SignComponent implements OnInit {
       if (this.txType === TxType.receive || this.txType === TxType.open) {
         this.currentBlock.work = await this.workPool.getWork(workBlock, 1 / 64, this.toAccountID || this.signatureAccount);
       } else {
-        this.currentBlock.work = await this.workPool.getWork(workBlock, 1, this.toAccountID || this.signatureAccount);
+        this.currentBlock.work = await this.workPool.getWork(workBlock, 1, this.toAccountID || this.signatureAccount, true);
       }
       this.notificationService.removeNotification('pow');
 

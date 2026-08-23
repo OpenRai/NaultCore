@@ -104,7 +104,7 @@ export class NanoBlockService {
       });
     }
 
-    blockData.work = await this.workPool.getWork(toAcct.frontier, 1, walletAccount.id);
+    blockData.work = await this.workPool.getWork(toAcct.frontier, 1, walletAccount.id, true);
     this.notifications.removeNotification("pow");
 
     const processResponse = await this.api.process(blockData, TxType.change);
@@ -272,7 +272,7 @@ export class NanoBlockService {
       });
     }
 
-    blockData.work = await this.workPool.getWork(fromAccount.frontier, 1, walletAccount.id);
+    blockData.work = await this.workPool.getWork(fromAccount.frontier, 1, walletAccount.id, true);
     this.notifications.removeNotification("pow");
 
     const processResponse = await this.api.process(blockData, TxType.send);
@@ -476,7 +476,7 @@ export class NanoBlockService {
         });
       }
 
-      block.work = await this.workPool.getWork(workBlock, multiplier, walletAccount.id);
+      block.work = await this.workPool.getWork(workBlock, multiplier, walletAccount.id, type === TxType.send || type === TxType.change);
       this.notifications.removeNotification("pow");
       this.workPool.removeFromCache(workBlock, walletAccount.id);
     }

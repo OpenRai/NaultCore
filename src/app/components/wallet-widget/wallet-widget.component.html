@@ -43,9 +43,9 @@
   </div>
   <div class="status-labels">
     <div class="label primary" [class.uk-text-success]="!workState.activeRoot && !workState.lastError" [class.uk-text-warning]="!!workState.activeRoot || !!workState.lastError">
-      PoW ready: {{workState.ready}}<span *ngIf="workState.queued > 0"> · queued: {{workState.queued}}</span>
+      PoW ready: {{workState.ready}}<span *ngIf="workState.queued > 0"> · queued: {{workState.queued}}</span><span *ngIf="workState.receiveHints > 0"> · receive hints: {{workState.receiveHints}}</span>
     </div>
-    <div class="label secondary" *ngIf="workState.activeRoot && workState.phase === 'local'">Generating locally…</div>
+    <div class="label secondary" *ngIf="workState.activeRoot && workState.phase === 'local'">Generating locally<span *ngIf="workState.activeTier === 'receive'"> for an incoming payment</span>…</div>
     <div class="label secondary" *ngIf="workState.activeRoot && workState.phase === 'remote'">Retrying network PoW…</div>
     <div class="label secondary" *ngIf="!workState.activeRoot && workState.lastError">{{workState.lastError}}</div>
   </div>

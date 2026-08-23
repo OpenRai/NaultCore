@@ -71,6 +71,12 @@ export const TestIds = {
     changeRepresentativeButton: 'representatives-change-representative-button',
     manageRepresentativesButton: 'representatives-manage-representatives-button',
   },
+  manageRepresentatives: {
+    pageRoot: 'manage-representatives-page-root',
+    addNewEntryButton: 'manage-representatives-add-button',
+    cancelButton: 'manage-representatives-cancel-button',
+    saveButton: 'manage-representatives-save-button',
+  },
   appSettings: {
     pageRoot: 'app-settings-page-root',
     saveSettingsButton: 'app-settings-save-settings-button',
@@ -89,6 +95,17 @@ export const TestIds = {
     accountRow: 'accounts-row',
     accountRowDetailsButton: 'accounts-row-details-button',
     copyAccountIdButton: 'copy-account-id-button',
+  },
+  sweeper: {
+    pageRoot: 'sweeper-page-root',
+    sourceWalletInput: 'sweeper-source-wallet-input',
+    destinationAccountSelect: 'sweeper-destination-account-select',
+    startIndexInput: 'sweeper-start-index-input',
+    endIndexInput: 'sweeper-end-index-input',
+    maxIncomingInput: 'sweeper-max-incoming-input',
+    startSweepingButton: 'sweeper-start-button',
+    processingButton: 'sweeper-processing-button',
+    output: 'sweeper-output',
   },
   walletWidget: {
     unlockButton: 'wallet-widget-unlock-button',

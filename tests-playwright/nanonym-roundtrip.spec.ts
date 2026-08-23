@@ -15,7 +15,7 @@
  * Funds left in stealth accounts may be unrecoverable.
  *
  * Prerequisites:
- *   NANO_TEST_SEED must be set in .env.test.
+ *   NANO_TEST_SEED must be set in .env or .env.test.
  *   Real on-chain Nano transactions (feeless!) — no mocks.
  */
 import { test, expect } from './fixtures';

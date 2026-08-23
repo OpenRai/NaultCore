@@ -32,6 +32,7 @@
     "desktop:dev": "pnpm run desktop:compile && electron desktop-app/dist/desktop-app.js",
     "desktop:local": "electron-builder -p never",
     "e2e:pw": "pnpm exec playwright test",
+    "e2e:pw:local": "pnpm exec playwright test",
     "e2e:pw:ui": "pnpm exec playwright test --ui",
     "build:packages": "pnpm --recursive --filter @nanonyms/* build",
     "clean:packages": "pnpm --recursive --filter @nanonyms/* clean",

@@ -2,7 +2,7 @@
  * Roundtrip E2E: Send and receive XNO between own nano_ accounts.
  *
  * Prerequisites:
- *   NANO_TEST_SEED must be set in .env.test (64-char hex seed with funded accounts).
+ *   NANO_TEST_SEED must be set in .env or .env.test (64-char hex seed with funded accounts).
  *   If unset, all tests are skipped.
  *
  * The fixture imports the wallet and creates a second sub-account (index 1)

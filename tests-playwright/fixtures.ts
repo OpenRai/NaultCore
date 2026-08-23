@@ -1,74 +1,39 @@
 import { test as base, expect, Page } from '@playwright/test';
+import { E2ETestWallet, e2eWalletPassword, getE2ETestWallet } from './test-wallet';
 
 /**
  * Playwright fixtures for NanoNymNault E2E tests.
  *
  * All fixtures use real on-chain Nano transactions (feeless!) — no mocks.
- * Roundtrip tests are skipped if NANO_TEST_SEED env var is not set.
+ * The setup project injects a two-account encrypted wallet snapshot first.
  */
 
 export type WalletFixtures = {
-  /** Page with a wallet already imported from NANO_TEST_SEED */
+  /** Page with the setup project's wallet unlocked and ready. */
   seededPage: Page;
-  /** The test seed from env, or null if unset */
-  testSeed: string | null;
+  /** Derived test-wallet accounts; the seed is intentionally not exposed. */
+  testWallet: E2ETestWallet;
 };
 
 export const test = base.extend<WalletFixtures>({
-  testSeed: [async ({}, use) => {
-    const seed = process.env.NANO_TEST_SEED || null;
-    await use(seed);
+  testWallet: [async ({}, use) => {
+    await use(getE2ETestWallet());
   }, { scope: 'test' }],
 
-  seededPage: async ({ page, testSeed }, use) => {
-    test.skip(!testSeed, 'NANO_TEST_SEED env var not set');
+  seededPage: async ({ page, testWallet }, use) => {
+    await page.goto('/accounts');
+    const lockedWallet = page.locator('.nav-status-row:has-text("Wallet Locked")');
+    await expect(lockedWallet).toBeVisible({ timeout: 15000 });
+    await lockedWallet.click();
+    const passwordInput = page.locator('#unlock-wallet-modal input[type="password"]');
+    await expect(passwordInput).toBeVisible({ timeout: 5000 });
+    await passwordInput.fill(e2eWalletPassword);
+    await page.locator('[data-testid="wallet-widget-unlock-button"]').click();
+    await expect(page.locator('[data-testid="accounts-page-root"]')).toBeVisible({ timeout: 30000 });
 
-    // 1. Clear any existing wallet state, then navigate
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.reload();
-
-    // 2. Wait for welcome page
-    await expect(page.locator('app-welcome a[href="/configure-wallet"]')).toBeVisible({ timeout: 15000 });
-
-    // 3. Navigate to configure-wallet page
-    await page.locator('app-welcome a[href="/configure-wallet"]').click();
-    await expect(page).toHaveURL(/\/configure-wallet/);
-
-    // 4. Click "Import Existing Seed"
-    await page.locator('[data-testid="configure-wallet-import-seed-button"]').click();
-
-    // 5. Fill in the seed
-    await page.locator('input[placeholder="64 hex character secret recovery seed"]').fill(testSeed!);
-
-    // 6. Click "Import from Seed" to proceed to password
-    await page.locator('[data-testid="configure-wallet-import-from-seed-button"]').click();
-
-    // 7. Set wallet password
-    await page.locator('input[placeholder="New Wallet Password"]').fill('test1234');
-    await page.locator('input[placeholder="Confirm Wallet Password"]').fill('test1234');
-
-    // 8. Click Next/Import
-    await page.locator('[data-testid="configure-wallet-password-next-button"]').click();
-
-    // 9. Wait for import to complete and navigate to accounts
-    await page.waitForURL('**/accounts', { timeout: 30000 });
-
-    // 10. Wait for balance loading
-    await page.waitForTimeout(5000);
-
-    // 11. Ensure we have at least 2 accounts — create one if needed
-    const accountRows = page.locator('[data-testid="accounts-row"]');
-    let rowCount = await accountRows.count();
-    if (rowCount < 2) {
-      const createButton = page.locator('[data-testid="accounts-create-account-button"]');
-      if (await createButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await createButton.click();
-        await page.waitForTimeout(2000);
-        rowCount = await accountRows.count();
-      }
+    for (const account of testWallet.accounts) {
+      await expect(page.locator(`[data-testid="accounts-row"][data-account-id="${account}"]`)).toBeVisible({ timeout: 15000 });
     }
-    expect(rowCount).toBeGreaterThanOrEqual(2);
 
     await use(page);
   },

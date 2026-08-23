@@ -14,6 +14,32 @@ import { test, expect } from './fixtures';
 
 test.describe('nano_ roundtrip: send between own accounts', () => {
 
+  test('should precompute and restore account-scoped work across reload', async ({ seededPage }) => {
+    test.slow();
+    const hasReadyWork = async () => seededPage.evaluate(() => {
+      const raw = localStorage.getItem('nanovault-workcache');
+      if (!raw) return false;
+      try {
+        const cache = JSON.parse(raw);
+        return cache.version === 2 && cache.entries?.some((entry: any) =>
+          typeof entry.account === 'string' && /^nano_/.test(entry.account) &&
+          typeof entry.root === 'string' && /^[0-9A-F]{64}$/i.test(entry.root) &&
+          typeof entry.work === 'string' && /^[0-9A-F]{16}$/i.test(entry.work));
+      } catch {
+        return false;
+      }
+    });
+
+    await expect.poll(hasReadyWork, { timeout: 120000 }).toBe(true);
+    const before = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
+    await seededPage.reload();
+    await seededPage.waitForURL('**/accounts', { timeout: 30000 });
+    await expect.poll(hasReadyWork, { timeout: 120000 }).toBe(true);
+    const after = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+  });
+
   test('should import wallet and show funded accounts', async ({ seededPage }) => {
     await expect(seededPage).toHaveURL(/\/accounts/);
 

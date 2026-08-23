@@ -407,7 +407,7 @@ export class SignComponent implements OnInit {
     // multiplier has changed, clear the cache and recalculate
     if (this.selectedThreshold !== this.selectedThresholdOld) {
       const workBlock = this.txType === TxType.open ? this.util.account.getAccountPublicKey(this.toAccountID) : this.currentBlock.previous;
-      this.workPool.removeFromCache(workBlock);
+      this.workPool.removeFromCache(workBlock, this.toAccountID || this.signatureAccount);
       console.log('PoW multiplier changed: Clearing cache');
       this.powChange();
     }
@@ -418,7 +418,7 @@ export class SignComponent implements OnInit {
     if (this.toAccountID) {
       console.log('Precomputing work...');
       const workBlock = this.txType === TxType.open ? this.util.account.getAccountPublicKey(this.toAccountID) : this.currentBlock.previous;
-      this.workPool.addWorkToCache(workBlock, this.selectedThreshold);
+      this.workPool.addWorkToCache(workBlock, this.selectedThreshold, this.toAccountID || this.signatureAccount);
     }
   }
 
@@ -510,16 +510,16 @@ export class SignComponent implements OnInit {
       if (this.shouldGenWork) {
         // For open blocks which don't have a frontier, use the public key of the account
         const workBlock = openEquiv ? this.util.account.getAccountPublicKey(this.multisigAccount) : block.previous;
-        if (!this.workPool.workExists(workBlock)) {
+        if (!this.workPool.workExists(workBlock, this.selectedThreshold, this.toAccountID || this.signatureAccount)) {
           this.notificationService.sendInfo(`Generating Proof of Work...`, { identifier: 'pow', length: 0 });
         }
 
-        const tempWork = await this.workPool.getWork(workBlock, this.selectedThreshold);
+        const tempWork = await this.workPool.getWork(workBlock, this.selectedThreshold, this.toAccountID || this.signatureAccount);
         if (tempWork.length === 16 ) {
           block.work = tempWork;
         }
         this.notificationService.removeNotification('pow');
-        this.workPool.removeFromCache(workBlock);
+        this.workPool.removeFromCache(workBlock, this.toAccountID || this.signatureAccount);
       }
       this.resetMultisig();
     }
@@ -568,18 +568,18 @@ export class SignComponent implements OnInit {
     const workBlock = this.txType === TxType.open ? this.util.account.getAccountPublicKey(this.toAccountID) : this.currentBlock.previous;
     if (this.shouldGenWork) {
       // For open blocks which don't have a frontier, use the public key of the account
-      if (!this.workPool.workExists(workBlock)) {
+      if (!this.workPool.workExists(workBlock, this.txType === TxType.receive || this.txType === TxType.open ? 1 / 64 : 1, this.toAccountID || this.signatureAccount)) {
         this.notificationService.sendInfo(`Generating Proof of Work...`, { identifier: 'pow', length: 0 });
       }
 
       if (this.txType === TxType.receive || this.txType === TxType.open) {
-        this.currentBlock.work = await this.workPool.getWork(workBlock, 1 / 64);
+        this.currentBlock.work = await this.workPool.getWork(workBlock, 1 / 64, this.toAccountID || this.signatureAccount);
       } else {
-        this.currentBlock.work = await this.workPool.getWork(workBlock, 1);
+        this.currentBlock.work = await this.workPool.getWork(workBlock, 1, this.toAccountID || this.signatureAccount);
       }
       this.notificationService.removeNotification('pow');
 
-      this.workPool.removeFromCache(workBlock);
+      this.workPool.removeFromCache(workBlock, this.toAccountID || this.signatureAccount);
     }
 
     // Validate that frontier is still the same and the previous balance is correct
@@ -612,7 +612,7 @@ export class SignComponent implements OnInit {
     if (processResponse && processResponse.hash) {
       // Add new hash into the work pool but does not make much sense for this case
       // this.workPool.addWorkToCache(processResponse.hash);
-      this.workPool.removeFromCache(workBlock);
+      this.workPool.removeFromCache(workBlock, this.toAccountID || this.signatureAccount);
       this.processedHash = processResponse.hash;
       this.notificationService.sendSuccess('Successfully processed the block!');
     } else {

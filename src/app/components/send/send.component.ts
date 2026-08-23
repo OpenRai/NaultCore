@@ -739,7 +739,7 @@ export class SendComponent implements OnInit {
       this.getAccountLabel(destinationID, null);
 
     // Start precomputing the work...
-    this.workPool.addWorkToCache(this.fromAccount.frontier, 1);
+    this.workPool.addWorkToCache(this.fromAccount.frontier, 1, this.fromAccountID);
 
     this.activePanel = "confirm";
   }
@@ -1260,7 +1260,7 @@ export class SendComponent implements OnInit {
       this.toAddressBook = "";
 
       // Start precomputing the work...
-      this.workPool.addWorkToCache(this.fromAccount.frontier, 1);
+      this.workPool.addWorkToCache(this.fromAccount.frontier, 1, this.fromAccountID);
 
       this.preparingTransaction = false;
       this.activePanel = "confirm";

@@ -9,6 +9,7 @@ import { UtilService } from "./util.service";
 import { NotificationService } from "./notification.service";
 import { NoPaddingZerosPipe } from "../pipes/no-padding-zeros.pipe";
 import { AppSettingsService } from "./app-settings.service";
+import { WorkPoolService } from "./work-pool.service";
 
 // Type-only imports (erased at compile time, zero bundle cost)
 import type { NanoNym, StealthAccount, NanoNymNotification } from "../types/nanonym.types";
@@ -75,6 +76,7 @@ export class NanoNymManagerService implements OnDestroy {
     private noZerosPipe: NoPaddingZerosPipe,
     private appSettings: AppSettingsService,
     private orbitdbService: OrbitdbNotificationService,
+    private workPool: WorkPoolService,
   ) {
     if (!FEATURE_NANONYMS) return;
 
@@ -610,6 +612,15 @@ export class NanoNymManagerService implements OnDestroy {
       isStealthAccount: true,  // Flag to use scalar signing in nano-block.service
       publicKeyHex: this.util.hex.fromUint8(stealthAccount.publicKey),  // Store the public key as hex string for signature verification
     };
+
+    // Nostr tells us the receive root before the wallet may be unlocked. Keep
+    // low-difficulty receive work ready so opening does not wait on the UI.
+    this.workPool.addWorkToCache(
+      this.util.account.getAccountPublicKey(stealthAccount.address),
+      1 / 64,
+      stealthAccount.address,
+      90,
+    );
 
     if (this.wallet.wallet.locked) {
       console.log(`[Manager] 🔒 Wallet locked, queuing stealth account opening for ${stealthAccount.address}`);

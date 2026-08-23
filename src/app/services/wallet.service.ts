@@ -959,13 +959,6 @@ export class WalletService {
             // If there is a pending, it means we want to add to work cache as receive-threshold
             if (walletAccount.pending.gt(0)) {
               console.log('Adding single pending account within limit to work cache');
-              // Use frontier or public key if open block
-              const hash = walletAccount.frontier || this.util.account.getAccountPublicKey(walletAccount.id);
-              // Technically should be 1/64 multiplier here but since we don't know if the pending will be received before
-              // a send or change block is made it's safer to use 1x PoW threshold to be sure the cache will work.
-              // On the other hand, it may be more efficient to use 1/64 and simply let the work cache rework
-              // in case a send is made instead. The typical user scenario would be to let the wallet auto receive first
-              this.workPool.addWorkToCache(hash, 1 / 64);
               walletAccount.receivePow = true;
             } else {
               walletAccount.receivePow = false;
@@ -991,12 +984,14 @@ export class WalletService {
       }
     }
 
-    // Make sure any frontiers are in the work pool
-    // If they have no frontier, we want to use their pub key?
-    const hashes = this.wallet.accounts.filter(account => (account.receivePow === false)).
-      map(account => account.frontier || this.util.account.getAccountPublicKey(account.id));
-    console.log('Adding non-pending frontiers to work cache');
-    hashes.forEach(hash => this.workPool.addWorkToCache(hash, 1)); // use high pow here since we don't know what tx type will be next
+    // Reconcile durable work against the current frontier. Account identity is
+    // part of the key so work is never reused after a frontier changes.
+    this.workPool.syncAccountRoots(this.wallet.accounts.map(account => ({
+      account: account.id,
+      root: account.frontier || this.util.account.getAccountPublicKey(account.id),
+      multiplier: account.receivePow ? 1 / 64 : 1,
+      priority: account.receivePow ? 80 : 10,
+    })));
 
     this.wallet.balance = walletBalance;
     this.wallet.pending = walletPendingAboveThresholdConfirmed;

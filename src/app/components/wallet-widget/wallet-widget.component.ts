@@ -4,6 +4,7 @@ import {NotificationService} from '../../services/notification.service';
 import {LedgerService, LedgerStatus} from '../../services/ledger.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {PowService} from '../../services/pow.service';
+import {WorkPoolService, WorkPoolState} from '../../services/work-pool.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
@@ -20,6 +21,15 @@ export class WalletWidgetComponent implements OnInit {
     statusText: '',
   };
   powAlert = false;
+  workState: WorkPoolState = {
+    ready: 0,
+    queued: 0,
+    activeRoot: null,
+    activeAccount: null,
+    activeElapsedMs: 0,
+    lastError: null,
+    phase: 'idle',
+  };
 
   unlockPassword = '';
 
@@ -32,7 +42,8 @@ export class WalletWidgetComponent implements OnInit {
     private notificationService: NotificationService,
     public ledgerService: LedgerService,
     public settings: AppSettingsService,
-    private powService: PowService) { }
+    private powService: PowService,
+    private workPool: WorkPoolService) { }
 
   @ViewChild('passwordInput') passwordInput: ElementRef;
 
@@ -56,6 +67,8 @@ export class WalletWidgetComponent implements OnInit {
         this.powAlert = false;
       }
     });
+
+    this.workPool.state$.subscribe(state => this.workState = state);
 
     this.walletService.wallet.unlockModalRequested$.subscribe(async wasRequested => {
       if (wasRequested === true) {

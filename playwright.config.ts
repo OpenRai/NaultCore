@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 // Load .env.test (gitignored) — contains NANO_TEST_SEED and optional CHROME_BIN.
 // Falls back gracefully if the file doesn't exist (CI uses secrets instead).
 dotenv.config({ path: '.env.test' });
+dotenv.config({ path: '.env' });
 
 const isCI = !!process.env.CI;
 const browserBin = process.env.CHROME_BIN || undefined;

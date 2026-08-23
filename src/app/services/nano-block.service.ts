@@ -97,21 +97,21 @@ export class NanoBlockService {
       this.signStateBlock(walletAccount, blockData);
     }
 
-    if (!this.workPool.workExists(toAcct.frontier)) {
+    if (!this.workPool.workExists(toAcct.frontier, 1, walletAccount.id)) {
       this.notifications.sendInfo(`Generating Proof of Work...`, {
         identifier: "pow",
         length: 0,
       });
     }
 
-    blockData.work = await this.workPool.getWork(toAcct.frontier, 1);
+    blockData.work = await this.workPool.getWork(toAcct.frontier, 1, walletAccount.id);
     this.notifications.removeNotification("pow");
 
     const processResponse = await this.api.process(blockData, TxType.change);
     if (processResponse && processResponse.hash) {
       walletAccount.frontier = processResponse.hash;
-      this.workPool.addWorkToCache(processResponse.hash, 1); // Add new hash into the work pool, high PoW threshold for change block
-      this.workPool.removeFromCache(toAcct.frontier);
+      this.workPool.addWorkToCache(processResponse.hash, 1, walletAccount.id); // Precompute the next frontier.
+      this.workPool.removeFromCache(toAcct.frontier, walletAccount.id);
       return processResponse.hash;
     } else {
       return null;
@@ -265,14 +265,14 @@ export class NanoBlockService {
       this.signStateBlock(walletAccount, blockData);
     }
 
-    if (!this.workPool.workExists(fromAccount.frontier)) {
+    if (!this.workPool.workExists(fromAccount.frontier, 1, walletAccount.id)) {
       this.notifications.sendInfo(`Generating Proof of Work...`, {
         identifier: "pow",
         length: 0,
       });
     }
 
-    blockData.work = await this.workPool.getWork(fromAccount.frontier, 1);
+    blockData.work = await this.workPool.getWork(fromAccount.frontier, 1, walletAccount.id);
     this.notifications.removeNotification("pow");
 
     const processResponse = await this.api.process(blockData, TxType.send);
@@ -280,8 +280,8 @@ export class NanoBlockService {
       throw new Error(processResponse.error || `Node returned an error`);
 
     walletAccount.frontier = processResponse.hash;
-    this.workPool.addWorkToCache(processResponse.hash, 1); // Add new hash into the work pool, high PoW threshold for send block
-    this.workPool.removeFromCache(fromAccount.frontier);
+    this.workPool.addWorkToCache(processResponse.hash, 1, walletAccount.id); // Precompute the next frontier.
+    this.workPool.removeFromCache(fromAccount.frontier, walletAccount.id);
 
     return processResponse.hash;
   }
@@ -361,7 +361,7 @@ export class NanoBlockService {
     }
 
     workBlock = openEquiv ? walletAccountPublicKey : previousBlock;
-    if (!this.workPool.workExists(workBlock)) {
+    if (!this.workPool.workExists(workBlock, 1 / 64, walletAccount.id)) {
       this.notifications.sendInfo(`Generating Proof of Work...`, {
         identifier: "pow",
         length: 0,
@@ -369,7 +369,7 @@ export class NanoBlockService {
     }
 
     console.log("Get work for receive block");
-    blockData.work = await this.workPool.getWork(workBlock, 1 / 64); // low PoW threshold since receive block
+    blockData.work = await this.workPool.getWork(workBlock, 1 / 64, walletAccount.id); // low PoW threshold since receive block
     this.notifications.removeNotification("pow");
     const processResponse = await this.api.process(
       blockData,
@@ -381,7 +381,7 @@ export class NanoBlockService {
       // Add new hash into the work pool, high PoW threshold since we don't know what the next one will be
       // Skip adding new work cache directly, let reloadBalances() check for pending and decide instead
       // this.workPool.addWorkToCache(processResponse.hash, 1);
-      this.workPool.removeFromCache(workBlock);
+      this.workPool.removeFromCache(workBlock, walletAccount.id);
 
       // update the rep view via subscription
       if (openEquiv) {
@@ -469,16 +469,16 @@ export class NanoBlockService {
       const workBlock = openEquiv
         ? this.util.account.getAccountPublicKey(walletAccount.id)
         : block.previous;
-      if (!this.workPool.workExists(workBlock)) {
+      if (!this.workPool.workExists(workBlock, multiplier, walletAccount.id)) {
         this.notifications.sendInfo(`Generating Proof of Work...`, {
           identifier: "pow",
           length: 0,
         });
       }
 
-      block.work = await this.workPool.getWork(workBlock, multiplier);
+      block.work = await this.workPool.getWork(workBlock, multiplier, walletAccount.id);
       this.notifications.removeNotification("pow");
-      this.workPool.removeFromCache(workBlock);
+      this.workPool.removeFromCache(workBlock, walletAccount.id);
     }
     return block; // return signed block (with or without work)
   }

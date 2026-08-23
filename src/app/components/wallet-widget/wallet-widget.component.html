@@ -37,6 +37,20 @@
   </div>
 </div>
 
+<div class="nav-status-row" data-testid="wallet-widget-work-status" *ngIf="workState.activeRoot || workState.queued > 0 || workState.ready > 0">
+  <div class="status-icon">
+    <span [class.uk-text-success]="!workState.activeRoot && !workState.lastError" [class.uk-text-warning]="!!workState.activeRoot || !!workState.lastError" uk-icon="icon: bolt; ratio: 1.2;"></span>
+  </div>
+  <div class="status-labels">
+    <div class="label primary" [class.uk-text-success]="!workState.activeRoot && !workState.lastError" [class.uk-text-warning]="!!workState.activeRoot || !!workState.lastError">
+      PoW ready: {{workState.ready}}<span *ngIf="workState.queued > 0"> · queued: {{workState.queued}}</span>
+    </div>
+    <div class="label secondary" *ngIf="workState.activeRoot && workState.phase === 'local'">Generating locally…</div>
+    <div class="label secondary" *ngIf="workState.activeRoot && workState.phase === 'remote'">Retrying network PoW…</div>
+    <div class="label secondary" *ngIf="!workState.activeRoot && workState.lastError">{{workState.lastError}}</div>
+  </div>
+</div>
+
 <ng-container *ngIf="walletService.isConfigured() && !walletService.isLedgerWallet()">
   <div class="nav-status-row half-muted interactable" (click)="showModal()" *ngIf="walletService.isLocked()">
     <div class="status-icon">

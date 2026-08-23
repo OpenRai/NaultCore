@@ -124,6 +124,11 @@ export class ApiService {
     return await this.request('block_count', { include_cemented: 'true'}, false);
   }
   async workGenerate(hash, difficulty, workServer = ''): Promise<{ work: string }> {
+    return this.workGenerateOnce(hash, difficulty, workServer, false);
+  }
+
+  /** Performs one work request without the random-server retry loop. */
+  async workGenerateOnce(hash, difficulty, workServer = '', skipError = true): Promise<{ work: string }> {
     const validateResponse = (res) => {
       if(res.work == null) {
         return {
@@ -154,7 +159,7 @@ export class ApiService {
       };
     };
 
-    return await this.request('work_generate', { hash, difficulty }, workServer !== '', workServer, validateResponse);
+    return await this.request('work_generate', { hash, difficulty }, skipError || workServer !== '', workServer, validateResponse);
   }
   async process(block, subtype: TxType): Promise<{ hash: string, error?: string }> {
     return await this.request('process', { block: JSON.stringify(block), watch_work: 'false', subtype: TxType[subtype] }, false);

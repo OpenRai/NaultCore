@@ -156,6 +156,29 @@
     min-height: 85px;
 }
 
+.account-work-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-work-status-icon {
+    flex: 0 0 24px;
+}
+
+.account-work-status-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.account-work-status-title {
+    font-weight: 600;
+}
+
+.account-work-status-retry {
+    flex: 0 0 auto;
+}
+
 @media (max-width: 1199px) {
     /* horizontal separator between rep details and balances */
     .representative-details::after {

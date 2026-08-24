@@ -231,6 +231,48 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.workPool.retryAccountWork(this.accountID);
   }
 
+  getWorkStatusTitle(): string {
+    if (!this.workStatus) return 'Checking Proof of Work status';
+    if (this.workStatus.activity === 'active') {
+      return this.workStatus.phase === 'remote'
+        ? 'Proof of Work is being requested from the network'
+        : 'Proof of Work is being prepared locally';
+    }
+    if (this.workStatus.activity === 'error') return 'Proof of Work needs attention';
+    if (this.workStatus.cached) return 'Proof of Work is ready for the next block';
+    return 'Proof of Work is not currently cached';
+  }
+
+  getWorkStatusDetail(): string {
+    if (!this.workStatus) return 'Waiting for the account status to initialize.';
+    if (this.workStatus.activity === 'active') {
+      return this.workStatus.phase === 'remote'
+        ? 'The local attempt is taking longer than expected; network work is being retried.'
+        : 'The wallet is preparing work for this account.';
+    }
+    if (this.workStatus.activity === 'error') return this.workStatus.lastError || 'Retry to prepare work again.';
+    if (this.workStatus.cached) return this.workStatus.purpose === 'receive-open'
+      ? 'Receive/open work is ready for this unopened account.'
+      : 'A compatible proof is cached for the current frontier.';
+    return this.workStatus.purpose === 'receive-open'
+      ? 'Receive/open work will be prepared when needed.'
+      : 'Work will be prepared when needed.';
+  }
+
+  getWorkStatusTone(): string {
+    if (!this.workStatus) return 'uk-text-muted';
+    if (this.workStatus.activity === 'active' || this.workStatus.activity === 'error') return 'uk-text-warning';
+    if (this.workStatus.cached) return 'uk-text-success';
+    return 'uk-text-muted';
+  }
+
+  getWorkStatusIcon(): string {
+    if (!this.workStatus) return 'clock';
+    if (this.workStatus.activity === 'error') return 'warning';
+    if (this.workStatus.cached) return 'check';
+    return 'bolt';
+  }
+
   async populateRepresentativeList() {
     // add trusted/regular local reps to the list
     const localReps = this.repService.getSortedRepresentatives();

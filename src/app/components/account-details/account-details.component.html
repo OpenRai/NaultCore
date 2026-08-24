@@ -129,6 +129,21 @@
             </p>
           </div>
         }
+        @if (walletAccount) {
+          <div class="uk-card-header account-work-status" [class.account-work-status-warning]="workStatus?.activity === 'active' || workStatus?.activity === 'error'">
+            <div class="account-work-status-icon" [class]="getWorkStatusTone()">
+              <span [attr.uk-icon]="'icon: ' + getWorkStatusIcon() + '; ratio: 1.1;'" ></span>
+            </div>
+            <div class="account-work-status-copy">
+              <div class="details-header">Proof of Work</div>
+              <div class="account-work-status-title" [class]="getWorkStatusTone()">{{ getWorkStatusTitle() }}</div>
+              <div class="uk-text-small text-half-muted">{{ getWorkStatusDetail() }}</div>
+            </div>
+            @if (workStatus?.activity === 'error') {
+              <button class="uk-button uk-button-text uk-text-warning account-work-status-retry" type="button" (click)="retryWork()">Retry</button>
+            }
+          </div>
+        }
         @if (settings.settings.serverAPI) {
           <div class="uk-card-header uk-form-horizontal uk-width-expand">
             <div uk-grid>

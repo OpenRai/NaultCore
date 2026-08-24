@@ -87,8 +87,8 @@ export class NanoNymManagerService implements OnDestroy {
     this.setupOrbitDbListener();
 
     // Subscribe to wallet unlock events to process any pending stealth receives
-    this.wallet.wallet.locked$.subscribe(async (isLocked) => {
-      if (!isLocked) { // Wallet is unlocked
+    this.wallet.lifecycle$.subscribe(async (lifecycle) => {
+      if (lifecycle.kind === 'unlocked') {
         await this.processPendingStealthBlocks();
         await this.refreshAllBalances();
       }
@@ -117,7 +117,7 @@ export class NanoNymManagerService implements OnDestroy {
    * Retries up to 12 times per account (1 hour total with 5-minute intervals)
    */
   private async attemptBackgroundOpening(): Promise<void> {
-    if (this.wallet.wallet.locked) {
+    if (this.wallet.isLocked()) {
       console.debug('[Manager] Phase 2: Wallet locked, skipping background opening attempt.');
       return;
     }
@@ -227,7 +227,7 @@ export class NanoNymManagerService implements OnDestroy {
    */
   async createNanoNym(label?: string): Promise<NanoNym> {
     // Get wallet seed
-    const seed = this.wallet.wallet.seed;
+    const seed = this.wallet.getRecoverySecret();
     if (!seed) {
       throw new Error("Wallet seed not available");
     }
@@ -622,7 +622,7 @@ export class NanoNymManagerService implements OnDestroy {
       90,
     );
 
-    if (this.wallet.wallet.locked) {
+    if (this.wallet.isLocked()) {
       console.log(`[Manager] 🔒 Wallet locked, queuing stealth account opening for ${stealthAccount.address}`);
       // Add to pending for later processing when unlocked
       this.addPendingStealthBlock(stealthAccount);
@@ -847,7 +847,7 @@ export class NanoNymManagerService implements OnDestroy {
    * Process all queued pending stealth blocks when the wallet is unlocked.
    */
   private async processPendingStealthBlocks(): Promise<void> {
-    if (this.wallet.wallet.locked) {
+    if (this.wallet.isLocked()) {
       console.debug('[Manager] Wallet is still locked, cannot process pending stealth blocks.');
       return;
     }

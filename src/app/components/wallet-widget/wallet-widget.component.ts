@@ -91,10 +91,10 @@ export class WalletWidgetComponent implements OnInit {
   }
 
   async lockWallet() {
-    if (this.wallet.type === 'ledger') {
+    if (this.walletService.isLedgerWallet()) {
       return; // No need to lock a ledger wallet, no password saved
     }
-    if (!this.wallet.password) {
+    if (!this.walletService.hasPassword()) {
       return this.notificationService.sendWarning(`You must set a password on your wallet - it is currently blank!`);
     }
     const locked = await this.walletService.lockWallet();

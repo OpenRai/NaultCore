@@ -301,11 +301,11 @@ export class ConfigureWalletComponent implements OnInit {
     this.activePanel = panels.backup;
   }
 
-  confirmNewSeed() {
+  async confirmNewSeed() {
     if (!this.hasConfirmedBackup) {
       return this.notifications.sendWarning(`Please confirm you have saved a wallet backup!`);
     }
-    this.walletService.createNewWallet(this.newWalletSeed);
+    await this.walletService.createNewWallet(this.newWalletSeed);
     this.storePassword();
     this.newWalletSeed = '';
     this.newWalletMnemonicLines = [];
@@ -336,7 +336,7 @@ export class ConfigureWalletComponent implements OnInit {
   }
 
   storePassword() {
-    this.walletService.wallet.password = this.newPassword;
+    this.walletService.changePassword(this.newPassword);
     this.newPassword = '';
   }
 

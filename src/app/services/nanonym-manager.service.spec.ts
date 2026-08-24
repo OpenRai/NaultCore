@@ -84,11 +84,15 @@ class MockApiService {
 }
 
 class MockWalletService {
-  wallet = {
-    seed: 'testseed',
-    locked: false,
-    locked$: new BehaviorSubject(false),
-  };
+  private readonly lifecycleSubject = new BehaviorSubject<any>({ kind: 'unlocked', type: 'seed', locked: false });
+  lifecycle$ = this.lifecycleSubject.asObservable();
+  private locked = false;
+  setLocked(locked: boolean) {
+    this.locked = locked;
+    this.lifecycleSubject.next({ kind: locked ? 'locked' : 'unlocked', type: 'seed', locked });
+  }
+  isLocked = () => this.locked;
+  getRecoverySecret = () => this.locked ? null : 'testseed';
   getWalletAccount = jasmine.createSpy('getWalletAccount');
   informBalanceRefresh = jasmine.createSpy('informBalanceRefresh');
 }
@@ -231,7 +235,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should process notification and generate receive block when wallet is unlocked', async () => {
-      walletService.wallet.locked = false;
+      walletService.setLocked(false);
       nanoNymCryptoService.deriveStealthPrivateKey.and.returnValue(new Uint8Array(Array(32).fill(1))); // Mock a private key
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32)); // Mock hex conversion
 
@@ -282,7 +286,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should add stealth account to pending blocks when wallet is locked', async () => {
-      walletService.wallet.locked = true;
+      walletService.setLocked(true);
       nanoNymCryptoService.deriveStealthPrivateKey.and.returnValue(new Uint8Array(Array(32).fill(1)));
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
@@ -325,7 +329,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should process pending stealth blocks when wallet is unlocked', async () => {
-      walletService.wallet.locked = true; // Start locked
+      walletService.setLocked(true); // Start locked
       nanoNymCryptoService.deriveStealthPrivateKey.and.returnValue(new Uint8Array(Array(32).fill(1)));
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
@@ -374,8 +378,7 @@ class MockOrbitdbNotificationService {
       expect(nanoBlockService.generateReceive).not.toHaveBeenCalled(); // Should not have been called yet
 
       // Unlock the wallet and trigger processing
-      walletService.wallet.locked = false;
-      walletService.wallet.locked$.next(false); // Manually trigger the observable
+      walletService.setLocked(false);
 
       // Need to wait for the async processing to complete
       await new Promise(resolve => setTimeout(resolve, 50)); // Small delay to allow promises to resolve
@@ -417,7 +420,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should track retry count per stealth account', async () => {
-      walletService.wallet.locked = false;
+      walletService.setLocked(false);
       nanoNymCryptoService.deriveStealthPrivateKey.and.returnValue(new Uint8Array(Array(32).fill(1)));
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
@@ -477,7 +480,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should stop retrying after max retries (12)', async () => {
-      walletService.wallet.locked = false;
+      walletService.setLocked(false);
 
       const stealthAccount = {
         address: 'nano_stealth_max_retry',
@@ -501,7 +504,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should skip background retry when wallet is locked', async () => {
-      walletService.wallet.locked = true;
+      walletService.setLocked(true);
 
       const stealthAccount = {
         address: 'nano_stealth_locked',
@@ -524,7 +527,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should remove stealth account from pending blocks after successful opening', async () => {
-      walletService.wallet.locked = false;
+      walletService.setLocked(false);
       nanoNymCryptoService.deriveStealthPrivateKey.and.returnValue(new Uint8Array(Array(32).fill(1)));
       utilService.hex.fromUint8.and.returnValue('01'.repeat(32));
 
@@ -551,7 +554,7 @@ class MockOrbitdbNotificationService {
     });
 
     it('should not process pending blocks if list is empty', async () => {
-      walletService.wallet.locked = false;
+      walletService.setLocked(false);
       (service as any).pendingStealthBlocks = [];
 
       const logSpy = spyOn(console, 'debug');

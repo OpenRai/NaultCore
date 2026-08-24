@@ -37,29 +37,29 @@
           <h3 class="uk-card-title">Backup Wallet</h3>
         </div>
         <div class="uk-card-body">
-          @if (wallet.locked && wallet.type === 'seed') {
+          @if (walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
               <span uk-icon="icon: lock;"></span> Unlock wallet to access the secret recovery seed/mnemonic.
             </p>
           }
-          @if (wallet.locked && (wallet.type === 'privateKey' || wallet.type === 'expandedKey')) {
+          @if (walletService.lifecycle.locked && (walletService.lifecycle.type === 'privateKey' || walletService.lifecycle.type === 'expandedKey')) {
             <p>
               <span uk-icon="icon: lock;"></span> Unlock wallet to access the private key.
             </p>
           }
-          @if (!wallet.locked && wallet.type === 'seed') {
+          @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
               To backup your wallet's secret recovery mnemonic, <a [title]="('configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco)" ngxClipboard [cbContent]="seedMnemonic()" (cbOnSuccess)="notifications.sendSuccess('Wallet mnemonic copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.
             </p>
           }
-          @if (!wallet.locked && wallet.type === 'seed') {
+          @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
-              To backup your wallet's secret recovery seed, <a [title]="( 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco )" ngxClipboard [cbContent]="wallet.seed" (cbOnSuccess)="notifications.sendSuccess('Wallet seed copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
+              To backup your wallet's secret recovery seed, <a [title]="( 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco )" ngxClipboard [cbContent]="walletService.getRecoverySecret()" (cbOnSuccess)="notifications.sendSuccess('Wallet seed copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
             </p>
           }
-          @if (!wallet.locked && (wallet.type === 'privateKey' || wallet.type === 'expandedKey')) {
+          @if (!walletService.lifecycle.locked && (walletService.lifecycle.type === 'privateKey' || walletService.lifecycle.type === 'expandedKey')) {
             <p>
-              To backup your wallet account's private key, <a title="Copy Private Key" ngxClipboard [cbContent]="wallet.seed" (cbOnSuccess)="notifications.sendSuccess('Private Key copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
+              To backup your wallet account's private key, <a title="Copy Private Key" ngxClipboard [cbContent]="walletService.getRecoverySecret()" (cbOnSuccess)="notifications.sendSuccess('Private Key copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
             </p>
           }
         </div>
@@ -71,12 +71,12 @@
         <div class="uk-card-header">
           <h3 class="uk-card-title">Export Nault Wallet</h3>
         </div>
-        @if (wallet.locked) {
+        @if (walletService.lifecycle.locked) {
           <div class="uk-card-body">
             <span uk-icon="icon: lock;"></span> Unlock wallet to access the export tool.
           </div>
         } @else {
-          @if (wallet.password) {
+          @if (walletService.hasPassword()) {
             <div class="uk-card-body">
               Use this export tool to simplify wallet transfer to other devices.
               <br>

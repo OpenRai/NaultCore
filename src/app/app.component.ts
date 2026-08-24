@@ -188,7 +188,7 @@ export class AppComponent implements OnInit {
 
     // If the wallet is locked and there is a pending balance, show a warning to unlock the wallet
     // (if not receive priority is set to manual)
-    if (this.wallet.locked && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
+    if (this.walletService.isLocked() && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
       this.notifications.sendWarning(`New incoming transaction(s) - Unlock the wallet to receive`, { length: 10000, identifier: 'pending-locked' });
     } else if (this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption === 'manual') {
       this.notifications.sendWarning(`Incoming transaction(s) found - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
@@ -196,11 +196,11 @@ export class AppComponent implements OnInit {
 
     // When the page closes, determine if we should lock the wallet
     window.addEventListener('beforeunload',  (e) => {
-      if (this.wallet.locked) return; // Already locked, nothing to worry about
+      if (this.walletService.isLocked()) return; // Already locked, nothing to worry about
       this.walletService.lockWallet();
     });
     window.addEventListener('unload',  (e) => {
-      if (this.wallet.locked) return; // Already locked, nothing to worry about
+      if (this.walletService.isLocked()) return; // Already locked, nothing to worry about
       this.walletService.lockWallet();
     });
 
@@ -236,7 +236,7 @@ export class AppComponent implements OnInit {
     setInterval(() => {
       this.inactiveSeconds += 1;
       if (!this.settings.settings.lockInactivityMinutes) return; // Do not lock on inactivity
-      if (this.wallet.locked || !this.wallet.password) return;
+      if (this.walletService.isLocked() || !this.walletService.hasPassword()) return;
 
       // Determine if we have been inactive for longer than our lock setting
       if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {

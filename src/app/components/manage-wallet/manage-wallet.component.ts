@@ -84,8 +84,9 @@ export class ManageWalletComponent implements OnInit {
       }
     }
 
-    this.walletService.wallet.password = this.newPassword;
-    this.walletService.saveWalletExport();
+    if (!this.walletService.changePassword(this.newPassword)) {
+      return this.notifications.sendError(`Unable to update wallet password`);
+    }
 
     this.newPassword = '';
     this.confirmPassword = '';
@@ -115,9 +116,8 @@ export class ManageWalletComponent implements OnInit {
   }
 
   seedMnemonic() {
-    if (this.wallet && this.wallet.seed ) {
-      return bip.entropyToMnemonic(this.wallet.seed);
-    }
+    const seed = this.walletService.getRecoverySecret();
+    if (seed) return bip.entropyToMnemonic(seed);
   }
 
   triggerFileDownload(fileName, exportData, type) {

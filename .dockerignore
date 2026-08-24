@@ -1,5 +1,11 @@
 node_modules
 npm-debug.log
+pnpm-debug.log
+.beads
+.dolt
+.github
+docs
+references
 dist
 desktop-app/dist
 desktop-app/build

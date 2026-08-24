@@ -30,6 +30,18 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
 });
 
+test('keeps the current account PoW status visible in Account Details', async ({ seededPage, testWallet }) => {
+  await seededPage.locator(
+    `[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`,
+  ).getByTestId('accounts-row-details-button').click();
+
+  const workStatus = seededPage.getByTestId('account-details-work-status');
+  await expect(workStatus).toBeVisible();
+  await expect(workStatus).toContainText(/Proof of Work/i);
+  await expect(workStatus).toContainText(/ready|prepar|cached|not currently|checking/i);
+  await expect(workStatus).not.toContainText(/[0-9A-F]{16}/i);
+});
+
 test('shows the selected account receive address', async ({ seededPage, testWallet }) => {
   await navigate(seededPage, '/receive');
 

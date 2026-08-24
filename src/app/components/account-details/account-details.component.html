@@ -130,7 +130,7 @@
           </div>
         }
         @if (walletAccount) {
-          <div class="uk-card-header account-work-status" [class.account-work-status-warning]="workStatus?.activity === 'active' || workStatus?.activity === 'error'">
+          <div class="uk-card-header account-work-status" [class.account-work-status-warning]="workStatus?.activity === 'active' || workStatus?.activity === 'error'" [attr.data-testid]="testIds.accountDetails.workStatus">
             <div class="account-work-status-icon" [class]="getWorkStatusTone()">
               <span [attr.uk-icon]="'icon: ' + getWorkStatusIcon() + '; ratio: 1.1;'" ></span>
             </div>

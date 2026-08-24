@@ -98,6 +98,9 @@ export const TestIds = {
     accountRowDetailsButton: 'accounts-row-details-button',
     copyAccountIdButton: 'copy-account-id-button',
   },
+  accountDetails: {
+    workStatus: 'account-details-work-status',
+  },
   sweeper: {
     pageRoot: 'sweeper-page-root',
     sourceWalletInput: 'sweeper-source-wallet-input',

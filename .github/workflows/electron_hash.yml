@@ -7,6 +7,9 @@ on:
 jobs:
   # Release draft and share app version via package.json
   pre_build:
+    # Temporarily paused. Set the repository variable
+    # NAULTCORE_ENABLE_ELECTRON_RELEASE=true to re-enable this workflow.
+    if: vars.NAULTCORE_ENABLE_ELECTRON_RELEASE == 'true'
     runs-on: ubuntu-20.04
     outputs:
       output1: ${{ steps.release_drafter.outputs.upload_url }}
@@ -32,6 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
+    if: vars.NAULTCORE_ENABLE_ELECTRON_RELEASE == 'true'
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
 

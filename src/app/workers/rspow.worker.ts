@@ -1,15 +1,15 @@
 import init, { generate_work } from 'nano-rspow-web';
 
-let initialized = null;
+let initialized: Promise<void> | null = null;
 
-function ensureInitialized() {
-  // Pass a runtime URL because Angular's worker build rewrites dependency
-  // import.meta.url values to the source checkout path.
-  initialized = initialized || init(new URL('./assets/lib/nano_rspow_web_bg.wasm', self.location.href));
+function ensureInitialized(): Promise<void> {
+  // Keep the WASM URL relative to the deployed worker. The app can be hosted
+  // below a path prefix, so a source-relative import.meta URL would escape it.
+  initialized ??= init(new URL('./assets/lib/nano_rspow_web_bg.wasm', self.location.href));
   return initialized;
 }
 
-self.onmessage = async (event) => {
+self.onmessage = async (event: MessageEvent<{ id: number; root: string; threshold: string }>) => {
   const { id, root, threshold } = event.data;
   try {
     await ensureInitialized();

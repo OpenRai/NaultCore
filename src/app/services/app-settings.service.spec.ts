@@ -1,18 +1,21 @@
 import { TestBed, inject } from '@angular/core/testing';
+import { TranslocoService } from '@jsverse/transloco';
 
 import { AppSettingsService } from './app-settings.service';
 
 describe('AppSettingsService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [AppSettingsService]
+      providers: [
+        AppSettingsService,
+        { provide: TranslocoService, useValue: {} },
+      ]
     });
   });
 
-  // SKIPPED: Test may fail due to missing DI providers in TestBed configuration.
-  // To fix: Add mock providers for all service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should be created', inject([AppSettingsService], (service: AppSettingsService) => {
-    expect(service).toBeTruthy();
+  it('returns the API origin as a trailing-slash URL', inject([AppSettingsService], (service: AppSettingsService) => {
+    service.settings.serverAPI = 'https://node.somenano.com/proxy?test=true#section';
+
+    expect(service.getServerApiBaseUrl()).toBe('https://node.somenano.com/');
   }));
 });

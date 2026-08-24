@@ -3,7 +3,6 @@ import { BehaviorSubject } from 'rxjs';
 import { workDifficultyToThreshold } from '@openrai/nano-core';
 import { ApiService } from './api.service';
 import { UtilService } from './util.service';
-import PowWorker from 'worker-loader!../../assets/lib/rspow.worker.js';
 
 export interface StoredWorkEntry {
   account: string | null;
@@ -329,7 +328,7 @@ export class WorkPoolService {
 
   private ensureWorker(): void {
     if (this.worker) return;
-    this.worker = new PowWorker();
+    this.worker = new Worker(new URL('../workers/rspow.worker', import.meta.url), { type: 'module' });
     this.worker.onmessage = event => this.onWorkerMessage(event.data);
     this.worker.onerror = event => {
       const error = new Error(event.message || 'PoW worker failed');

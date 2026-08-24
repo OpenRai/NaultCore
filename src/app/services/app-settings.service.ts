@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import * as url from 'url';
 import { TranslocoService, getBrowserCultureLang, getBrowserLang } from '@jsverse/transloco';
 
 export type WalletStore = 'localStorage'|'none';
@@ -266,8 +265,10 @@ export class AppSettingsService {
 
   // Get the base URL part of the serverAPI, e.g. https://nanovault.io from https://nanovault.io/api/node-api.
   getServerApiBaseUrl(): string {
-    const u = url.parse(this.settings.serverAPI);
-    u.pathname = '/';
-    return url.format(u);
+    const serverUrl = new URL(this.settings.serverAPI);
+    serverUrl.pathname = '/';
+    serverUrl.search = '';
+    serverUrl.hash = '';
+    return serverUrl.toString();
   }
 }

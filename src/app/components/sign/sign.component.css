@@ -19,8 +19,8 @@
   margin-top: 10px;
   margin-right: 10px;
   background-color: currentcolor;
-  -webkit-mask-image: url('assets/img/qr-code.svg');
-  mask-image: url('assets/img/qr-code.svg');
+  -webkit-mask-image: url('/assets/img/qr-code.svg');
+  mask-image: url('/assets/img/qr-code.svg');
 }
 
 @media (max-width: 12450px) {

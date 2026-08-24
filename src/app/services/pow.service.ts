@@ -3,7 +3,6 @@ import {AppSettingsService} from './app-settings.service';
 import {ApiService} from './api.service';
 import {NotificationService} from './notification.service';
 import { PoWSource } from './app-settings.service';
-import Worker from 'worker-loader!./../../assets/lib/cpupow.js';
 import {UtilService} from './util.service';
 import {BehaviorSubject} from 'rxjs';
 
@@ -273,8 +272,7 @@ export class PowService {
         newThreshold + ' using CPU workers for hash: ', hash);
       workerList = [];
       for (let i = 0; i < workerCount; i++) {
-        // const worker = new Worker()
-        const worker = new (Worker as any)();
+        const worker = new Worker(new URL('../workers/cpupow.worker', import.meta.url), { type: 'module' });
         worker.postMessage({
           blockHash: hash,
           workerIndex: i,

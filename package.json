@@ -25,7 +25,8 @@
     "version": "node scripts/generate-version.js",
     "wallet:build": "pnpm run version && ng build --configuration production --base-href /NaultCore/",
     "wallet:build:naultcore": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng build --configuration naultcore --base-href /NaultCore/",
-    "wallet:build-desktop": "pnpm run version && ng build --configuration=desktop --base-href ",
+    "wallet:build-desktop": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng build --configuration=desktop --base-href ",
+    "wallet:build-desktop:nanonyms": "FEATURE_NANONYMS=true pnpm run version && FEATURE_NANONYMS=true ng build --configuration=nanonyms --base-href ",
     "desktop:compile": "cd desktop-app && tsc && cd ..",
     "desktop:build": "pnpm run wallet:build-desktop && pnpm run desktop:compile",
     "desktop:build-local": "pnpm run desktop:build && pnpm run desktop:local",
@@ -148,7 +149,7 @@
   "build": {
     "appId": "cc.nault",
     "buildVersion": "1.0.0",
-    "productName": "Nault",
+    "productName": "NaultCore",
     "copyright": "Copyright © 2025 Conny Brunnkvist <cbrunnkvist@gmail.com>",
     "directories": {
       "output": "desktop-app/build",
@@ -157,6 +158,7 @@
     },
     "mac": {
       "target": "dmg",
+      "artifactName": "Nault-${version}.${ext}",
       "category": "public.app-category.finance",
       "extendInfo": {
         "CFBundleURLTypes": [
@@ -171,10 +173,14 @@
     },
     "linux": {
       "target": "AppImage",
+      "artifactName": "Nault-${version}.${ext}",
       "icon": "desktop-app/assets/linux",
       "desktop": {
         "GenericName": "Nano Wallet"
       }
+    },
+    "win": {
+      "artifactName": "Nault Setup ${version}.${ext}"
     },
     "protocols": {
       "name": "nano",

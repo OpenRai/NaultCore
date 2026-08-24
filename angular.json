@@ -98,7 +98,7 @@
               "namedChunks": false,
               "extractLicenses": true,
               "define": {
-                "FEATURE_NANONYMS": "true"
+                "FEATURE_NANONYMS": "false"
               },
               "fileReplacements": [
                 {

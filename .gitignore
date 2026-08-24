@@ -54,6 +54,8 @@ debug.log*-debug-*.log
 
 # Generated files
 src/environments/version.ts
+src/environments/branding.ts
+desktop-app/src/branding.ts
 .beads/
 
 # Playwright / test results (ignored by default)

@@ -1,0 +1,14 @@
+{
+  "naultcore": {
+    "applicationName": "NaultCore",
+    "loadingText": "Loading NaultCore...",
+    "githubUrl": "https://github.com/OpenRai/NaultCore",
+    "attribution": "by OpenRai"
+  },
+  "nanonyms": {
+    "applicationName": "NanoNymNault",
+    "loadingText": "Loading NanoNymNault...",
+    "githubUrl": "https://github.com/cbrunnkvist/NanoNymNault",
+    "attribution": ""
+  }
+}

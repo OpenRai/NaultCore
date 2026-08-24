@@ -20,6 +20,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { version } from 'environments/version';
 import { TestIds } from './testing/test-ids';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
+import { branding } from 'environments/branding';
 
 
 @Component({
@@ -54,6 +55,7 @@ export class AppComponent implements OnInit {
 
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
+  readonly branding = branding;
   updateAvailable = false;
   updateApplying = false;
 
@@ -64,8 +66,7 @@ export class AppComponent implements OnInit {
         this.closeNav();
       });
 
-      // Set page title based on build variant
-      this.titleService.setTitle(FEATURE_NANONYMS ? 'NanoNymNault' : 'NaultCore');
+      this.titleService.setTitle(branding.applicationName);
     }
 
   @ViewChild('selectButton') selectButton: ElementRef;

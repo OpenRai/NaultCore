@@ -2,6 +2,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 import {CurrencyPipe} from '@angular/common';
 
 @Pipe({
+  standalone: false,
   name: 'currencySymbol'
 })
 export class CurrencySymbolPipe extends CurrencyPipe implements PipeTransform {

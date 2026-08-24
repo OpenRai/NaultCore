@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import * as QRCode from 'qrcode';
 
 @Component({
+  standalone: false,
   selector: 'app-qr-generator',
   templateUrl: './qr-generator.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./qr-generator.component.less']
 })
 export class QrGeneratorComponent implements OnInit {

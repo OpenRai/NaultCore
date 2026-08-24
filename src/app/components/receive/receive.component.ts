@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import { ChildActivationEnd, Router } from "@angular/router";
 import { WalletService, WalletAccount } from "../../services/wallet.service";
 import { NotificationService } from "../../services/notification.service";
@@ -13,7 +13,7 @@ import { PriceService } from "../../services/price.service";
 import { WebsocketService } from "../../services/websocket.service";
 import * as QRCode from "qrcode";
 import BigNumber from "bignumber.js";
-import { TranslocoService } from "@ngneat/transloco";
+import { TranslocoService } from "@jsverse/transloco";
 import { SpendableAccount } from "../../types/spendable-account.types";
 import { Subscription } from "rxjs";
 import { TestIds } from '../../testing/test-ids';
@@ -21,11 +21,29 @@ import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymStorageService } from "../../services/nanonym-storage.service";
 
 @Component({
+  standalone: false,
   selector: "app-receive",
   templateUrl: "./receive.component.html",
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ["./receive.component.css"],
 })
 export class ReceiveComponent implements OnInit, OnDestroy {
+  private route = inject(Router);
+  private walletService = inject(WalletService);
+  private notificationService = inject(NotificationService);
+  private addressBook = inject(AddressBookService);
+  modal = inject(ModalService);
+  private api = inject(ApiService);
+  private workPool = inject(WorkPoolService);
+  settings = inject(AppSettingsService);
+  private nanoBlock = inject(NanoBlockService);
+  price = inject(PriceService);
+  private websocket = inject(WebsocketService);
+  private util = inject(UtilService);
+  private translocoService = inject(TranslocoService);
+  private nanoNymManager = inject(NanoNymManagerService);
+  private nanoNymStorage = inject(NanoNymStorageService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
@@ -71,24 +89,6 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   routerSub = null;
   notificationSub: Subscription | null = null;
   spendableAccountsSub: Subscription | null = null;
-
-  constructor(
-    private route: Router,
-    private walletService: WalletService,
-    private notificationService: NotificationService,
-    private addressBook: AddressBookService,
-    public modal: ModalService,
-    private api: ApiService,
-    private workPool: WorkPoolService,
-    public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
-    public price: PriceService,
-    private websocket: WebsocketService,
-    private util: UtilService,
-    private translocoService: TranslocoService,
-    private nanoNymManager: NanoNymManagerService,
-    private nanoNymStorage: NanoNymStorageService,
-  ) {}
 
   async ngOnInit() {
     const UIkit = window["UIkit"];

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {UtilService} from '../../services/util.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
@@ -9,11 +9,20 @@ import {BehaviorSubject} from 'rxjs';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-send',
   templateUrl: './remote-signing.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./remote-signing.component.css']
 })
 export class RemoteSigningComponent implements OnInit {
+  private util = inject(UtilService);
+  private router = inject(Router);
+  private notificationService = inject(NotificationService);
+  private remoteSignService = inject(RemoteSignService);
+  private qrModalService = inject(QrModalService);
+  private addressBookService = inject(AddressBookService);
+
   readonly testIds = TestIds;
   toAccountID = '';
   toAccountStatus: number = null;
@@ -24,15 +33,6 @@ export class RemoteSigningComponent implements OnInit {
   addressBookResults$ = new BehaviorSubject([]);
   showAddressBook = false;
   addressBookMatch = '';
-
-  constructor(
-    private util: UtilService,
-    private router: Router,
-    private notificationService: NotificationService,
-    private remoteSignService: RemoteSignService,
-    private qrModalService: QrModalService,
-    private addressBookService: AddressBookService,
-  ) { }
 
   async ngOnInit() {
     this.addressBookService.loadAddressBook();

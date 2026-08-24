@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { QrModalComponent, QRType } from '../components/qr-modal/qr-modal.component';
 
@@ -6,9 +6,8 @@ import { QrModalComponent, QRType } from '../components/qr-modal/qr-modal.compon
   providedIn: 'root'
 })
 export class QrModalService {
+  private modalService = inject(NgbModal);
 
-  constructor(
-    private modalService: NgbModal) { }
 
   /** Will return a promise that will only resolve if the type matches the QR string read and is valid
    *

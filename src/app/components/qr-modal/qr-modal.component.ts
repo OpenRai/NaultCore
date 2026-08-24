@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {NgbActiveModal} from '@ng-bootstrap/ng-bootstrap';
 import { NotificationService } from '../../services/notification.service';
 import { BarcodeFormat } from '@zxing/library';
@@ -10,11 +10,17 @@ import { TestIds } from '../../testing/test-ids';
 export type QRType = 'account' | 'hash' | 'mnemonic' | 'generic';
 
 @Component({
+  standalone: false,
   selector: 'app-qr-modal',
   templateUrl: './qr-modal.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./qr-modal.component.css']
 })
 export class QrModalComponent implements OnInit {
+  activeModal = inject(NgbActiveModal);
+  private notifcationService = inject(NotificationService);
+  private util = inject(UtilService);
+
   readonly testIds = TestIds;
   @Input() title = 'QR Scanner';
   @Input() reference: string;
@@ -36,12 +42,6 @@ export class QrModalComponent implements OnInit {
   torchEnabled = false;
   torchAvailable$ = new BehaviorSubject<boolean>(false);
   tryHarder = false;
-
-  constructor(
-    public activeModal: NgbActiveModal,
-    private notifcationService: NotificationService,
-    private util: UtilService,
-  ) { }
 
   ngOnInit(): void {
   }

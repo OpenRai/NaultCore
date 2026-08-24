@@ -6,16 +6,18 @@
   [style.height]="( innerHeight + 'px' )"
   style="overflow-y: hidden;"
   [attr.data-testid]="testIds.app.root"
->
+  >
   <div class="uk-width-1-1" style="position: relative; overflow-y: hidden;">
 
     <!-- Service Worker Update Banner (non-dismissible) -->
-    <div *ngIf="updateAvailable" class="sw-update-banner">
-      <span class="sw-update-text">A new version is available.</span>
-      <button class="sw-update-button" (click)="applySwUpdate()" [disabled]="updateApplying">
-        {{ updateApplying ? 'Updating\u2026' : 'Reload to update' }}
-      </button>
-    </div>
+    @if (updateAvailable) {
+      <div class="sw-update-banner">
+        <span class="sw-update-text">A new version is available.</span>
+        <button class="sw-update-button" (click)="applySwUpdate()" [disabled]="updateApplying">
+          {{ updateApplying ? 'Updating\u2026' : 'Reload to update' }}
+        </button>
+      </div>
+    }
 
     <!-- Mobile top bar -->
     <div uk-grid class="mobile-top-bar uk-background-primary">
@@ -32,67 +34,71 @@
     <!-- Accounts dropdown -->
     <div #accountsDropdown [class]="[ 'accounts-dropdown', showAccountsDropdown ? 'visible' : 'hidden' ]">
       <div class="header">Currently Selected</div>
-      <div class="account active" *ngIf="wallet.selectedAccount !== null"> <!-- active nano_ account -->
-        <div class="name-column">
-          <div class="name">{{ wallet.selectedAccount.addressBookName ? wallet.selectedAccount.addressBookName : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index) }}</div>
-          <div class="address nano-address-monospace">{{ wallet.selectedAccount.id }}</div>
+      @if (wallet.selectedAccount !== null) {
+        <div class="account active"> <!-- active nano_ account -->
+          <div class="name-column">
+            <div class="name">{{ wallet.selectedAccount.addressBookName ? wallet.selectedAccount.addressBookName : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index) }}</div>
+            <div class="address nano-address-monospace">{{ wallet.selectedAccount.id }}</div>
+          </div>
+          <div class="balance-column">
+            @if ((walletService.wallet.updatingBalance === false)) {
+              <div class="balance primary">
+                {{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
+              </div>
+              <div class="balance converted">{{ wallet.selectedAccount.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
+            } @else {
+              <div class="balance loading">
+                <div uk-spinner="ratio: 0.5;"></div>
+              </div>
+            }
+          </div>
         </div>
-        <div class="balance-column">
-          <ng-container *ngIf="(walletService.wallet.updatingBalance === false) else balanceLoading">
-            <div class="balance primary">
-              {{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
-            </div>
-            <div class="balance converted">{{ wallet.selectedAccount.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
-          </ng-container>
-          <ng-template #balanceLoading>
-            <div class="balance loading">
-              <div uk-spinner="ratio: 0.5;"></div>
-            </div>
-          </ng-template>
-        </div>
-      </div>
+      }
       <div [class]="[ 'account', (wallet.selectedAccount === null) ? 'active' : 'inactive' ]" (click)="selectAccount(null)"> <!-- active/inactive total balance -->
         <div class="name-column">
           <div class="name">Total Balance</div>
           <div class="address"> </div>
         </div>
         <div class="balance-column">
-          <ng-container *ngIf="(walletService.wallet.updatingBalance === false) else balanceLoading">
+          @if ((walletService.wallet.updatingBalance === false)) {
             <div class="balance primary" [attr.data-testid]="testIds.app.totalBalanceXnoDropdown">{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 0 }}{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 1 }} XNO</div>
             <div class="balance converted" [attr.data-testid]="testIds.app.totalBalanceFiatDropdown">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency }}</div>
-          </ng-container>
-          <ng-template #balanceLoading>
+          } @else {
             <div class="balance loading">
               <div uk-spinner="ratio: 0.5;"></div>
             </div>
-          </ng-template>
+          }
         </div>
       </div>
-      <ng-container *ngFor="let account of wallet.accounts"> <!-- inactive accounts -->
-        <div class="account inactive" (click)="selectAccount(account)" *ngIf="( (wallet.selectedAccount === null) || (wallet.selectedAccount.id !== account.id) )">
-          <div class="name-column">
-            <div class="name">{{ account.addressBookName ? account.addressBookName : (('general.account' | transloco) + ' #' + account.index) }}</div>
-            <div class="address nano-address-monospace">{{ account.id }}</div>
+      @for (account of wallet.accounts; track account) {
+        <!-- inactive accounts -->
+        @if (( (wallet.selectedAccount === null) || (wallet.selectedAccount.id !== account.id) )) {
+          <div class="account inactive" (click)="selectAccount(account)">
+            <div class="name-column">
+              <div class="name">{{ account.addressBookName ? account.addressBookName : (('general.account' | transloco) + ' #' + account.index) }}</div>
+              <div class="address nano-address-monospace">{{ account.id }}</div>
+            </div>
+            <div class="balance-column">
+              @if ((walletService.wallet.updatingBalance === false)) {
+                <div class="balance primary">
+                  @if (account.pending.gt(0)) {
+                    <span class="incoming-label">
+                      <span class="text-snippet">{{ 'general.new' | transloco }}</span>
+                      <span class="text-full">+{{ account.pending | rai: 'mnano,true' | amountsplit: 0 }}{{ account.pending | rai: 'mnano,true' | amountsplit: 1 }} XNO</span>
+                    </span>
+                  }
+                  {{ account.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ account.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
+                </div>
+                <div class="balance converted">{{ account.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
+              } @else {
+                <div class="balance loading">
+                  <div uk-spinner="ratio: 0.5;"></div>
+                </div>
+              }
+            </div>
           </div>
-          <div class="balance-column">
-            <ng-container *ngIf="(walletService.wallet.updatingBalance === false) else balanceLoading">
-              <div class="balance primary">
-                <span class="incoming-label" *ngIf="account.pending.gt(0)">
-                  <span class="text-snippet">{{ 'general.new' | transloco }}</span>
-                  <span class="text-full">+{{ account.pending | rai: 'mnano,true' | amountsplit: 0 }}{{ account.pending | rai: 'mnano,true' | amountsplit: 1 }} XNO</span>
-                </span>
-                {{ account.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ account.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
-              </div>
-              <div class="balance converted">{{ account.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
-            </ng-container>
-            <ng-template #balanceLoading>
-              <div class="balance loading">
-                <div uk-spinner="ratio: 0.5;"></div>
-              </div>
-            </ng-template>
-          </div>
-        </div>
-      </ng-container>
+        }
+      }
     </div>
 
     <!-- Main content container-->
@@ -100,12 +106,12 @@
       uk-grid
       class="app-grid"
       [style.height]="( innerHeightWithoutMobileBar + 'px' )"
-    >
+      >
       <div
         class="uk-width-1-4 nav-container"
         [class.nav-expanded]="navExpanded"
         [style.height]="( innerHeightWithoutMobileBar + 'px' )"
-      >
+        >
         <div class="nav-header">
 
           <div uk-grid>
@@ -114,12 +120,13 @@
               <div [class]="[ 'nano-card', (wallet.selectedAccount === null) ? 'is-wallet' : 'is-card' ]" style="position: relative;">
                 <div class="logo"></div>
                 <!-- "Technical Preview" Sticker -->
-                <div class="dev-preview-sticker" *ngIf="featureNanonyms">
-                  <div class="sticker-content">
-                    <div class="sticker-text-top">"NanoNyms" TECHNICAL PREVIEW</div>
-
+                @if (featureNanonyms) {
+                  <div class="dev-preview-sticker">
+                    <div class="sticker-content">
+                      <div class="sticker-text-top">"NanoNyms" TECHNICAL PREVIEW</div>
+                    </div>
                   </div>
-                </div>
+                }
                 <div class="card-contents">
                   <div class="account-name-container">
                     <a
@@ -130,12 +137,12 @@
                       )"
                       [queryParams]="{ compact: '1' }"
                       class="name"
-                    >{{
-                        (wallet.selectedAccount !== null)
+                      >{{
+                      (wallet.selectedAccount !== null)
                       ? (
-                          wallet.selectedAccount.addressBookName
-                        ? wallet.selectedAccount.addressBookName
-                        : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index)
+                      wallet.selectedAccount.addressBookName
+                      ? wallet.selectedAccount.addressBookName
+                      : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index)
                       )
                       : 'Total Balance'
                     }}</a>
@@ -146,53 +153,60 @@
                     </div>
                   </div>
                   <div class="account-balances">
-                    <ng-container *ngIf="( ( node.status && (wallet.balanceInitialized === true) ) || !isConfigured() ) else balancesLoading">
+                    @if (( ( node.status && (wallet.balanceInitialized === true) ) || !isConfigured() )) {
                       <div class="balance-container primary">
                         <div class="currency-name">XNO</div>
                         <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceXnoCard">
                           <div class="amount-integer">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 0 }}</div>
                           <div class="amount-fractional">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 1 }}</div>
-                          <div class="amount-updating" *ngIf="wallet.updatingBalance && isConfigured()"><div uk-spinner="ratio: 0.5;"></div></div>
+                          @if (wallet.updatingBalance && isConfigured()) {
+                            <div class="amount-updating"><div uk-spinner="ratio: 0.5;"></div></div>
+                          }
                         </div>
                       </div>
-                      <div class="balance-container converted" *ngIf="settings.settings.displayCurrency">
-                        <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
-                        <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
-                          <div class="amount-integer">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                          <div class="amount-fractional">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                      @if (settings.settings.displayCurrency) {
+                        <div class="balance-container converted">
+                          <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
+                          <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
+                            <div class="amount-integer">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
+                            <div class="amount-fractional">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                          </div>
                         </div>
-                      </div>
-                    </ng-container>
-                    <ng-template #balancesLoading>
-                      <div class="spinner-container" *ngIf="(node.status !== false)">
-                        <div uk-spinner="ratio: 0.6;"></div>
-                      </div>
-                    </ng-template>
+                      }
+                    } @else {
+                      @if ((node.status !== false)) {
+                        <div class="spinner-container">
+                          <div uk-spinner="ratio: 0.6;"></div>
+                        </div>
+                      }
+                    }
                   </div>
                 </div>
               </div>
 
-              <ng-container *ngIf="(wallet.selectedAccount !== null) ? wallet.selectedAccount.pending.gt(0) : walletService.hasPendingTransactions()">
-                <ng-container *ngIf="walletService.processingPending else notProcessingPending">
-                  <div class="nav-action-receive" *ngIf="walletService.processingPending">
-                    <div class="icon" uk-icon="icon: chevron-up; ratio: 1.2;"></div>
-                    <div class="label"><span uk-spinner="ratio: 0.5;"></span>Processing Transactions...</div>
-                  </div>
-                </ng-container>
-                <ng-template #notProcessingPending>
-                  <ng-container *ngIf=" (settings.settings.pendingOption !== 'manual') else manuallyReceivingPending ">
-                    <div class="nav-action-receive user-action-required uk-animation-slide-left" *ngIf="walletService.isLocked()">
+              @if ((wallet.selectedAccount !== null) ? wallet.selectedAccount.pending.gt(0) : walletService.hasPendingTransactions()) {
+                @if (walletService.processingPending) {
+                  @if (walletService.processingPending) {
+                    <div class="nav-action-receive">
                       <div class="icon" uk-icon="icon: chevron-up; ratio: 1.2;"></div>
-                      <div class="label">Unlock Wallet to Receive</div>
+                      <div class="label"><span uk-spinner="ratio: 0.5;"></span>Processing Transactions...</div>
                     </div>
-                  </ng-container>
-                  <ng-template #manuallyReceivingPending>
+                  }
+                } @else {
+                  @if ( (settings.settings.pendingOption !== 'manual')) {
+                    @if (walletService.isLocked()) {
+                      <div class="nav-action-receive user-action-required uk-animation-slide-left">
+                        <div class="icon" uk-icon="icon: chevron-up; ratio: 1.2;"></div>
+                        <div class="label">Unlock Wallet to Receive</div>
+                      </div>
+                    }
+                  } @else {
                     <div class="nav-action-receive uk-animation-slide-left">
                       <div class="icon" uk-icon="icon: chevron-up; ratio: 1.2;"></div>
                       <div class="label">Set to Receive Manually</div>
                     </div>
-                  </ng-template>
-                </ng-template>
+                  }
+                }
                 <div class="nano-card incoming-card uk-animation-slide-left">
                   <div class="card-contents">
                     <div class="account-name-container">
@@ -206,34 +220,44 @@
                           <div class="amount-fractional">{{ (wallet.selectedAccount ? wallet.selectedAccount.pending : wallet.pending) | rai: 'mnano,true' | amountsplit: 1 }}</div>
                         </div>
                       </div>
-                      <div class="balance-container converted" *ngIf="settings.settings.displayCurrency">
-                        <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
-                        <div class="amount-container">
-                          <div class="amount-integer">{{ (wallet.selectedAccount ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                          <div class="amount-fractional">{{ (wallet.selectedAccount ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                      @if (settings.settings.displayCurrency) {
+                        <div class="balance-container converted">
+                          <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
+                          <div class="amount-container">
+                            <div class="amount-integer">{{ (wallet.selectedAccount ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
+                            <div class="amount-fractional">{{ (wallet.selectedAccount ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                          </div>
                         </div>
-                      </div>
+                      }
                     </div>
                   </div>
                 </div>
                 <div class="nav-separator-top"></div>
-              </ng-container>
+              }
 
-              <div class="nav-status-row" *ngIf="(node.status === false) && isConfigured()">
-                <div class="status-icon">
-                  <span class="uk-text-danger" uk-icon="icon: warning; ratio: 1.2;"></span>
+              @if ((node.status === false) && isConfigured()) {
+                <div class="nav-status-row">
+                  <div class="status-icon">
+                    <span class="uk-text-danger" uk-icon="icon: warning; ratio: 1.2;"></span>
+                  </div>
+                  @if (settings.settings.serverAPI) {
+                    <div class="status-labels">
+                      <div class="label primary uk-text-danger">Unable to connect to the server</div>
+                      <div class="label secondary"><a (click)="retryConnection()">Refresh</a> or <a routerLink="/configure-app">select a different server</a></div>
+                    </div>
+                  }
+                  @if (!settings.settings.serverAPI) {
+                    <div class="status-labels">
+                      <div class="label primary uk-text-danger">Wallet is in offline mode</div>
+                      <div class="label secondary"><a routerLink="/configure-app">Select a server</a> to interact with the network</div>
+                    </div>
+                  }
                 </div>
-                <div class="status-labels" *ngIf="settings.settings.serverAPI">
-                  <div class="label primary uk-text-danger">Unable to connect to the server</div>
-                  <div class="label secondary"><a (click)="retryConnection()">Refresh</a> or <a routerLink="/configure-app">select a different server</a></div>
-                </div>
-                <div class="status-labels" *ngIf="!settings.settings.serverAPI">
-                  <div class="label primary uk-text-danger">Wallet is in offline mode</div>
-                  <div class="label secondary"><a routerLink="/configure-app">Select a server</a> to interact with the network</div>
-                </div>
-              </div>
+              }
 
-              <app-change-rep-widget *ngIf="isConfigured()"></app-change-rep-widget>
+              @if (isConfigured()) {
+                <app-change-rep-widget></app-change-rep-widget>
+              }
               <app-wallet-widget></app-wallet-widget>
 
             </div>
@@ -251,7 +275,9 @@
                   <div class="label">{{ 'general.receive' | transloco }}</div>
                 </div>
                 <div class="uk-width-1-4 uk-text-center label-new">
-                  <span *ngIf="walletService.hasPendingTransactions()" class="uk-badge uk-text-top uk-align-center"><div class="label">{{ 'general.new' | transloco }}</div></span>
+                  @if (walletService.hasPendingTransactions()) {
+                    <span class="uk-badge uk-text-top uk-align-center"><div class="label">{{ 'general.new' | transloco }}</div></span>
+                  }
                 </div>
               </div>
             </a>
@@ -263,7 +289,9 @@
             <ul class="uk-nav-sub">
               <li><a routerLink="/representatives" [queryParams]="" routerLinkActive="active"><div class="label">{{ 'general.representatives' | transloco }}</div></a></li>
               <li><a routerLink="/configure-app" routerLinkActive="active"><div class="label">{{ 'general.app-settings' | transloco }}</div></a></li>
-              <li *ngIf="isConfigured()"><a routerLink="/manage-wallet" routerLinkActive="active"><div class="label">Manage Wallet</div></a></li>
+              @if (isConfigured()) {
+                <li><a routerLink="/manage-wallet" routerLinkActive="active"><div class="label">Manage Wallet</div></a></li>
+              }
               <li><a routerLink="/configure-wallet" routerLinkActive="active"><div class="label">Configure New Wallet</div></a></li>
             </ul>
           </li>
@@ -312,10 +340,10 @@
               <div class="dark-mode-area">
                 <div class="dark-mode-switch">
                   <svg width="16" height="16" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-                   <g fill="#EEE" stroke="#EEE" stroke-linejoin="round" stroke-width="2">
-                    <path d="m145.54 108.99c-5.5673 25.239-34.67 39.667-62.22 39.667-37.888 0-68.603-30.714-68.603-68.603-1e-6 -37.888 30.714-68.603 68.603-68.603 9.8615 0 19.237 2.0808 27.712 5.8272-105.27 26.034-34.024 146.53 34.508 91.711z" stop-color="#000000"/>
-                    <path transform="matrix(.69599 .69599 -.69599 .69599 66.459 -75.221)" d="m120.54 62.862c-2.3901-1e-6 -9.2713 6.4507-10.961 4.7607s4.7607-8.5712 4.7607-10.961c0-2.3901-6.4507-9.2713-4.7607-10.961s8.5712 4.7607 10.961 4.7607 9.2712-6.4507 10.961-4.7607c1.69 1.6901-4.7607 8.5712-4.7607 10.961 0 2.3901 6.4507 9.2713 4.7607 10.961-1.6901 1.6901-8.5712-4.7607-10.961-4.7607z" stop-color="#000000"/>
-                   </g>
+                    <g fill="#EEE" stroke="#EEE" stroke-linejoin="round" stroke-width="2">
+                      <path d="m145.54 108.99c-5.5673 25.239-34.67 39.667-62.22 39.667-37.888 0-68.603-30.714-68.603-68.603-1e-6 -37.888 30.714-68.603 68.603-68.603 9.8615 0 19.237 2.0808 27.712 5.8272-105.27 26.034-34.024 146.53 34.508 91.711z" stop-color="#000000"/>
+                      <path transform="matrix(.69599 .69599 -.69599 .69599 66.459 -75.221)" d="m120.54 62.862c-2.3901-1e-6 -9.2713 6.4507-10.961 4.7607s4.7607-8.5712 4.7607-10.961c0-2.3901-6.4507-9.2713-4.7607-10.961s8.5712 4.7607 10.961 4.7607 9.2712-6.4507 10.961-4.7607c1.69 1.6901-4.7607 8.5712-4.7607 10.961 0 2.3901 6.4507 9.2713 4.7607 10.961-1.6901 1.6901-8.5712-4.7607-10.961-4.7607z" stop-color="#000000"/>
+                    </g>
                   </svg>
                 </div>
               </div>
@@ -326,8 +354,10 @@
         <div class="footer footer-attribution uk-margin-remove-top" uk-grid>
           <div class="attribution uk-width-1-1 uk-text-center">
             <div class="uk-text-small">{{ featureNanonyms ? 'NanoNymNault' : 'NaultCore' }} &#64; {{ appVersion }}</div>
-            <div *ngIf="!featureNanonyms" class="uk-text-small uk-text-muted">by OpenRai</div>
-          <div class="uk-text-small">Based on <a href="https://github.com/Nault/Nault" target="_blank" rel="noopener noreferrer">Nault</a></div>
+            @if (!featureNanonyms) {
+              <div class="uk-text-small uk-text-muted">by OpenRai</div>
+            }
+            <div class="uk-text-small">Based on <a href="https://github.com/Nault/Nault" target="_blank" rel="noopener noreferrer">Nault</a></div>
           </div>
         </div>
 
@@ -339,7 +369,7 @@
         [class.nav-animating]="navAnimating"
         [style.height]="( innerHeightWithoutMobileBar + 'px' )"
         (click)="closeNav()"
-      >
+        >
         <router-outlet></router-outlet>
       </div>
     </div>

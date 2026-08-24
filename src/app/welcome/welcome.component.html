@@ -6,23 +6,27 @@
         <span class="uk-text-lead">{{ 'welcome.a-secure-open-source-wallet-for-nano' | transloco }}</span><br>
       </div>
 
-      <div class="uk-width-1-1" *ngIf="!isConfigured()">
-        <div uk-grid>
-          <div class="uk-width-1-1">
-            <a routerLink="/configure-wallet" class="uk-button uk-button-primary uk-width-1-1 uk-button-large" [attr.data-testid]="testIds.welcome.createWalletButton">{{ 'welcome.configure-wallet' | transloco }}</a>
+      @if (!isConfigured()) {
+        <div class="uk-width-1-1">
+          <div uk-grid>
+            <div class="uk-width-1-1">
+              <a routerLink="/configure-wallet" class="uk-button uk-button-primary uk-width-1-1 uk-button-large" [attr.data-testid]="testIds.welcome.createWalletButton">{{ 'welcome.configure-wallet' | transloco }}</a>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="uk-width-1-1" *ngIf="isConfigured()">
-        <div uk-grid>
-          <div class="uk-width-1-1" style="margin-top: 10px;">
-            <span>{{ 'welcome.welcome-back-it-looks-like-your-wallet-is-already-configured' | transloco }}</span>
-          </div>
-          <div class="uk-width-1-1@m">
-            <a routerLink="/accounts" class="uk-button uk-button-primary uk-width-1-1 uk-button-large" [attr.data-testid]="testIds.welcome.importWalletButton">{{ 'welcome.view-my-accounts' | transloco }}</a>
+      }
+      @if (isConfigured()) {
+        <div class="uk-width-1-1">
+          <div uk-grid>
+            <div class="uk-width-1-1" style="margin-top: 10px;">
+              <span>{{ 'welcome.welcome-back-it-looks-like-your-wallet-is-already-configured' | transloco }}</span>
+            </div>
+            <div class="uk-width-1-1@m">
+              <a routerLink="/accounts" class="uk-button uk-button-primary uk-width-1-1 uk-button-large" [attr.data-testid]="testIds.welcome.importWalletButton">{{ 'welcome.view-my-accounts' | transloco }}</a>
+            </div>
           </div>
         </div>
-      </div>
+      }
     </div>
 
     <div class="welcome-features-container uk-margin-top">

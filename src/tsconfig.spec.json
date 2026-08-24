@@ -18,5 +18,16 @@
   },
   "files": ["test.ts", "polyfills.ts"],
   "include": ["**/*.spec.ts", "**/*.d.ts", "../packages/protocol/src/**/*.ts", "../packages/crypto/src/**/*.ts", "../packages/core/src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    },
+    "strictTemplates": false
+  }
 }

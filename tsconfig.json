@@ -7,18 +7,18 @@
     "outDir": "./dist/out-tsc",
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
     "target": "ES2022",
     "typeRoots": [
       "node_modules/@types",
       "./src/typings"
-    ],
-    "lib": [
-      "es2020",
-      "dom"
     ],
     "module": "es2020",
     "baseUrl": "./",

@@ -1,8 +1,10 @@
-import {Component, Input, OnChanges, HostBinding} from '@angular/core';
+import {Component, Input, OnChanges, HostBinding, ChangeDetectionStrategy} from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'app-nano-account-id',
   templateUrl: './nano-account-id.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./nano-account-id.component.css'],
 })
 export class NanoAccountIdComponent implements OnChanges {

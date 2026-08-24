@@ -1,17 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { NotificationService } from './notification.service';
 import { Router } from '@angular/router';
 import { UtilService } from './util.service';
 
 @Injectable()
 export class RemoteSignService {
+  private router = inject(Router);
+  private notifcationService = inject(NotificationService);
+  private util = inject(UtilService);
 
-
-  constructor(
-    private router: Router,
-    private notifcationService: NotificationService,
-    private util: UtilService,
-  ) { }
 
   navigateSignBlock(url) {
     if (!this.checkSignBlock(url.pathname)) {

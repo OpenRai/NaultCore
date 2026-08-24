@@ -1,9 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import {AppSettingsService} from './app-settings.service';
 
 @Injectable()
 export class WebsocketService {
+  private appSettings = inject(AppSettingsService);
+
 
   queuedCommands = [];
 
@@ -20,8 +22,6 @@ export class WebsocketService {
   subscribedAccounts = [];
 
   newTransactions$ = new BehaviorSubject(null);
-
-  constructor(private appSettings: AppSettingsService) { }
 
   /**
    * Normalize websocket timestamp to milliseconds.

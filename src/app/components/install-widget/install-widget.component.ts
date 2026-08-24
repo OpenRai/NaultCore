@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NotificationService } from 'app/services/notification.service';
 
 interface InstallEvent extends Event {
@@ -7,20 +7,20 @@ interface InstallEvent extends Event {
 }
 
 @Component({
+  standalone: false,
   selector: 'app-install-widget',
   templateUrl: './install-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./install-widget.component.less'],
 })
 export class InstallWidgetComponent implements OnInit {
+  private notifications = inject(NotificationService);
+
 
   installEvent: InstallEvent;
   showInstallPromotion = false;
   platform = this.getPlatform();
   promotablePlatforms = ['Android', 'iOS', 'iPadOS', 'Chrome OS'];
-
-  constructor(
-    private notifications: NotificationService,
-  ) { }
 
   ngOnInit() {
     if (!this.isPromotable()) {

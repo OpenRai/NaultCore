@@ -3,309 +3,362 @@
     <h2 class="uk-heading-divider">{{ (sendDestinationType === 'own-address') ? 'Transfer Nano Between Own Accounts' : 'Send Nano' }}</h2>
 
     <!-- Send Panel -->
-    <div uk-grid *ngIf="activePanel == 'send'" class="uk-animation-slide-left-small">
-      <div class="send-types-wrapper uk-width-1-1 uk-text-center">
-        <div class="send-types-frame">
-          <button [class]="['send-types-tab', 'uk-text-truncate', (sendDestinationType === 'external-address') ? 'send-types-tab-active' : 'send-types-tab-inactive', 'uk-button', (sendDestinationType === 'external-address') ? 'uk-button-primary' : 'uk-button-secondary']" type="button" (click)="setSendDestinationType('external-address')">Send to address</button>
-          <button [class]="['send-types-tab', 'uk-text-truncate', (sendDestinationType === 'own-address') ? 'send-types-tab-active' : 'send-types-tab-inactive', 'uk-button', (sendDestinationType === 'own-address') ? 'uk-button-primary' : 'uk-button-secondary']" type="button" (click)="setSendDestinationType('own-address')">Transfer between own accounts</button>
+    @if (activePanel == 'send') {
+      <div uk-grid class="uk-animation-slide-left-small">
+        <div class="send-types-wrapper uk-width-1-1 uk-text-center">
+          <div class="send-types-frame">
+            <button [class]="['send-types-tab', 'uk-text-truncate', (sendDestinationType === 'external-address') ? 'send-types-tab-active' : 'send-types-tab-inactive', 'uk-button', (sendDestinationType === 'external-address') ? 'uk-button-primary' : 'uk-button-secondary']" type="button" (click)="setSendDestinationType('external-address')">Send to address</button>
+            <button [class]="['send-types-tab', 'uk-text-truncate', (sendDestinationType === 'own-address') ? 'send-types-tab-active' : 'send-types-tab-inactive', 'uk-button', (sendDestinationType === 'own-address') ? 'uk-button-primary' : 'uk-button-secondary']" type="button" (click)="setSendDestinationType('own-address')">Transfer between own accounts</button>
+          </div>
         </div>
-      </div>
-
-      <div class="uk-width-1-1">
-
-        <div class="uk-card uk-card-default">
-          <div class="uk-card-body">
-            <div class="uk-form-horizontal">
-
-
-              <div class="uk-margin">
-                <label class="uk-form-label" for="form-horizontal-select">From Account</label>
-                <div class="uk-form-controls">
-                  <select class="form-select-source uk-select" [(ngModel)]="fromAccountID" (change)="resetRaw(); onFromAccountChange()" id="form-horizontal-select">
-                    <option *ngFor="let account of spendableAccounts" [value]="account.id">{{ formatAccountLabel(account) }}</option>
-                  </select>
+        <div class="uk-width-1-1">
+          <div class="uk-card uk-card-default">
+            <div class="uk-card-body">
+              <div class="uk-form-horizontal">
+                <div class="uk-margin">
+                  <label class="uk-form-label" for="form-horizontal-select">From Account</label>
+                  <div class="uk-form-controls">
+                    <select class="form-select-source uk-select" [(ngModel)]="fromAccountID" (change)="resetRaw(); onFromAccountChange()" id="form-horizontal-select" [attr.data-testid]="testIds.send.sourceAccountInput">
+                      @for (account of spendableAccounts; track account) {
+                        <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
-              </div>
-
-              <div class="uk-margin" *ngIf="( sendDestinationType === 'external-address' )">
-                <label class="uk-form-label" for="form-horizontal-text2">To Address</label>
-                <div class="uk-form-controls">
-                  <div class="form-input-destination uk-inline uk-width-1-1">
-                    <a class="hide-on-small-viewports uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('account1','account')" uk-tooltip title="Scan from QR code"></a>
-                    <input (blur)="validateDestination()" (input)="onDestinationAddressInput()" (keydown.enter)="lookupAlias()" (focus)="searchAddressBook()" [(ngModel)]="toAccountID" [ngClass]="{ 'uk-form-success': toAccountStatus === 2, 'uk-form-danger': toAccountStatus === 0 }" class="uk-input" id="form-horizontal-text2" type="text" placeholder="Address to send to / Alias / nano:.." autocomplete="off" [attr.data-testid]="testIds.send.addressInput">
-
-                    <div *ngIf="(aliasResults$ | async).length || (addressBookResults$ | async).length" [hidden]="!showAddressBook && !isDestinationAccountAlias" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
-                      <ul class="uk-nav uk-nav-default">
-                        <ng-container *ngIf="(aliasResults$ | async).length">
-                          <li class="uk-nav-header">Alias Lookup</li>
-                          <li class="uk-nav-divider"></li>
-                          <li *ngIf="(aliasLookupInProgress.domain !== '')">
-                            <a>
-                              <span class="spinner uk-margin-small-right" uk-spinner="ratio: 0.5;"></span><span class="text-half-muted">Looking up {{ aliasLookupInProgress.fullText }}...</span>
-                            </a>
-                          </li>
-                          <ng-container *ngIf="(aliasLookupInProgress.domain === '')">
-                            <li *ngFor="let alias of aliasResults$ | async">
-                              <a (click)="lookupAlias()" class="uk-padding-remove-bottom">
-                                <span class="text-half-muted">Press Enter or click here to request alias from</span>
-                              </a>
-                              <a (click)="lookupAlias()">
-                                <span class="uk-text-primary">{{ alias.domain }}</span>
-                              </a>
-                            </li>
-                          </ng-container>
-                          <li class="uk-nav-divider" *ngIf="(addressBookResults$ | async).length"></li>
-                        </ng-container>
-                        <ng-container *ngIf="(addressBookResults$ | async).length">
-                          <li class="uk-nav-header">Address Book Results</li>
-                          <li class="uk-nav-divider"></li>
-                          <li *ngFor="let book of addressBookResults$ | async">
-                            <a (click)="selectBookEntry(book.account)">{{ book.name }}</a>
-                          </li>
-                        </ng-container>
-                      </ul>
+                @if (( sendDestinationType === 'external-address' )) {
+                  <div class="uk-margin">
+                    <label class="uk-form-label" for="form-horizontal-text2">To Address</label>
+                    <div class="uk-form-controls">
+                      <div class="form-input-destination uk-inline uk-width-1-1">
+                        <a class="hide-on-small-viewports uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('account1','account')" uk-tooltip title="Scan from QR code"></a>
+                        <input (blur)="validateDestination()" (input)="onDestinationAddressInput()" (keydown.enter)="lookupAlias()" (focus)="searchAddressBook()" [(ngModel)]="toAccountID" [ngClass]="{ 'uk-form-success': toAccountStatus === 2, 'uk-form-danger': toAccountStatus === 0 }" class="uk-input" id="form-horizontal-text2" type="text" placeholder="Address to send to / Alias / nano:.." autocomplete="off" [attr.data-testid]="testIds.send.addressInput">
+                        @if ((aliasResults$ | async).length || (addressBookResults$ | async).length) {
+                          <div [hidden]="!showAddressBook && !isDestinationAccountAlias" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
+                            <ul class="uk-nav uk-nav-default">
+                              @if ((aliasResults$ | async).length) {
+                                <li class="uk-nav-header">Alias Lookup</li>
+                                <li class="uk-nav-divider"></li>
+                                @if ((aliasLookupInProgress.domain !== '')) {
+                                  <li>
+                                    <a>
+                                      <span class="spinner uk-margin-small-right" uk-spinner="ratio: 0.5;"></span><span class="text-half-muted">Looking up {{ aliasLookupInProgress.fullText }}...</span>
+                                    </a>
+                                  </li>
+                                }
+                                @if ((aliasLookupInProgress.domain === '')) {
+                                  @for (alias of aliasResults$ | async; track alias) {
+                                    <li>
+                                      <a (click)="lookupAlias()" class="uk-padding-remove-bottom">
+                                        <span class="text-half-muted">Press Enter or click here to request alias from</span>
+                                      </a>
+                                      <a (click)="lookupAlias()">
+                                        <span class="uk-text-primary">{{ alias.domain }}</span>
+                                      </a>
+                                    </li>
+                                  }
+                                }
+                                @if ((addressBookResults$ | async).length) {
+                                  <li class="uk-nav-divider"></li>
+                                }
+                              }
+                              @if ((addressBookResults$ | async).length) {
+                                <li class="uk-nav-header">Address Book Results</li>
+                                <li class="uk-nav-divider"></li>
+                                @for (book of addressBookResults$ | async; track book) {
+                                  <li>
+                                    <a (click)="selectBookEntry(book.account)">{{ book.name }}</a>
+                                  </li>
+                                }
+                              }
+                            </ul>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                    @if (addressBookMatch || addressAliasMatch) {
+                      <div class="uk-form-controls">
+                        @if (addressBookMatch) {
+                          <div class="uk-inline uk-width-auto uk-margin-small-right">
+                            <span class="account-label blue uk-margin-small-top">{{ addressBookMatch }}</span>
+                          </div>
+                        }
+                        @if (addressAliasMatch) {
+                          <div class="uk-inline uk-width-auto">
+                            <span class="account-label alias uk-margin-small-top">{{ addressAliasMatch }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                    @if (isNanoNymAddress && toAccountStatus === 2) {
+                      <div class="uk-form-controls">
+                        <div class="uk-inline uk-width-auto">
+                          <span class="account-label nanonym uk-margin-small-top" uk-tooltip title="Privacy-preserving NanoNym address">🔒 NanoNym</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+                @if (( sendDestinationType === 'own-address' )) {
+                  <div class="uk-margin">
+                    <label class="uk-form-label" for="form-horizontal-text2">To Account</label>
+                    <div class="uk-form-controls">
+                      <select required class="form-select-destination uk-select" [(ngModel)]="toOwnAccountID" id="form-horizontal-select" [attr.data-testid]="testIds.transfer.toAccountInput">
+                        <option value="" disabled selected hidden>Account to transfer to</option>
+                        @for (account of spendableAccounts; track account) {
+                          @if (account.id !== fromAccountID) {
+                            <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
+                          }
+                        }
+                      </select>
+                    </div>
+                  </div>
+                }
+                <div uk-grid>
+                  <div class="uk-width-1-1">
+                    <label class="uk-form-label" for="form-horizontal-text">Amount</label>
+                    <div class="form-amount uk-form-controls">
+                      <div uk-grid>
+                        <div class="uk-width-1-1">
+                          <div class="uk-inline uk-width-1-1">
+                            <a class="max-amt-button uk-form-icon uk-form-icon-flip form-icon-btn" (click)="setMaxAmount()" uk-tooltip title="Set Maximum Amount">Max</a>
+                            <label class="uk-form-icon uk-link-reset uk-link-muted xno-symbol" for="form-horizontal-amount"></label>
+                            <input [(ngModel)]="amount" [ngClass]="{ 'uk-form-danger': amountStatus === 0 }" style="padding-left: 52px !important;" class="uk-input" id="form-horizontal-text" (input)="syncFiatPrice()" type="number" step="any" placeholder="Amount of {{ selectedAmount.name }}" maxlength="40" [attr.data-testid]="(sendDestinationType === 'own-address') ? testIds.transfer.amountInput : testIds.send.amountInput">
+                          </div>
+                        </div>
+                        @if (amountExtraRaw.gt(0)) {
+                          <div class="amount-raw-extra uk-width-1-1 uk-text-small text-half-muted">
+                            <span uk-tooltip title="Additional raw to {{ (sendDestinationType === 'own-address') ? 'transfer' : 'send' }}">+{{ amountExtraRaw.toString(10) }} raw</span> &nbsp; <a class="uk-text-danger" (click)="resetRaw()" uk-tooltip title="Remove the additional raw amount from the total amount" uk-icon="icon: close"></a>
+                          </div>
+                        }
+                        @if (settings.settings.displayCurrency) {
+                          <div class="uk-width-1-1" style="margin-top: 10px;">
+                            <div class="uk-width-1-1 uk-inline">
+                              <a class="uk-form-icon uk-link-reset uk-link-muted fiat-currency-ticker" uk-tooltip title="Last Price: {{ price.price.lastPrice | fiat: settings.settings.displayCurrency }} / XNO">{{ settings.settings.displayCurrency | currencySymbol }}</a>
+                              <input [(ngModel)]="amountFiat" (input)="syncNanoPrice()" style="padding-left: 52px !important;" class="uk-input" id="form-horizontal-text-fiat" type="number" step="any" placeholder="Amount of {{ settings.settings.displayCurrency }}">
+                            </div>
+                          </div>
+                        }
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div class="uk-form-controls" *ngIf="addressBookMatch || addressAliasMatch">
-                  <div class="uk-inline uk-width-auto uk-margin-small-right" *ngIf="addressBookMatch">
-                    <span class="account-label blue uk-margin-small-top">{{ addressBookMatch }}</span>
-                  </div>
-                  <div class="uk-inline uk-width-auto" *ngIf="addressAliasMatch">
-                    <span class="account-label alias uk-margin-small-top">{{ addressAliasMatch }}</span>
-                  </div>
-                </div>
-
-                <div class="uk-form-controls" *ngIf="isNanoNymAddress && toAccountStatus === 2">
-                  <div class="uk-inline uk-width-auto">
-                    <span class="account-label nanonym uk-margin-small-top" uk-tooltip title="Privacy-preserving NanoNym address">🔒 NanoNym</span>
-                  </div>
-                </div>
               </div>
-
-              <div class="uk-margin" *ngIf="( sendDestinationType === 'own-address' )">
-                <label class="uk-form-label" for="form-horizontal-text2">To Account</label>
-                <div class="uk-form-controls">
-                  <select required class="form-select-destination uk-select" [(ngModel)]="toOwnAccountID" id="form-horizontal-select" [attr.data-testid]="testIds.transfer.toAccountInput">
-                    <option value="" disabled selected hidden>Account to transfer to</option>
-                    <ng-container *ngFor="let account of spendableAccounts">
-                      <option [value]="account.id" *ngIf="account.id !== fromAccountID">{{ formatAccountLabel(account) }}</option>
-                    </ng-container>
-                  </select>
-                </div>
-              </div>
-
-              <div uk-grid>
-                <div class="uk-width-1-1">
-                  <label class="uk-form-label" for="form-horizontal-text">Amount</label>
-                  <div class="form-amount uk-form-controls">
-                    <div uk-grid>
-                      <div class="uk-width-1-1">
-                        <div class="uk-inline uk-width-1-1">
-                          <a class="max-amt-button uk-form-icon uk-form-icon-flip form-icon-btn" (click)="setMaxAmount()" uk-tooltip title="Set Maximum Amount">Max</a>
-                          <label class="uk-form-icon uk-link-reset uk-link-muted xno-symbol" for="form-horizontal-amount"></label>
-                          <input [(ngModel)]="amount" [ngClass]="{ 'uk-form-danger': amountStatus === 0 }" style="padding-left: 52px !important;" class="uk-input" id="form-horizontal-text" (input)="syncFiatPrice()" type="number" step="any" placeholder="Amount of {{ selectedAmount.name }}" maxlength="40" [attr.data-testid]="(sendDestinationType === 'own-address') ? testIds.transfer.amountInput : testIds.send.amountInput">
-                        </div>
-
-                      </div>
-
-                      <div *ngIf="amountExtraRaw.gt(0)" class="amount-raw-extra uk-width-1-1 uk-text-small text-half-muted">
-                        <span uk-tooltip title="Additional raw to {{ (sendDestinationType === 'own-address') ? 'transfer' : 'send' }}">+{{ amountExtraRaw.toString(10) }} raw</span> &nbsp; <a class="uk-text-danger" (click)="resetRaw()" uk-tooltip title="Remove the additional raw amount from the total amount" uk-icon="icon: close"></a>
-                      </div>
-
-                      <div class="uk-width-1-1" style="margin-top: 10px;" *ngIf="settings.settings.displayCurrency">
-                        <div class="uk-width-1-1 uk-inline">
-                          <a class="uk-form-icon uk-link-reset uk-link-muted fiat-currency-ticker" uk-tooltip title="Last Price: {{ price.price.lastPrice | fiat: settings.settings.displayCurrency }} / XNO">{{ settings.settings.displayCurrency | currencySymbol }}</a>
-                          <input [(ngModel)]="amountFiat" (input)="syncNanoPrice()" style="padding-left: 52px !important;" class="uk-input" id="form-horizontal-text-fiat" type="number" step="any" placeholder="Amount of {{ settings.settings.displayCurrency }}">
-                        </div>
-                      </div>
-
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
             </div>
-          </div>
-          <div class="uk-card-footer">
-            <div class="uk-text-right@s nlt-button-group">
-              <button class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button" type="button" (click)="sendTransaction()" *ngIf="!preparingTransaction" [attr.data-testid]="(sendDestinationType === 'own-address') ? testIds.transfer.transferButton : testIds.send.sendButton">
-                {{ (sendDestinationType === 'own-address') ? 'Transfer nano' : 'Send nano' }}
-              </button>
-              <button class="uk-button uk-button-secondary uk-disabled uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button" type="button" *ngIf="preparingTransaction">
-                <span class="spinner" uk-spinner="ratio: 0.5;"></span>
-                Preparing transaction
-              </button>
-              <button
-                class="only-on-small-viewports uk-button uk-button-secondary uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button"
-                [class.uk-disabled]="preparingTransaction"
-                type="button"
-                (click)="preparingTransaction ? return : openQR('account1','account')"
-                *ngIf="(sendDestinationType !== 'own-address')"
-              >
-                Scan QR code
-              </button>
+            <div class="uk-card-footer">
+              <div class="uk-text-right@s nlt-button-group">
+                @if (!preparingTransaction) {
+                  <button class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button" type="button" (click)="sendTransaction()" [attr.data-testid]="(sendDestinationType === 'own-address') ? testIds.transfer.transferButton : testIds.send.sendButton">
+                    {{ (sendDestinationType === 'own-address') ? 'Transfer nano' : 'Send nano' }}
+                  </button>
+                }
+                @if (preparingTransaction) {
+                  <button class="uk-button uk-button-secondary uk-disabled uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button" type="button">
+                    <span class="spinner" uk-spinner="ratio: 0.5;"></span>
+                    Preparing transaction
+                  </button>
+                }
+                @if ((sendDestinationType !== 'own-address')) {
+                  <button
+                    class="only-on-small-viewports uk-button uk-button-secondary uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button"
+                    [class.uk-disabled]="preparingTransaction"
+                    type="button"
+                    (click)="preparingTransaction ? return : openQR('account1','account')"
+                    >
+                    Scan QR code
+                  </button>
+                }
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    }
     <!-- End Send Panel -->
 
     <!-- Confirmation Panel -->
-    <div uk-grid *ngIf="activePanel == 'confirm'" class="uk-animation-slide-left">
-      <div class="uk-width-1-1">
-        <div class="uk-card uk-card-default uk-width-1-1 uk-text-center" style="margin-bottom: 20px;">
-          <div class="uk-card-body" style="padding: 15px;">
-            <div class="uk-text-danger">You are about to send</div>
-            <div class="block-amount-primary uk-text-danger">
-              <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-              <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
-              <span class="currency-name">XNO</span>
-            </div>
-            <div *ngIf="amountExtraRaw.gt(0)" class="uk-text-small text-half-muted" style="margin: 2px 0 -2px 0;">+{{ amountExtraRaw.toString(10) }} raw</div>
-            <div style="margin: 8px 0 -1px 0;" class="text-half-muted" *ngIf="settings.settings.displayCurrency">{{ amountFiat | fiat: settings.settings.displayCurrency }}</div>
-            <div style="margin: 1px 0 -1px 0;" class="uk-text-muted" *ngIf="settings.settings.displayCurrency">{{ price.price.lastPrice | fiat: settings.settings.displayCurrency }} / XNO</div>
-          </div>
-        </div>
-
-        <div class="account-snippet-container" *ngIf="fromAccount && toAccount" style="margin-bottom: 20px;">
-          <!-- Single Account (Regular Wallet Sends) -->
-          <div class="account-snippet uk-text-truncate" *ngIf="!isSpendingFromNanoNym">
-            <div class="uk-card uk-card-default uk-text-truncate" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
-              <div class="uk-card-header">
-                <div class="snippet-caption uk-text-small text-half-muted">From Account</div>
-                <div class="uk-flex uk-flex-nowrap uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
-                  <a [routerLink]="'/account/' + fromAccountID" class="uk-link-reset account-container uk-text-truncate" uk-tooltip title="View Account Details">
-                    <div class="identicon-address-book-row">
-                      <app-nano-identicon scale="12" [accountID]="fromAccountID" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon" *ngIf="(settings.settings.identiconsStyle !== 'none')"></app-nano-identicon>
-                      <div class="account-label uk-text-truncate" *ngIf="fromAddressBook">{{ fromAddressBook }}</div>
-                    </div>
-                    <div class="nano-address-clickable nano-address-monospace uk-text-truncate"><app-nano-account-id [accountID]="fromAccountID"></app-nano-account-id></div>
-                  </a>
-                  <div class="snippet-address-actions uk-width-auto uk-flex uk-flex-bottom">
-                    <ul class="uk-iconnav">
-                      <li><a ngxClipboard [cbContent]="fromAccountID" (cbOnSuccess)="copied()" uk-icon="icon: copy" title="Copy Account Address" uk-tooltip></a></li>
-                    </ul>
-                  </div>
-                </div>
+    @if (activePanel == 'confirm') {
+      <div uk-grid class="uk-animation-slide-left">
+        <div class="uk-width-1-1">
+          <div class="uk-card uk-card-default uk-width-1-1 uk-text-center" style="margin-bottom: 20px;">
+            <div class="uk-card-body" style="padding: 15px;">
+              <div class="uk-text-danger">You are about to send</div>
+              <div class="block-amount-primary uk-text-danger">
+                <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
+                <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                <span class="currency-name">XNO</span>
               </div>
-              <div class="uk-card-body">
-                <div uk-grid>
-                  <div class="uk-width-1-2 uk-text-muted">
-                    <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
-                    <span class="block-balance">
-                      <span class="balance-amount-primary">
-                        <span class="amount-integer">{{ (fromAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                        <span class="amount-fractional">{{ (fromAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 1 }}</span>
-                        <span class="currency-name">XNO</span>
-                      </span>
-                    </span>
-                  </div>
-                  <div class="uk-width-1-2 uk-text-right">
-                    <div class="uk-text-small text-half-muted" style="height: 25px;"></div>
-                    <span class="block-balance">
-                      <span class="balance-amount-primary uk-text-danger">
-                        <span class="amount-sign">-</span>
-                        <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                        <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
-                        <span class="currency-name">XNO</span>
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
+              @if (amountExtraRaw.gt(0)) {
+                <div class="uk-text-small text-half-muted" style="margin: 2px 0 -2px 0;">+{{ amountExtraRaw.toString(10) }} raw</div>
+              }
+              @if (settings.settings.displayCurrency) {
+                <div style="margin: 8px 0 -1px 0;" class="text-half-muted">{{ amountFiat | fiat: settings.settings.displayCurrency }}</div>
+              }
+              @if (settings.settings.displayCurrency) {
+                <div style="margin: 1px 0 -1px 0;" class="uk-text-muted">{{ price.price.lastPrice | fiat: settings.settings.displayCurrency }} / XNO</div>
+              }
             </div>
           </div>
-
-          <!-- Multiple Stealth Accounts (NanoNym Sends) -->
-          <div class="account-snippet uk-text-truncate" *ngIf="isSpendingFromNanoNym">
-            <div class="uk-card uk-card-default uk-text-truncate">
-              <div class="uk-card-header">
-                <div class="snippet-caption uk-text-small text-half-muted">
-                  From NanoNym ({{selectedStealthAccounts.length}} stealth account<span *ngIf="selectedStealthAccounts.length !== 1">s</span>)
-                </div>
-                <div class="account-label uk-text-truncate">{{ fromAddressBook }}</div>
-              </div>
-              <div class="uk-card-body" style="max-height: 300px; overflow-y: auto;">
-                <div *ngFor="let account of selectedStealthAccounts; let i = index" class="uk-margin-small-bottom" [ngClass]="{ 'stealth-account-done': account.done, 'stealth-account-sending': confirmingTransaction && i === sendProgress.current - 1 }">
-                  <div class="uk-grid-small uk-grid uk-grid-match" uk-grid>
-                    <div class="uk-width-expand">
-                      <div class="nano-address-monospace uk-text-small uk-text-truncate">
-                        <span *ngIf="account.done" uk-icon="icon: check; ratio: 0.8" class="uk-text-success uk-margin-small-right"></span>
-                        <span *ngIf="confirmingTransaction && i === sendProgress.current - 1 && !account.done" uk-spinner="ratio: 0.4" class="uk-margin-small-right"></span>
-                        <app-nano-account-id [accountID]="account.address"></app-nano-account-id>
+          @if (fromAccount && toAccount) {
+            <div class="account-snippet-container" style="margin-bottom: 20px;">
+              <!-- Single Account (Regular Wallet Sends) -->
+              @if (!isSpendingFromNanoNym) {
+                <div class="account-snippet uk-text-truncate">
+                  <div class="uk-card uk-card-default uk-text-truncate" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
+                    <div class="uk-card-header">
+                      <div class="snippet-caption uk-text-small text-half-muted">From Account</div>
+                      <div class="uk-flex uk-flex-nowrap uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
+                        <a [routerLink]="'/account/' + fromAccountID" class="uk-link-reset account-container uk-text-truncate" uk-tooltip title="View Account Details">
+                          <div class="identicon-address-book-row">
+                            @if ((settings.settings.identiconsStyle !== 'none')) {
+                              <app-nano-identicon scale="12" [accountID]="fromAccountID" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
+                            }
+                            @if (fromAddressBook) {
+                              <div class="account-label uk-text-truncate">{{ fromAddressBook }}</div>
+                            }
+                          </div>
+                          <div class="nano-address-clickable nano-address-monospace uk-text-truncate"><app-nano-account-id [accountID]="fromAccountID"></app-nano-account-id></div>
+                        </a>
+                        <div class="snippet-address-actions uk-width-auto uk-flex uk-flex-bottom">
+                          <ul class="uk-iconnav">
+                            <li><a ngxClipboard [cbContent]="fromAccountID" (cbOnSuccess)="copied()" uk-icon="icon: copy" title="Copy Account Address" uk-tooltip></a></li>
+                          </ul>
+                        </div>
                       </div>
                     </div>
-                    <div class="uk-width-auto uk-text-right">
-                      <span class="uk-text-muted uk-text-small">
-                        {{ ((account.balance || account.amountRaw) | rai: 'mnano,true') | amountsplit: 0 }}<span class="amount-fractional">.{{ ((account.balance || account.amountRaw) | rai: 'mnano,true') | amountsplit: 1 }}</span> XNO
-                      </span>
+                    <div class="uk-card-body">
+                      <div uk-grid>
+                        <div class="uk-width-1-2 uk-text-muted">
+                          <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
+                          <span class="block-balance">
+                            <span class="balance-amount-primary">
+                              <span class="amount-integer">{{ (fromAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 0 }}</span>
+                              <span class="amount-fractional">{{ (fromAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                              <span class="currency-name">XNO</span>
+                            </span>
+                          </span>
+                        </div>
+                        <div class="uk-width-1-2 uk-text-right">
+                          <div class="uk-text-small text-half-muted" style="height: 25px;"></div>
+                          <span class="block-balance">
+                            <span class="balance-amount-primary uk-text-danger">
+                              <span class="amount-sign">-</span>
+                              <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
+                              <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                              <span class="currency-name">XNO</span>
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+              <!-- Multiple Stealth Accounts (NanoNym Sends) -->
+              @if (isSpendingFromNanoNym) {
+                <div class="account-snippet uk-text-truncate">
+                  <div class="uk-card uk-card-default uk-text-truncate">
+                    <div class="uk-card-header">
+                      <div class="snippet-caption uk-text-small text-half-muted">
+                        From NanoNym ({{selectedStealthAccounts.length}} stealth account@if (selectedStealthAccounts.length !== 1) {
+                        <span>s</span>
+                        })
+                      </div>
+                      <div class="account-label uk-text-truncate">{{ fromAddressBook }}</div>
+                    </div>
+                    <div class="uk-card-body" style="max-height: 300px; overflow-y: auto;">
+                      @for (account of selectedStealthAccounts; track account; let i = $index) {
+                        <div class="uk-margin-small-bottom" [ngClass]="{ 'stealth-account-done': account.done, 'stealth-account-sending': confirmingTransaction && i === sendProgress.current - 1 }">
+                          <div class="uk-grid-small uk-grid uk-grid-match" uk-grid>
+                            <div class="uk-width-expand">
+                              <div class="nano-address-monospace uk-text-small uk-text-truncate">
+                                @if (account.done) {
+                                  <span uk-icon="icon: check; ratio: 0.8" class="uk-text-success uk-margin-small-right"></span>
+                                }
+                                @if (confirmingTransaction && i === sendProgress.current - 1 && !account.done) {
+                                  <span uk-spinner="ratio: 0.4" class="uk-margin-small-right"></span>
+                                }
+                                <app-nano-account-id [accountID]="account.address"></app-nano-account-id>
+                              </div>
+                            </div>
+                            <div class="uk-width-auto uk-text-right">
+                              <span class="uk-text-muted uk-text-small">
+                                {{ ((account.balance || account.amountRaw) | rai: 'mnano,true') | amountsplit: 0 }}<span class="amount-fractional">.{{ ((account.balance || account.amountRaw) | rai: 'mnano,true') | amountsplit: 1 }}</span> XNO
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+              <div class="account-snippet uk-text-truncate">
+                <div class="uk-card uk-card-default uk-text-truncate" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
+                  <div class="uk-card-header">
+                    <div class="snippet-caption uk-text-small text-half-muted">To Account</div>
+                    <div class="uk-flex uk-flex-nowrap uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
+                      <a [routerLink]="'/account/' + getDestinationID()" class="uk-link-reset account-container uk-text-truncate" uk-tooltip title="View Account Details">
+                        <div class="identicon-address-book-row">
+                          @if ((settings.settings.identiconsStyle !== 'none')) {
+                            <app-nano-identicon scale="12" [accountID]="getDestinationID()" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
+                          }
+                          @if (toAddressBook) {
+                            <div class="account-label uk-text-truncate">{{ toAddressBook }}</div>
+                          }
+                        </div>
+                        <div class="nano-address-clickable nano-address-monospace uk-text-truncate"><app-nano-account-id [accountID]="getDestinationID()"></app-nano-account-id></div>
+                      </a>
+                      <div class="snippet-address-actions uk-width-auto uk-flex uk-flex-bottom">
+                        <ul class="uk-iconnav">
+                          <li><a ngxClipboard [cbContent]="getDestinationID()" (cbOnSuccess)="copied()" uk-icon="icon: copy" title="Copy Account Address" uk-tooltip></a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="uk-card-body">
+                    <div uk-grid>
+                      <div class="uk-width-1-2 uk-text-muted">
+                        <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
+                        <span class="block-balance">
+                          <span class="balance-amount-primary">
+                            <span class="amount-integer">{{ (toAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 0 }}</span>
+                            <span class="amount-fractional">{{ (toAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                            <span class="currency-name">XNO</span>
+                          </span>
+                        </span>
+                      </div>
+                      <div class="uk-width-1-2 uk-text-right">
+                        <div class="uk-text-small text-half-muted" style="height: 25px;"></div>
+                        <span class="block-balance">
+                          <span class="balance-amount-primary uk-text-success">
+                            <span class="amount-sign">+</span>
+                            <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
+                            <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                            <span class="currency-name">XNO</span>
+                          </span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          }
+          <div class="uk-text-right@s nlt-button-group">
+            <button (click)="activePanel = 'send'" class="uk-button uk-button-danger uk-width-1-1@s uk-width-auto@m">Cancel</button>
+            @if (!confirmingTransaction) {
+              <button class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m" (click)="confirmTransaction()">Confirm & Send</button>
+            }
+            @if (confirmingTransaction && !isSpendingFromNanoNym) {
+              <button class="uk-button uk-button-secondary uk-disabled nlt-icon-button nlt-icon-button-inline uk-width-1-1@s uk-width-auto@m"><span class="spinner" uk-spinner="ratio: 0.5;"></span> Sending</button>
+            }
+            @if (confirmingTransaction && isSpendingFromNanoNym) {
+              <button class="uk-button uk-button-secondary uk-disabled nlt-icon-button nlt-icon-button-inline uk-width-1-1@s uk-width-auto@m"><span class="spinner" uk-spinner="ratio: 0.5;"></span> {{sendProgress.current}}/{{sendProgress.total}} Transactions</button>
+            }
           </div>
-
-          <div class="account-snippet uk-text-truncate">
-            <div class="uk-card uk-card-default uk-text-truncate" [class.identicons-enabled]="(settings.settings.identiconsStyle !== 'none')">
-              <div class="uk-card-header">
-                <div class="snippet-caption uk-text-small text-half-muted">To Account</div>
-                <div class="uk-flex uk-flex-nowrap uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
-                  <a [routerLink]="'/account/' + getDestinationID()" class="uk-link-reset account-container uk-text-truncate" uk-tooltip title="View Account Details">
-                    <div class="identicon-address-book-row">
-                      <app-nano-identicon scale="12" [accountID]="getDestinationID()" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon" *ngIf="(settings.settings.identiconsStyle !== 'none')"></app-nano-identicon>
-                      <div class="account-label uk-text-truncate" *ngIf="toAddressBook">{{ toAddressBook }}</div>
-                    </div>
-                    <div class="nano-address-clickable nano-address-monospace uk-text-truncate"><app-nano-account-id [accountID]="getDestinationID()"></app-nano-account-id></div>
-                  </a>
-                  <div class="snippet-address-actions uk-width-auto uk-flex uk-flex-bottom">
-                    <ul class="uk-iconnav">
-                      <li><a ngxClipboard [cbContent]="getDestinationID()" (cbOnSuccess)="copied()" uk-icon="icon: copy" title="Copy Account Address" uk-tooltip></a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <div class="uk-card-body">
-                <div uk-grid>
-                  <div class="uk-width-1-2 uk-text-muted">
-                    <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
-                    <span class="block-balance">
-                      <span class="balance-amount-primary">
-                        <span class="amount-integer">{{ (toAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                        <span class="amount-fractional">{{ (toAccount.balance || 0) | rai: 'mnano,true' | amountsplit: 1 }}</span>
-                        <span class="currency-name">XNO</span>
-                      </span>
-                    </span>
-                  </div>
-                  <div class="uk-width-1-2 uk-text-right">
-                    <div class="uk-text-small text-half-muted" style="height: 25px;"></div>
-                    <span class="block-balance">
-                      <span class="balance-amount-primary uk-text-success">
-                        <span class="amount-sign">+</span>
-                        <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                        <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
-                        <span class="currency-name">XNO</span>
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="uk-text-right@s nlt-button-group">
-          <button (click)="activePanel = 'send'" class="uk-button uk-button-danger uk-width-1-1@s uk-width-auto@m">Cancel</button>
-          <button *ngIf="!confirmingTransaction" class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m" (click)="confirmTransaction()">Confirm & Send</button>
-          <button *ngIf="confirmingTransaction && !isSpendingFromNanoNym" class="uk-button uk-button-secondary uk-disabled nlt-icon-button nlt-icon-button-inline uk-width-1-1@s uk-width-auto@m"><span class="spinner" uk-spinner="ratio: 0.5;"></span> Sending</button>
-          <button *ngIf="confirmingTransaction && isSpendingFromNanoNym" class="uk-button uk-button-secondary uk-disabled nlt-icon-button nlt-icon-button-inline uk-width-1-1@s uk-width-auto@m"><span class="spinner" uk-spinner="ratio: 0.5;"></span> {{sendProgress.current}}/{{sendProgress.total}} Transactions</button>
         </div>
       </div>
-    </div>
+    }
     <!-- End Confirmation Panel -->
 
   </div>
@@ -333,31 +386,35 @@
         </ul>
       </div>
 
-      <div *ngIf="selectedStealthAccounts.length > 0">
-        <button class="uk-button uk-button-text" type="button" uk-toggle="target: #privacy-details">
-          Review Inputs <span uk-icon="icon: chevron-down"></span>
-        </button>
-        <div id="privacy-details" hidden>
-          <div class="uk-card uk-card-default uk-card-body uk-margin-small-top">
-            <h4 class="uk-card-title uk-text-small">Stealth Accounts for This Send:</h4>
-            <ul class="uk-list uk-list-divider uk-text-small">
-              <li *ngFor="let account of selectedStealthAccounts; let i = index">
-                <div class="uk-grid-small" uk-grid>
-                  <div class="uk-width-expand">
-                    <span class="nano-address-monospace uk-text-truncate uk-display-block">{{account.address}}</span>
-                  </div>
-                  <div class="uk-width-auto uk-text-right">
-                    <span class="uk-text-muted">{{ ((account.amountRaw || account.balance) | rai: 'mnano,true') }} XNO</span>
-                  </div>
-                </div>
-              </li>
-            </ul>
-            <p class="uk-text-meta uk-margin-small-top">
-              ⚠️ These accounts will be publicly linked on the Nano blockchain
-            </p>
+      @if (selectedStealthAccounts.length > 0) {
+        <div>
+          <button class="uk-button uk-button-text" type="button" uk-toggle="target: #privacy-details">
+            Review Inputs <span uk-icon="icon: chevron-down"></span>
+          </button>
+          <div id="privacy-details" hidden>
+            <div class="uk-card uk-card-default uk-card-body uk-margin-small-top">
+              <h4 class="uk-card-title uk-text-small">Stealth Accounts for This Send:</h4>
+              <ul class="uk-list uk-list-divider uk-text-small">
+                @for (account of selectedStealthAccounts; track account; let i = $index) {
+                  <li>
+                    <div class="uk-grid-small" uk-grid>
+                      <div class="uk-width-expand">
+                        <span class="nano-address-monospace uk-text-truncate uk-display-block">{{account.address}}</span>
+                      </div>
+                      <div class="uk-width-auto uk-text-right">
+                        <span class="uk-text-muted">{{ ((account.amountRaw || account.balance) | rai: 'mnano,true') }} XNO</span>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+              <p class="uk-text-meta uk-margin-small-top">
+                ⚠️ These accounts will be publicly linked on the Nano blockchain
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      }
 
       <label class="uk-margin-top uk-display-block">
         <input class="uk-checkbox" type="checkbox" [(ngModel)]="privacyWarningDismissed">

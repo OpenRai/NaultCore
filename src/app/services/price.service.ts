@@ -1,9 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {BehaviorSubject} from 'rxjs';
 
 @Injectable()
 export class PriceService {
+  private http = inject(HttpClient);
+
   storeKey = `nanovault-price`;
   apiUrl = `https://api.coingecko.com/api/v3/coins/nano?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`;
 
@@ -13,7 +15,7 @@ export class PriceService {
   };
   lastPrice$ = new BehaviorSubject(1);
 
-  constructor(private http: HttpClient) {
+  constructor() {
     this.loadSavedPrice();
   }
 

@@ -1,10 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from './notification.service';
 import { UtilService } from './util.service';
 
 @Injectable()
 export class NinjaService {
+  private http = inject(HttpClient);
+  private notifications = inject(NotificationService);
+  private util = inject(UtilService);
+
 
   // URL to MyNanoNinja-compatible representative health check API
   // set to empty string to disable
@@ -12,8 +16,6 @@ export class NinjaService {
 
   // null - loading, false - offline, true - online
   status = null;
-
-  constructor(private http: HttpClient, private notifications: NotificationService, private util: UtilService) { }
 
   private async request(action): Promise<any> {
     if (this.ninjaUrl === '') {

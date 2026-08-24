@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import * as url from 'url';
-import { TranslocoService, getBrowserCultureLang, getBrowserLang } from '@ngneat/transloco';
+import { TranslocoService, getBrowserCultureLang, getBrowserLang } from '@jsverse/transloco';
 
 export type WalletStore = 'localStorage'|'none';
 export type PoWSource = 'server'|'clientCPU'|'clientWebGL'|'best'|'custom';
@@ -35,6 +35,8 @@ interface AppSettings {
 
 @Injectable()
 export class AppSettingsService {
+  private translate = inject(TranslocoService);
+
   storeKey = `nanovault-appsettings`;
 
   settings: AppSettings = {
@@ -147,10 +149,6 @@ export class AppSettingsService {
   }, [
     'node.somenano.com'
   ]);
-
-  constructor(
-    private translate: TranslocoService
-  ) { }
 
   loadAppSettings() {
     let settings: AppSettings = this.settings;

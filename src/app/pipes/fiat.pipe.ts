@@ -3,6 +3,7 @@ import {CurrencyPipe} from '@angular/common';
 import {BigNumber} from 'bignumber.js';
 
 @Pipe({
+  standalone: false,
   name: 'fiat'
 })
 export class FiatPipe extends CurrencyPipe implements PipeTransform {

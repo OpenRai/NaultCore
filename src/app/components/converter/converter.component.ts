@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import {UtilService} from '../../services/util.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import * as nanocurrency from 'nanocurrency';
@@ -7,11 +7,18 @@ import { BigNumber } from 'bignumber.js';
 import {NotificationService} from '../../services/notification.service';
 
 @Component({
+  standalone: false,
   selector: 'app-converter',
   templateUrl: './converter.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./converter.component.less']
 })
 export class ConverterComponent implements OnInit, OnDestroy {
+  private util = inject(UtilService);
+  settings = inject(AppSettingsService);
+  private price = inject(PriceService);
+  notifications = inject(NotificationService);
+
   Mnano = '1';
   raw = '';
   invalidMnano = false;
@@ -19,13 +26,6 @@ export class ConverterComponent implements OnInit, OnDestroy {
   invalidFiat = false;
   fiatPrice = '0';
   priceSub = null;
-
-  constructor(
-    private util: UtilService,
-    public settings: AppSettingsService,
-    private price: PriceService,
-    public notifications: NotificationService,
-  ) { }
 
   ngOnInit(): void {
     BigNumber.config({ DECIMAL_PLACES: 30 });

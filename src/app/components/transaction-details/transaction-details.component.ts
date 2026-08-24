@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute, ChildActivationEnd, Router} from '@angular/router';
 import {WalletService} from '../../services/wallet.service';
 import {ApiService} from '../../services/api.service';
@@ -6,15 +6,26 @@ import {NotificationService} from '../../services/notification.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import BigNumber from 'bignumber.js';
 import {AddressBookService} from '../../services/address-book.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-transaction-details',
   templateUrl: './transaction-details.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./transaction-details.component.css']
 })
 export class TransactionDetailsComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private addressBook = inject(AddressBookService);
+  private api = inject(ApiService);
+  private notifications = inject(NotificationService);
+  settings = inject(AppSettingsService);
+  private translocoService = inject(TranslocoService);
+
   readonly testIds = TestIds;
   nano = 1000000000000000000000000;
 
@@ -37,17 +48,6 @@ export class TransactionDetailsComponent implements OnInit {
 
   amountRaw = new BigNumber(0);
   successorHash = '';
-
-  constructor(
-    private walletService: WalletService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private addressBook: AddressBookService,
-    private api: ApiService,
-    private notifications: NotificationService,
-    public settings: AppSettingsService,
-    private translocoService: TranslocoService
-  ) { }
 
   async ngOnInit() {
     this.routerSub = this.router.events.subscribe(event => {

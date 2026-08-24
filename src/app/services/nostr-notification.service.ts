@@ -1,8 +1,8 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import * as Rx from "rxjs";
 
 // Type-only imports (erased at compile time)
-import type { Event } from "nostr-tools/lib/types/core";
+import type { Event } from "nostr-tools";
 
 // Angular service imports (needed for DI tokens)
 import { NostrSyncStateService } from "./nostr-sync-state.service";
@@ -37,6 +37,8 @@ export interface RelayStatus {
   providedIn: "root",
 })
 export class NostrNotificationService {
+  private syncStateService = inject(NostrSyncStateService);
+
   // Default relay list - can be configured by user later
   // Reduced to 3 most reliable relays for testing
   private defaultRelays = [
@@ -86,9 +88,7 @@ export class NostrNotificationService {
   // Minimum time tab must be hidden before forcing reconnect (30 seconds)
   private readonly RECONNECT_THRESHOLD_MS = 30000;
 
-  constructor(
-    private syncStateService: NostrSyncStateService,
-  ) {
+  constructor() {
     if (!FEATURE_NANONYMS) return;
     this.pool = this.createPool();
     this.initializeRelays();

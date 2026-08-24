@@ -1,4 +1,4 @@
-import { Injectable, Injector } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {UtilService} from './util.service';
 import {ApiService} from './api.service';
@@ -101,6 +101,20 @@ export interface WalletApiAccount extends BaseApiAccount {
 
 @Injectable()
 export class WalletService {
+  private util = inject(UtilService);
+  private api = inject(ApiService);
+  private appSettings = inject(AppSettingsService);
+  private addressBook = inject(AddressBookService);
+  private price = inject(PriceService);
+  private workPool = inject(WorkPoolService);
+  private websocket = inject(WebsocketService);
+  private nanoBlock = inject(NanoBlockService);
+  private ledgerService = inject(LedgerService);
+  private noZerosPipe = inject(NoPaddingZerosPipe);
+  private notifications = inject(NotificationService);
+  private nanoNymStorage = inject(NanoNymStorageService);
+  private injector = inject(Injector);
+
   nano = 1000000000000000000000000;
   storeKey = `nanovault-wallet`;
 
@@ -135,20 +149,7 @@ export class WalletService {
   successfulBlocks = [];
   trackedHashes = [];
 
-  constructor(
-    private util: UtilService,
-    private api: ApiService,
-    private appSettings: AppSettingsService,
-    private addressBook: AddressBookService,
-    private price: PriceService,
-    private workPool: WorkPoolService,
-    private websocket: WebsocketService,
-    private nanoBlock: NanoBlockService,
-    private ledgerService: LedgerService,
-    private noZerosPipe: NoPaddingZerosPipe,
-    private notifications: NotificationService,
-    private nanoNymStorage: NanoNymStorageService,
-    private injector: Injector) {
+  constructor() {
     this.websocket.newTransactions$.subscribe(async (transaction) => {
       if (!transaction) return; // Not really a new transaction
       console.log('New Transaction', transaction);
@@ -1004,7 +1005,7 @@ export class WalletService {
     this.wallet.balanceFiat = this.util.nano.rawToMnano(walletBalance).times(fiatPrice).toNumber();
     this.wallet.pendingFiat = this.util.nano.rawToMnano(walletPendingAboveThresholdConfirmed).times(fiatPrice).toNumber();
 
-    // eslint-disable-next-line
+
     this.wallet.hasPending = walletPendingAboveThresholdConfirmed.gt(0);
 
     this.wallet.updatingBalance = false;

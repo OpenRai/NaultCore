@@ -53,7 +53,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     await expect(accountRows.first()).toContainText(/nano_/);
   });
 
-  test('should send XNO to second account via external address', async ({ seededPage }) => {
+  test('should send XNO to second account via external address', async ({ seededPage, testWallet }) => {
     test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
     test.slow();
 
@@ -68,6 +68,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     // Navigate to Send
     await seededPage.locator('a[href="/send"]').click();
     await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
+    await seededPage.locator('[data-testid="send-source-account-input"]').selectOption(testWallet.accounts[1]);
 
     await seededPage.locator('[data-testid="send-address-input"]').fill(secondAddress!.trim());
     await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
@@ -80,12 +81,13 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     await seededPage.waitForTimeout(5000);
   });
 
-  test('should transfer XNO between own accounts', async ({ seededPage }) => {
+  test('should transfer XNO between own accounts', async ({ seededPage, testWallet }) => {
     test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
     test.slow();
 
     await seededPage.locator('a[href="/send"]').click();
     await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
+    await seededPage.locator('[data-testid="send-source-account-input"]').selectOption(testWallet.accounts[1]);
 
     // Switch to "Transfer between own accounts" tab
     await seededPage.locator('text=Transfer between own accounts').click();

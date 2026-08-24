@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {ModalService} from '../../services/modal.service';
@@ -19,12 +19,25 @@ const SWEEP_MAX_INDEX = 100; // max index keys to sweep
 const SWEEP_MAX_PENDING = 100; // max pending blocks to process per run
 
 @Component({
+  standalone: false,
   selector: 'app-sweeper',
   templateUrl: './sweeper.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./sweeper.component.css'],
 })
 
 export class SweeperComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private notificationService = inject(NotificationService);
+  private appSettings = inject(AppSettingsService);
+  modal = inject(ModalService);
+  private api = inject(ApiService);
+  private workPool = inject(WorkPoolService);
+  settings = inject(AppSettingsService);
+  private nanoBlock = inject(NanoBlockService);
+  private util = inject(UtilService);
+  private route = inject(Router);
+
   readonly testIds = TestIds;
   accounts = this.walletService.wallet.accounts;
   indexMax = INDEX_MAX;
@@ -61,17 +74,7 @@ export class SweeperComponent implements OnInit {
 
   @ViewChild('outputarea') logArea: ElementRef;
 
-  constructor(
-    private walletService: WalletService,
-    private notificationService: NotificationService,
-    private appSettings: AppSettingsService,
-    public modal: ModalService,
-    private api: ApiService,
-    private workPool: WorkPoolService,
-    public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
-    private util: UtilService,
-    private route: Router) {
+  constructor() {
       if (this.route.getCurrentNavigation().extras.state && this.route.getCurrentNavigation().extras.state.seed) {
         this.sourceWallet = this.route.getCurrentNavigation().extras.state.seed;
         this.validSeed = true;

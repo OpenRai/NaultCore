@@ -1,15 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { BarcodeFormat } from '@zxing/library';
 import { NotificationService } from 'app/services';
 import { BehaviorSubject } from 'rxjs';
 import { DeeplinkService } from '../../services/deeplink.service';
 
 @Component({
+  standalone: false,
   selector: 'app-qr-scan',
   templateUrl: './qr-scan.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./qr-scan.component.css']
 })
 export class QrScanComponent implements OnInit {
+  private deeplinkService = inject(DeeplinkService);
+  private notificationService = inject(NotificationService);
+
   [x: string]: any;
 
   availableDevices: MediaDeviceInfo[];
@@ -30,11 +35,6 @@ export class QrScanComponent implements OnInit {
   torchEnabled = false;
   torchAvailable$ = new BehaviorSubject<boolean>(false);
   tryHarder = false;
-
-  constructor(
-    private deeplinkService: DeeplinkService,
-    private notificationService: NotificationService,
-  ) { }
 
   ngOnInit(): void { }
 

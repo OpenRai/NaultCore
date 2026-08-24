@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {NotificationService} from '../../services/notification.service';
 
 @Component({
+  standalone: false,
   selector: 'app-notifications',
   templateUrl: './notifications.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./notifications.component.css']
 })
 export class NotificationsComponent implements OnInit {
+  private notificationService = inject(NotificationService);
+
 
   notificationLength = 5000;
 
   notifications: any[] = [];
-  constructor(private notificationService: NotificationService) { }
 
   ngOnInit() {
     this.notificationService.notifications$.subscribe(notification => {

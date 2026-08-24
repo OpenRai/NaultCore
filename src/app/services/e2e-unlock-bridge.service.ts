@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { environment } from 'environments/environment';
 import { WalletService } from './wallet.service';
 
@@ -12,7 +12,9 @@ declare global {
 
 @Injectable()
 export class E2eUnlockBridgeService {
-  constructor(private walletService: WalletService) {
+  private walletService = inject(WalletService);
+
+  constructor() {
     if (environment.e2eUnlockBridge) {
       window.__NAULTCORE_E2E__ = {
         unlock: (password: string): boolean =>

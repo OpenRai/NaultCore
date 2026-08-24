@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UtilService } from './util.service';
 import { NotificationService } from './notification.service';
@@ -7,14 +7,12 @@ import { RemoteSignService } from './remote-sign.service';
 
 @Injectable()
 export class DeeplinkService {
+  private router = inject(Router);
+  private notifcationService = inject(NotificationService);
+  private util = inject(UtilService);
+  private walletService = inject(WalletService);
+  private remoteSignService = inject(RemoteSignService);
 
-  constructor(
-    private router: Router,
-    private notifcationService: NotificationService,
-    private util: UtilService,
-    private walletService: WalletService,
-    private remoteSignService: RemoteSignService,
-  ) { }
 
   navigate(deeplink: string): boolean {
     const nano_scheme = /^(nano|nanorep|nanoseed|nanokey|nanosign|nanoprocess|https):.+$/g;

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {HttpHeaders} from '@angular/common/http';
 import {NodeService} from './node.service';
@@ -7,8 +7,11 @@ import { TxType } from './util.service';
 
 @Injectable()
 export class ApiService {
+  private http = inject(HttpClient);
+  private node = inject(NodeService);
+  private appSettings = inject(AppSettingsService);
+
   storeKey = `nanovault-active-difficulty`;
-  constructor(private http: HttpClient, private node: NodeService, private appSettings: AppSettingsService) { }
 
   private async request(action, data, skipError, url = '', validateResponse?): Promise<any> {
     data.action = action;

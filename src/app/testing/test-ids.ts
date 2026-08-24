@@ -39,6 +39,7 @@ export const TestIds = {
   },
   send: {
     pageRoot: 'send-page-root',
+    sourceAccountInput: 'send-source-account-input',
     addressInput: 'send-address-input',
     amountInput: 'send-amount-input',
     sendButton: 'send-send-button',

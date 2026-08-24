@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute, ChildActivationEnd, Router, NavigationEnd} from '@angular/router';
 import {formatDate} from '@angular/common';
 import {AddressBookService} from '../../services/address-book.service';
@@ -16,17 +16,36 @@ import {BehaviorSubject} from 'rxjs';
 import * as nanocurrency from 'nanocurrency';
 import {NinjaService} from '../../services/ninja.service';
 import { QrModalService } from '../../services/qr-modal.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { NostrNotificationService } from '../../services/nostr-notification.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-account-details',
   templateUrl: './account-details.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./account-details.component.css']
 })
 export class AccountDetailsComponent implements OnInit, OnDestroy {
+  private router = inject(ActivatedRoute);
+  private route = inject(Router);
+  private addressBook = inject(AddressBookService);
+  private api = inject(ApiService);
+  private price = inject(PriceService);
+  private repService = inject(RepresentativeService);
+  private notifications = inject(NotificationService);
+  private wallet = inject(WalletService);
+  private util = inject(UtilService);
+  settings = inject(AppSettingsService);
+  private nanoBlock = inject(NanoBlockService);
+  private qrModalService = inject(QrModalService);
+  private ninja = inject(NinjaService);
+  private translocoService = inject(TranslocoService);
+  private nostrNotificationService = inject(NostrNotificationService);
+  private nanoNymManager = inject(NanoNymManagerService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
@@ -121,23 +140,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   representativesOverview = [];
   // End remote signing
 
-  constructor(
-    private router: ActivatedRoute,
-    private route: Router,
-    private addressBook: AddressBookService,
-    private api: ApiService,
-    private price: PriceService,
-    private repService: RepresentativeService,
-    private notifications: NotificationService,
-    private wallet: WalletService,
-    private util: UtilService,
-    public settings: AppSettingsService,
-    private nanoBlock: NanoBlockService,
-    private qrModalService: QrModalService,
-    private ninja: NinjaService,
-    private translocoService: TranslocoService,
-    private nostrNotificationService: NostrNotificationService,
-    private nanoNymManager: NanoNymManagerService) {
+  constructor() {
+      const route = this.route;
+
       // to detect when the account changes if the view is already active
       route.events.subscribe((val) => {
         if (val instanceof NavigationEnd) {

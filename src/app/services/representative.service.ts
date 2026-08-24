@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {BehaviorSubject} from 'rxjs';
 import {BaseApiAccount, WalletApiAccount, WalletService} from './wallet.service';
 import BigNumber from 'bignumber.js';
@@ -56,6 +56,11 @@ export interface FullRepresentativeOverview extends RepresentativeApiOverview {
 
 @Injectable()
 export class RepresentativeService {
+  private wallet = inject(WalletService);
+  private api = inject(ApiService);
+  private util = inject(UtilService);
+  private ninja = inject(NinjaService);
+
   storeKey = `nanovault-representatives`;
 
   representatives$ = new BehaviorSubject([]);
@@ -71,12 +76,7 @@ export class RepresentativeService {
 
   loaded = false;
 
-  constructor(
-    private wallet: WalletService,
-    private api: ApiService,
-    private util: UtilService,
-    private ninja: NinjaService
-  ) {
+  constructor() {
     this.representatives = this.defaultRepresentatives;
   }
 

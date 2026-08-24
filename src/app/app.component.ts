@@ -1,4 +1,4 @@
-import {Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector} from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector, inject, ChangeDetectionStrategy } from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {WalletService} from './services/wallet.service';
 import {AddressBookService} from './services/address-book.service';
@@ -16,44 +16,50 @@ import {NodeService} from './services/node.service';
 import { DesktopService, LedgerService } from './services';
 import { environment } from 'environments/environment';
 import { DeeplinkService } from './services/deeplink.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { version } from 'environments/version';
 import { TestIds } from './testing/test-ids';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 
 
 @Component({
+  standalone: false,
   selector: 'app-root',
   templateUrl: './app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./app.component.less']
 })
 export class AppComponent implements OnInit {
+  walletService = inject(WalletService);
+  private addressBook = inject(AddressBookService);
+  settings = inject(AppSettingsService);
+  private websocket = inject(WebsocketService);
+  private notifications = inject(NotificationService);
+  nodeService = inject(NodeService);
+  private representative = inject(RepresentativeService);
+  private router = inject(Router);
+  updates = inject(SwUpdate);
+  private workPool = inject(WorkPoolService);
+  price = inject(PriceService);
+  private util = inject(UtilService);
+  private desktop = inject(DesktopService);
+  private ledger = inject(LedgerService);
+  private renderer = inject(Renderer2);
+  private deeplinkService = inject(DeeplinkService);
+  private translate = inject(TranslocoService);
+  private titleService = inject(Title);
+  private injector = inject(Injector);
+  // Instantiation deliberately registers the narrow E2E-only unlock bridge.
+  private e2eUnlockBridge = inject(E2eUnlockBridgeService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   updateAvailable = false;
   updateApplying = false;
 
-  constructor(
-    public walletService: WalletService,
-    private addressBook: AddressBookService,
-    public settings: AppSettingsService,
-    private websocket: WebsocketService,
-    private notifications: NotificationService,
-    public nodeService: NodeService,
-    private representative: RepresentativeService,
-    private router: Router,
-    public updates: SwUpdate,
-    private workPool: WorkPoolService,
-    public price: PriceService,
-    private util: UtilService,
-    private desktop: DesktopService,
-    private ledger: LedgerService,
-    private renderer: Renderer2,
-    private deeplinkService: DeeplinkService,
-    private translate: TranslocoService,
-    private titleService: Title,
-    private injector: Injector,
-    e2eUnlockBridge: E2eUnlockBridgeService) {
+  constructor() {
+      const router = this.router;
+
       router.events.subscribe(() => {
         this.closeNav();
       });
@@ -144,7 +150,9 @@ export class AppComponent implements OnInit {
     if (FEATURE_NANONYMS) {
       try {
         const { NanoNymManagerService } = require('./services/nanonym-manager.service');
-        const manager = this.injector.get(NanoNymManagerService);
+        const manager = this.injector.get(NanoNymManagerService) as {
+          startMonitoringAll(): Promise<void>;
+        };
         await manager.startMonitoringAll();
       } catch (e) { /* NanoNym manager not available */ }
     }

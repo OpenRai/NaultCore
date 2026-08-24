@@ -14,6 +14,13 @@ async function navigate(page: Page, path: string): Promise<void> {
   await expect(page).toHaveURL(new RegExp(`${path.replace('/', '\\/')}(?:\\?.*)?$`));
 }
 
+async function dismissPersistentNotifications(page: Page): Promise<void> {
+  const closeButton = page.locator('.wallet-notification .close-notification').first();
+  if (await closeButton.isVisible().catch(() => false)) {
+    await closeButton.click();
+  }
+}
+
 test('opens an account and shows its account details', async ({ seededPage, testWallet }) => {
   await seededPage.locator(
     `[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`,
@@ -93,25 +100,28 @@ test('starts remote signing for an account', async ({ seededPage, testWallet }) 
   await expect(seededPage).toHaveURL(new RegExp(`/account/${testWallet.accounts[1]}\\?sign=1`));
 });
 
-test('generates a keypair', async ({ seededPage }) => {
-  await navigate(seededPage, '/keygenerator');
-  await seededPage.getByTestId('keygenerator-generate-keypair-button').click();
+test('generates a keypair', async ({ page }) => {
+  await page.goto('/keygenerator');
+  await dismissPersistentNotifications(page);
+  await page.getByTestId('keygenerator-generate-keypair-button').click();
 
-  const generator = seededPage.locator('.uk-card').filter({ hasText: 'Generate a new random keypair' });
+  const generator = page.locator('.uk-card').filter({ hasText: 'Generate a new random keypair' });
   await expect(generator.locator('.nano-address-monospace')).toContainText(/nano_[13][13456789abcdefghijkmnopqrstuwxyz]{59}/);
-  await expect(seededPage.getByText('Copy Private Key')).toBeVisible();
+  await expect(page.getByText('Copy Private Key')).toBeVisible();
 });
 
-test('converts XNO to raw', async ({ seededPage }) => {
-  await navigate(seededPage, '/converter');
-  await seededPage.locator('#mnano').fill('1');
+test('converts XNO to raw', async ({ page }) => {
+  await page.goto('/converter');
+  await dismissPersistentNotifications(page);
+  await page.locator('#mnano').fill('1');
 
-  await expect(seededPage.locator('#raw')).toHaveValue('1000000000000000000000000000000');
+  await expect(page.locator('#raw')).toHaveValue('1000000000000000000000000000000');
 });
 
-test('generates a QR code from text', async ({ seededPage }) => {
-  await navigate(seededPage, '/qr-generator');
-  await seededPage.getByPlaceholder('Text to be converted into QR').fill('Nano E2E');
+test('generates a QR code from text', async ({ page }) => {
+  await page.goto('/qr-generator');
+  await dismissPersistentNotifications(page);
+  await page.getByPlaceholder('Text to be converted into QR').fill('Nano E2E');
 
-  await expect(seededPage.getByAltText('QR code')).toHaveAttribute('src', /^data:image\/png;base64,/);
+  await expect(page.getByAltText('QR code')).toHaveAttribute('src', /^data:image\/png;base64,/);
 });

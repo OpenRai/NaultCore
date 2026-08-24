@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {AppSettingsService} from './app-settings.service';
 import {ApiService} from './api.service';
 import {NotificationService} from './notification.service';
@@ -16,6 +16,11 @@ export enum workState {'success', 'cancelled', 'error'}
 
 @Injectable()
 export class PowService {
+  private appSettings = inject(AppSettingsService);
+  private api = inject(ApiService);
+  private notifications = inject(NotificationService);
+  private util = inject(UtilService);
+
 
   webGLAvailable = false;
   webGLTested = false;
@@ -29,14 +34,7 @@ export class PowService {
   public shouldContinueQueue = true; // set to false to disable further processing
   cpuWorkerResolve = null; // global worker promise to allow termination
   cpuWorkerReject = null; // global worker promise to allow termination
-  shouldAbortGpuPow = false; // set to true to abort GPU pow
-
-  constructor(
-    private appSettings: AppSettingsService,
-    private api: ApiService,
-    private notifications: NotificationService,
-    private util: UtilService
-  ) { }
+  shouldAbortGpuPow = false;
 
   /**
    * Determine the best PoW Method available for this browser

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { TranslocoModule } from '@ngneat/transloco';
+import { TranslocoModule } from '@jsverse/transloco';
 import { ReceiveComponent } from './receive.component';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
@@ -14,7 +14,7 @@ import { AppSettingsService } from '../../services/app-settings.service';
 import { NanoBlockService } from '../../services/nano-block.service';
 import { PriceService } from '../../services/price.service';
 import { WebsocketService } from '../../services/websocket.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { Router } from '@angular/router';

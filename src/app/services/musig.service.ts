@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {UtilService} from './util.service';
 import { NotificationService } from './notification.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -11,6 +11,10 @@ const base32 = require('nano-base32');
   providedIn: 'root'
 })
 export class MusigService {
+  private util = inject(UtilService);
+  private notificationService = inject(NotificationService);
+  private http = inject(HttpClient);
+
   // The multisig wasm library can be validated by running build-or-validate_musig_wasm.sh
   private wasmURL = environment.desktop ?
     '../../../resources/app.asar/dist/assets/lib/musig-nano/musig_nano.wasm.b64' : '../../../assets/lib/musig-nano/musig_nano.wasm.b64';
@@ -21,11 +25,7 @@ export class MusigService {
   musigStageNum: number = null;
   savedPublicKeys = [];
 
-  constructor(
-    private util: UtilService,
-    private notificationService: NotificationService,
-    private http: HttpClient,
-  ) {
+  constructor() {
     // Read the wasm file for multisig
     this.getWASM().subscribe(data => {
       const wasmString = atob(data);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { workDifficultyToThreshold } from '@openrai/nano-core';
 import { ApiService } from './api.service';
@@ -57,6 +57,9 @@ interface PersistedWorkCache {
 
 @Injectable()
 export class WorkPoolService {
+  private api = inject(ApiService);
+  private util = inject(UtilService);
+
   readonly storeKey = 'nanovault-workcache';
   readonly cacheLength = 25;
   readonly state$ = new BehaviorSubject<WorkPoolState>({
@@ -90,11 +93,6 @@ export class WorkPoolService {
   private remoteRetryAttempt = 0;
   private remoteFallbackStarted = false;
   private readonly receiveHintTtlMs = 60_000;
-
-  constructor(
-    private api: ApiService,
-    private util: UtilService,
-  ) { }
 
   public loadWorkCache(): StoredWorkEntry[] {
     this.loaded = true;

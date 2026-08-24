@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {NotificationService} from '../../services/notification.service';
 import * as CryptoJS from 'crypto-js';
@@ -7,11 +7,19 @@ import {UtilService} from '../../services/util.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-import-wallet',
   templateUrl: './import-wallet.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./import-wallet.component.css']
 })
 export class ImportWalletComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private notifications = inject(NotificationService);
+  private walletService = inject(WalletService);
+  private router = inject(Router);
+  private util = inject(UtilService);
+
   readonly testIds = TestIds;
   activePanel = 'error';
 
@@ -19,9 +27,6 @@ export class ImportWalletComponent implements OnInit {
   validImportData = false;
   importData: any = null;
   hostname = '';
-
-  constructor(private route: ActivatedRoute, private notifications: NotificationService, private walletService: WalletService,
-    private router: Router, private util: UtilService) { }
 
   ngOnInit() {
     const importData = this.route.snapshot.fragment;

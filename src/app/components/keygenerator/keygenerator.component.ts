@@ -1,26 +1,26 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {UtilService} from '../../services/util.service';
 import * as bip39 from 'bip39';
 import {NotificationService} from '../../services/notification.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-keygenerator',
   templateUrl: './keygenerator.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./keygenerator.component.css']
 })
 export class KeygeneratorComponent implements OnInit {
+  private util = inject(UtilService);
+  private notificationService = inject(NotificationService);
+
   readonly testIds = TestIds;
   seed = '';
   mnemonic = '';
   privateKey = '';
   account = '';
   newWalletMnemonicLines = [];
-
-  constructor(
-    private util: UtilService,
-    private notificationService: NotificationService
-  ) { }
 
   ngOnInit(): void {
   }

@@ -1,8 +1,10 @@
-import { Component, Input, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'app-nano-transaction-mobile',
   templateUrl: './nano-transaction-mobile.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./nano-transaction-mobile.component.less']
 })
 export class NanoTransactionMobileComponent implements OnInit, OnChanges {

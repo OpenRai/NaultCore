@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, OnInit, OnDestroy} from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import {AddressBookService} from '../../services/address-book.service';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
@@ -11,7 +11,7 @@ import {BigNumber} from 'bignumber.js';
 import {ApiService} from '../../services/api.service';
 import {PriceService} from '../../services/price.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {TranslocoService} from '@ngneat/transloco';
+import {TranslocoService} from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 
 export interface BalanceAccount {
@@ -22,12 +22,26 @@ export interface BalanceAccount {
 }
 
 @Component({
+  standalone: false,
   selector: 'app-address-book',
   templateUrl: './address-book.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./address-book.component.css']
 })
 
 export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
+  private addressBookService = inject(AddressBookService);
+  private walletService = inject(WalletService);
+  notificationService = inject(NotificationService);
+  modal = inject(ModalService);
+  private util = inject(UtilService);
+  private qrModalService = inject(QrModalService);
+  private router = inject(Router);
+  private api = inject(ApiService);
+  private price = inject(PriceService);
+  appSettings = inject(AppSettingsService);
+  private translocoService = inject(TranslocoService);
+
   readonly testIds = TestIds;
 
   nano = 1000000000000000000000000;
@@ -57,19 +71,6 @@ export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
   timeoutIdAllowingRefresh: any = null;
   loadingBalances = false;
   numberOfTrackedBalance = 0;
-
-  constructor(
-    private addressBookService: AddressBookService,
-    private walletService: WalletService,
-    public notificationService: NotificationService,
-    public modal: ModalService,
-    private util: UtilService,
-    private qrModalService: QrModalService,
-    private router: Router,
-    private api: ApiService,
-    private price: PriceService,
-    public appSettings: AppSettingsService,
-    private translocoService: TranslocoService) { }
 
   async ngOnInit() {
     this.addressBookService.loadAddressBook();

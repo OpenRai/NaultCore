@@ -1,4 +1,4 @@
-import {Component, OnInit, ViewChild} from '@angular/core';
+import { Component, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import BigNumber from 'bignumber.js';
 import {BehaviorSubject} from 'rxjs';
@@ -15,15 +15,29 @@ import {
   WalletService,
   NinjaService
 } from '../../services';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-representatives',
   templateUrl: './representatives.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./representatives.component.css']
 })
 export class RepresentativesComponent implements OnInit {
+  private router = inject(ActivatedRoute);
+  walletService = inject(WalletService);
+  private api = inject(ApiService);
+  private notifications = inject(NotificationService);
+  private nanoBlock = inject(NanoBlockService);
+  private util = inject(UtilService);
+  private representativeService = inject(RepresentativeService);
+  settings = inject(AppSettingsService);
+  private ninja = inject(NinjaService);
+  private qrModalService = inject(QrModalService);
+  private translocoService = inject(TranslocoService);
+
   readonly testIds = TestIds;
   @ViewChild('repInput') repInput;
 
@@ -53,19 +67,6 @@ export class RepresentativesComponent implements OnInit {
   hideOverview = false;
 
   representativeList = [];
-
-  constructor(
-    private router: ActivatedRoute,
-    public walletService: WalletService,
-    private api: ApiService,
-    private notifications: NotificationService,
-    private nanoBlock: NanoBlockService,
-    private util: UtilService,
-    private representativeService: RepresentativeService,
-    public settings: AppSettingsService,
-    private ninja: NinjaService,
-    private qrModalService: QrModalService,
-    private translocoService: TranslocoService) { }
 
   async ngOnInit() {
     this.representativeService.loadRepresentativeList();

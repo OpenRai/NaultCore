@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from "@angular/core";
+import { Injectable, OnDestroy, inject } from "@angular/core";
 import BigNumber from "bignumber.js";
 import { Subscription, Subject, interval } from "rxjs";
 import { ApiService } from "./api.service";
@@ -45,6 +45,21 @@ const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
   providedIn: "root",
 })
 export class NanoNymManagerService implements OnDestroy {
+  private storage = inject(NanoNymStorageService);
+  private crypto = inject(NanoNymCryptoService);
+  private nostr = inject(NostrNotificationService);
+  private nostrSyncState = inject(NostrSyncStateService);
+  private api = inject(ApiService);
+  private wallet = inject(WalletService);
+  private websocket = inject(WebsocketService);
+  private nanoBlock = inject(NanoBlockService);
+  private util = inject(UtilService);
+  private notifications = inject(NotificationService);
+  private noZerosPipe = inject(NoPaddingZerosPipe);
+  private appSettings = inject(AppSettingsService);
+  private orbitdbService = inject(OrbitdbNotificationService);
+  private workPool = inject(WorkPoolService);
+
   private notificationSubscription: Subscription | null = null;
   private backgroundRetrySubscription: Subscription | null = null;
   // Map nostr private key hex -> NanoNym index for fast notification routing
@@ -62,22 +77,7 @@ export class NanoNymManagerService implements OnDestroy {
     txHash: string;
   }>();
 
-  constructor(
-    private storage: NanoNymStorageService,
-    private crypto: NanoNymCryptoService,
-    private nostr: NostrNotificationService,
-    private nostrSyncState: NostrSyncStateService,
-    private api: ApiService,
-    private wallet: WalletService,
-    private websocket: WebsocketService,
-    private nanoBlock: NanoBlockService,
-    private util: UtilService,
-    private notifications: NotificationService,
-    private noZerosPipe: NoPaddingZerosPipe,
-    private appSettings: AppSettingsService,
-    private orbitdbService: OrbitdbNotificationService,
-    private workPool: WorkPoolService,
-  ) {
+  constructor() {
     if (!FEATURE_NANONYMS) return;
 
     // Subscribe to incoming Nostr notifications

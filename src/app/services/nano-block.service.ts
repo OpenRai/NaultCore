@@ -1,4 +1,4 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { ApiService } from "./api.service";
 import { UtilService, StateBlock, TxType } from "./util.service";
 import { WorkPoolService } from "./work-pool.service";
@@ -14,6 +14,14 @@ const nacl = window["nacl"];
 
 @Injectable()
 export class NanoBlockService {
+  private api = inject(ApiService);
+  private util = inject(UtilService);
+  private workPool = inject(WorkPoolService);
+  private notifications = inject(NotificationService);
+  private ledgerService = inject(LedgerService);
+  settings = inject(AppSettingsService);
+  private nanonymCrypto = inject(NanoNymCryptoService);
+
   representativeAccounts = [
     "nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs", // NanoCrawler
     "nano_1zuksmn4e8tjw1ch8m8fbrwy5459bx8645o9euj699rs13qy6ysjhrewioey", // Nanowallets.guide
@@ -35,16 +43,6 @@ export class NanoBlockService {
     "nano_3qb6o6i1tkzr6jwr5s7eehfxwg9x6eemitdinbpi7u8bjjwsgqfj4wzser3x";
 
   newOpenBlock$: BehaviorSubject<boolean | false> = new BehaviorSubject(false);
-
-  constructor(
-    private api: ApiService,
-    private util: UtilService,
-    private workPool: WorkPoolService,
-    private notifications: NotificationService,
-    private ledgerService: LedgerService,
-    public settings: AppSettingsService,
-    private nanonymCrypto: NanoNymCryptoService,
-  ) {}
 
   async generateChange(walletAccount, representativeAccount, ledger = false) {
     const toAcct = await this.api.accountInfo(walletAccount.id);

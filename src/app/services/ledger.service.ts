@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import Nano from 'hw-app-nano';
 import TransportU2F from '@ledgerhq/hw-transport-u2f';
 import TransportUSB from '@ledgerhq/hw-transport-webusb';
@@ -44,6 +44,11 @@ const zeroBlock = '0000000000000000000000000000000000000000000000000000000000000
 
 @Injectable()
 export class LedgerService {
+  private api = inject(ApiService);
+  private desktop = inject(DesktopService);
+  private notifications = inject(NotificationService);
+  private appSettings = inject(AppSettingsService);
+
   walletPrefix = `44'/165'/`;
 
   waitTimeout = 30000;
@@ -74,10 +79,9 @@ export class LedgerService {
   ledgerStatus$: Subject<{ status: string, statusText: string }> = new Subject();
   desktopMessage$ = new Subject();
 
-  constructor(private api: ApiService,
-              private desktop: DesktopService,
-              private notifications: NotificationService,
-              private appSettings: AppSettingsService) {
+  constructor() {
+    const appSettings = this.appSettings;
+
     if (this.isDesktop) {
       this.configureDesktop();
     } else {

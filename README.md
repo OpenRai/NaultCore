@@ -8,7 +8,8 @@ It is for people who want a maintained web wallet for Nano. Contributors can imp
 
 - Standard Nano wallet workflows: create or import a wallet, manage accounts, send, receive, and recover from a seed.
 - Browser and desktop build targets from the Nault codebase.
-- Current Angular, Node, and pnpm tooling for ongoing maintenance.
+- Angular 22 modernization of the web app, with aligned build, test, and browser-automation tooling.
+- Node 22 and pnpm tooling for ongoing maintenance.
 
 ## NanoNyms
 

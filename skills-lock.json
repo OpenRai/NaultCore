@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "dependency-upgrade": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "skillPath": "plugins/framework-migration/skills/dependency-upgrade/SKILL.md",
+      "computedHash": "48ee1ca8e94666736fe6f39723f091dca3b26487e9da4bd933cd3a8b3951ac46"
+    },
     "modern-web-guidance": {
       "source": "googlechrome/modern-web-guidance",
       "sourceType": "github",

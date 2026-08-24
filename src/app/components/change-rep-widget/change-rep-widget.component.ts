@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NanoBlockService} from '../../services/nano-block.service';
 import {RepresentativeService} from '../../services/representative.service';
@@ -6,11 +6,18 @@ import {Router} from '@angular/router';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-change-rep-widget',
   templateUrl: './change-rep-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./change-rep-widget.component.css']
 })
 export class ChangeRepWidgetComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private blockService = inject(NanoBlockService);
+  private repService = inject(RepresentativeService);
+  private router = inject(Router);
+
   readonly testIds = TestIds;
   changeableRepresentatives = this.repService.changeableReps;
   displayedRepresentatives = [];
@@ -20,13 +27,6 @@ export class ChangeRepWidgetComponent implements OnInit {
   selectedAccount = null;
   selectedAccountHasRep = false;
   initialLoadComplete = false;
-
-  constructor(
-    private walletService: WalletService,
-    private blockService: NanoBlockService,
-    private repService: RepresentativeService,
-    private router: Router
-    ) { }
 
   async ngOnInit() {
     this.repService.walletReps$.subscribe(async reps => {

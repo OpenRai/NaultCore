@@ -31,6 +31,7 @@ export default defineConfig({
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:4200',
+    screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     // Local: see the browser. CI: headless.
     headless: isCI,

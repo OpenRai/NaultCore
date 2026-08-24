@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { TranslocoModule } from '@ngneat/transloco';
+import { TranslocoModule } from '@jsverse/transloco';
 import { AccountsComponent } from './accounts.component';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
@@ -10,7 +10,7 @@ import { AppSettingsService } from '../../services/app-settings.service';
 import { RepresentativeService } from '../../services/representative.service';
 import { Router } from '@angular/router';
 import { LedgerService } from '../../services/ledger.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 

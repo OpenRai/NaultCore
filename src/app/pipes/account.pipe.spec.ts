@@ -5,9 +5,13 @@ import { AppSettingsService } from "../services/app-settings.service";
 
 describe("AccountPipe", () => {
   it("create an instance", () => {
-    const utilService = {} as UtilService;
-    const settingsService = {} as AppSettingsService;
-    const pipe = new AccountPipe(utilService, settingsService);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: UtilService, useValue: {} },
+        { provide: AppSettingsService, useValue: {} },
+      ],
+    });
+    const pipe = TestBed.runInInjectionContext(() => new AccountPipe());
     expect(pipe).toBeTruthy();
   });
 });

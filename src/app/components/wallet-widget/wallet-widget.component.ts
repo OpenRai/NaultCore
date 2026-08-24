@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {LedgerService, LedgerStatus} from '../../services/ledger.service';
@@ -8,11 +8,20 @@ import {WorkPoolService, WorkPoolState} from '../../services/work-pool.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-wallet-widget',
   templateUrl: './wallet-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./wallet-widget.component.css']
 })
 export class WalletWidgetComponent implements OnInit {
+  walletService = inject(WalletService);
+  private notificationService = inject(NotificationService);
+  ledgerService = inject(LedgerService);
+  settings = inject(AppSettingsService);
+  private powService = inject(PowService);
+  private workPool = inject(WorkPoolService);
+
   readonly testIds = TestIds;
   wallet = this.walletService.wallet;
 
@@ -38,14 +47,6 @@ export class WalletWidgetComponent implements OnInit {
   modal: any = null;
   mayAttemptUnlock = true;
   timeoutIdAllowingUnlock: any = null;
-
-  constructor(
-    public walletService: WalletService,
-    private notificationService: NotificationService,
-    public ledgerService: LedgerService,
-    public settings: AppSettingsService,
-    private powService: PowService,
-    private workPool: WorkPoolService) { }
 
   @ViewChild('passwordInput') passwordInput: ElementRef;
 
@@ -153,7 +154,7 @@ export class WalletWidgetComponent implements OnInit {
       this.notificationService.sendSuccess(`Wallet unlocked`);
       this.modal.hide();
       if (this.unlockPassword.length < 6) {
-        // eslint-disable-next-line max-len
+
         this.notificationService.sendWarning(`You are using an insecure password and encouraged to change it from settings > manage wallet`);
       }
 

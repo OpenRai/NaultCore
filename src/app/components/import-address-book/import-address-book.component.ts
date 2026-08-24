@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {NotificationService} from '../../services/notification.service';
 import {ActivatedRoute} from '@angular/router';
 import {AddressBookService} from '../../services/address-book.service';
@@ -6,11 +6,18 @@ import {Router} from '@angular/router';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-import-address-book',
   templateUrl: './import-address-book.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./import-address-book.component.css']
 })
 export class ImportAddressBookComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private notifications = inject(NotificationService);
+  private addressBook = inject(AddressBookService);
+  private router = inject(Router);
+
   readonly testIds = TestIds;
   activePanel = 'error';
 
@@ -21,12 +28,6 @@ export class ImportAddressBookComponent implements OnInit {
   newEntries = 0;
   existingEntries = 0;
   hostname = '';
-
-  constructor(
-    private route: ActivatedRoute,
-    private notifications: NotificationService,
-    private addressBook: AddressBookService,
-    private router: Router) { }
 
   ngOnInit() {
     const importData = this.route.snapshot.fragment;

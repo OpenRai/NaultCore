@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {Subject, timer, Subscription} from 'rxjs';
 import {debounce} from 'rxjs/operators';
 import {Router} from '@angular/router';
@@ -11,7 +11,7 @@ import {
   RepresentativeService,
   WalletService,
 } from '../../services';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../../types/spendable-account.types';
 import { TestIds } from '../../testing/test-ids';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
@@ -19,11 +19,25 @@ import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { UtilService } from '../../services/util.service';
 
 @Component({
+  standalone: false,
   selector: 'app-accounts',
   templateUrl: './accounts.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./accounts.component.css']
 })
 export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
+  private walletService = inject(WalletService);
+  private notificationService = inject(NotificationService);
+  modal = inject(ModalService);
+  settings = inject(AppSettingsService);
+  private representatives = inject(RepresentativeService);
+  private router = inject(Router);
+  private ledger = inject(LedgerService);
+  private translocoService = inject(TranslocoService);
+  private nanoNymStorage = inject(NanoNymStorageService);
+  private nanoNymManager = inject(NanoNymManagerService);
+  private util = inject(UtilService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   accounts = this.walletService.wallet.accounts;
@@ -47,19 +61,6 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   generateNanoNymModal: any = null;
   newNanoNymLabel = '';
   generatingNanoNym = false;
-
-  constructor(
-    private walletService: WalletService,
-    private notificationService: NotificationService,
-    public modal: ModalService,
-    public settings: AppSettingsService,
-    private representatives: RepresentativeService,
-    private router: Router,
-    private ledger: LedgerService,
-    private translocoService: TranslocoService,
-    private nanoNymStorage: NanoNymStorageService,
-    private nanoNymManager: NanoNymManagerService,
-    private util: UtilService) { }
 
   async ngOnInit() {
     this.reloadRepWarning$.subscribe(a => {

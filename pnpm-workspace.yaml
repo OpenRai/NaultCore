@@ -1,3 +1,16 @@
 packages:
   - "packages/*"
   - "nanonyms-relay"
+allowBuilds:
+  '@abandonware/noble': false
+  '@parcel/watcher': false
+  classic-level: true
+  core-js: false
+  electron: false
+  esbuild: true
+  lmdb: false
+  msgpackr-extract: false
+  nice-napi: false
+  node-datachannel: true
+  node-hid: false
+  usb: false

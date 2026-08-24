@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
 import BigNumber from "bignumber.js";
 import { AddressBookService } from "../../services/address-book.service";
 import { BehaviorSubject } from "rxjs";
@@ -14,7 +14,7 @@ import { PriceService } from "../../services/price.service";
 import { NanoBlockService } from "../../services/nano-block.service";
 import { QrModalService } from "../../services/qr-modal.service";
 import { environment } from "environments/environment";
-import { TranslocoService } from "@ngneat/transloco";
+import { TranslocoService } from "@jsverse/transloco";
 import { HttpClient } from "@angular/common/http";
 import * as nanocurrency from "nanocurrency";
 import { SpendableAccount, formatSpendableAccountLabel, NanoNymAccount } from "../../types/spendable-account.types";
@@ -29,11 +29,32 @@ import { OrbitdbNotificationService } from "../../services/orbitdb-notification.
 const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
 @Component({
+  standalone: false,
   selector: "app-send",
   templateUrl: "./send.component.html",
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ["./send.component.css"],
 })
 export class SendComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private walletService = inject(WalletService);
+  private addressBookService = inject(AddressBookService);
+  private notificationService = inject(NotificationService);
+  private nodeApi = inject(ApiService);
+  private nanoBlock = inject(NanoBlockService);
+  price = inject(PriceService);
+  private workPool = inject(WorkPoolService);
+  settings = inject(AppSettingsService);
+  private util = inject(UtilService);
+  private qrModalService = inject(QrModalService);
+  private http = inject(HttpClient);
+  private translocoService = inject(TranslocoService);
+  private nanoNymCrypto = inject(NanoNymCryptoService);
+  nostrService = inject(NostrNotificationService);
+  private nanoNymManager = inject(NanoNymManagerService);
+  private accountSelection = inject(NanoNymAccountSelectionService);
+  private orbitdbService = inject(OrbitdbNotificationService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
@@ -109,28 +130,7 @@ export class SendComponent implements OnInit {
   privacyWarningShown = false;
   privacyWarningDismissed = false;
   privacyWarningPending = false;
-  sendProgress = { current: 0, total: 0 }; // Track progress during multi-account sends
-
-  constructor(
-    private route: ActivatedRoute,
-    private walletService: WalletService,
-    private addressBookService: AddressBookService,
-    private notificationService: NotificationService,
-    private nodeApi: ApiService,
-    private nanoBlock: NanoBlockService,
-    public price: PriceService,
-    private workPool: WorkPoolService,
-    public settings: AppSettingsService,
-    private util: UtilService,
-    private qrModalService: QrModalService,
-    private http: HttpClient,
-    private translocoService: TranslocoService,
-    private nanoNymCrypto: NanoNymCryptoService,
-    public nostrService: NostrNotificationService,
-    private nanoNymManager: NanoNymManagerService,
-    private accountSelection: NanoNymAccountSelectionService,
-    private orbitdbService: OrbitdbNotificationService,
-  ) {}
+  sendProgress = { current: 0, total: 0 };
 
   async ngOnInit() {
     const params = this.route.snapshot.queryParams;

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UtilService } from '../../services/util.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
@@ -8,11 +8,20 @@ import { MusigService } from '../../services/musig.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
+  standalone: false,
   selector: 'app-multisig',
   templateUrl: './multisig.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./multisig.component.css']
 })
 export class MultisigComponent implements OnInit {
+  private util = inject(UtilService);
+  private router = inject(Router);
+  private notificationService = inject(NotificationService);
+  private remoteSignService = inject(RemoteSignService);
+  private qrModalService = inject(QrModalService);
+  private musigService = inject(MusigService);
+
   readonly testIds = TestIds;
   accountAdd = '';
   showAddBox = false;
@@ -25,15 +34,6 @@ export class MultisigComponent implements OnInit {
   unsignedStatus: number = null;
   showAdvancedOptions = false; // if displaying more info
   wasmErrors = ['No error', 'Internal error', 'Invalid parameter(s)', 'Invalid Participant Input'];
-
-  constructor(
-    private util: UtilService,
-    private router: Router,
-    private notificationService: NotificationService,
-    private remoteSignService: RemoteSignService,
-    private qrModalService: QrModalService,
-    private musigService: MusigService,
-  ) { }
 
   @ViewChild('accountAddFocus') _el: ElementRef;
 

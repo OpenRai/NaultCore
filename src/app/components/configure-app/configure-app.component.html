@@ -18,7 +18,9 @@
                 </label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedLanguage" id="languageselector">
-                    <option *ngFor="let language of languages" [value]="language.id">{{ language.label }}</option>
+                    @for (language of languages; track language) {
+                      <option [value]="language.id">{{ language.label }}</option>
+                    }
                   </select>
                 </div>
               </div>
@@ -33,7 +35,9 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.fiat-currency' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-the-currency-pair-used-when-showing-fiat-values')"></span></label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedCurrency" id="form-horizontal-select">
-                    <option *ngFor="let currency of currencies" [value]="currency.value">{{ currency.name | transloco }}</option>
+                    @for (currency of currencies; track currency) {
+                      <option [value]="currency.value">{{ currency.name | transloco }}</option>
+                    }
                   </select>
                 </div>
               </div>
@@ -48,7 +52,9 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.night-mode' | transloco }}</label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedNightModeOption" id="form-horizontal-select">
-                    <option *ngFor="let nightModeOption of nightModeOptions" [value]="nightModeOption.value">{{ nightModeOption.name | transloco }}</option>
+                    @for (nightModeOption of nightModeOptions; track nightModeOption) {
+                      <option [value]="nightModeOption.value">{{ nightModeOption.name | transloco }}</option>
+                    }
                   </select>
                 </div>
               </div>
@@ -63,7 +69,9 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.identicons' | transloco }}</label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedIdenticonOption" id="form-horizontal-select">
-                    <option *ngFor="let identiconOption of identiconOptions" [value]="identiconOption.value">{{ identiconOption.name | transloco }}</option>
+                    @for (identiconOption of identiconOptions; track identiconOption) {
+                      <option [value]="identiconOption.value">{{ identiconOption.name | transloco }}</option>
+                    }
                   </select>
                 </div>
               </div>
@@ -71,39 +79,43 @@
             </div>
           </div>
 
-          <div class="uk-width-1-1" *ngIf="featureNanonyms">
-            <div class="uk-form-horizontal">
-              <div class="uk-margin">
-                <label class="uk-form-label">Nostr Notifications</label>
-                <div class="uk-form-controls">
-                  <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="useNostr">
-                      <option [ngValue]="true">Enabled</option>
-                      <option [ngValue]="false">Disabled</option>
-                    </select>
+          @if (featureNanonyms) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div class="uk-margin">
+                  <label class="uk-form-label">Nostr Notifications</label>
+                  <div class="uk-form-controls">
+                    <div class="uk-inline uk-width-1-1">
+                      <select class="uk-select" [(ngModel)]="useNostr">
+                        <option [ngValue]="true">Enabled</option>
+                        <option [ngValue]="false">Disabled</option>
+                      </select>
+                    </div>
+                    <span class="uk-text-meta">Use Nostr relays for NanoNym payment notifications (fast, distributed).</span>
                   </div>
-                  <span class="uk-text-meta">Use Nostr relays for NanoNym payment notifications (fast, distributed).</span>
                 </div>
               </div>
             </div>
-          </div>
+          }
 
-          <div class="uk-width-1-1" *ngIf="featureNanonyms">
-            <div class="uk-form-horizontal">
-              <div class="uk-margin">
-                <label class="uk-form-label">OrbitDB Notifications</label>
-                <div class="uk-form-controls">
-                  <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="useOrbitDb">
-                      <option [ngValue]="true">Enabled</option>
-                      <option [ngValue]="false">Disabled</option>
-                    </select>
+          @if (featureNanonyms) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div class="uk-margin">
+                  <label class="uk-form-label">OrbitDB Notifications</label>
+                  <div class="uk-form-controls">
+                    <div class="uk-inline uk-width-1-1">
+                      <select class="uk-select" [(ngModel)]="useOrbitDb">
+                        <option [ngValue]="true">Enabled</option>
+                        <option [ngValue]="false">Disabled</option>
+                      </select>
+                    </div>
+                    <span class="uk-text-meta">Experimental: Use IPFS/OrbitDB for parallel notification delivery.</span>
                   </div>
-                  <span class="uk-text-meta">Experimental: Use IPFS/OrbitDB for parallel notification delivery.</span>
                 </div>
               </div>
             </div>
-          </div>
+          }
 
         </div>
       </div>
@@ -129,7 +141,9 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedInactivityMinutes">
-                      <option *ngFor="let option of inactivityOptions" [value]="option.value">{{ option.name | transloco: option.params }}</option>
+                      @for (option of inactivityOptions; track option) {
+                        <option [value]="option.value">{{ option.name | transloco: option.params }}</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -146,7 +160,9 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedStorage">
-                      <option *ngFor="let storage of storageOptions" [value]="storage.value">{{ storage.name | transloco }}</option>
+                      @for (storage of storageOptions; track storage) {
+                        <option [value]="storage.value">{{ storage.name | transloco }}</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -163,34 +179,45 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedPoWOption">
-                      <option *ngFor="let pow of powOptions" [value]="pow.value">
-                        <ng-element *ngIf="pow.value === 'server'">{{ getRemotePoWOptionName() }}</ng-element>
-                        <ng-element *ngIf="pow.value !== 'server'">{{ pow.name | transloco }}</ng-element>
-                      </option>
+                      @for (pow of powOptions; track pow) {
+                        <option [value]="pow.value">
+                          @if (pow.value === 'server') {
+                            <ng-element>{{ getRemotePoWOptionName() }}</ng-element>
+                          }
+                          @if (pow.value !== 'server') {
+                            <ng-element>{{ pow.name | transloco }}</ng-element>
+                          }
+                        </option>
+                      }
                     </select>
                   </div>
                 </div>
               </div>
-              <div class="uk-margin" *ngIf="selectedPoWOption === 'custom'">
-                <label class="uk-form-label">{{ 'configure-app.work-server' | transloco }}</label>
+              @if (selectedPoWOption === 'custom') {
+                <div class="uk-margin">
+                  <label class="uk-form-label">{{ 'configure-app.work-server' | transloco }}</label>
                   <div class="uk-form-controls">
-                      <input [(ngModel)]="customWorkServer" class="uk-input uk-margin-small-bottom" type="text" placeholder="http://my-work-server:port">
-                      <span class="uk-text-meta">
-                        {{ 'configure-app.this-has-to-be-a-valid-work.1' | transloco }} <a href="https://docs.nault.cc/2021/02/13/custom-work-server.html" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-work.2-link-work' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-work.3' | transloco }}
-                      </span>
-                  </div>
-              </div>
-              <div class="uk-margin" *ngIf="selectedPoWOption === 'clientWebGL' || selectedPoWOption === 'clientCPU' || selectedPoWOption === 'custom'">
-                <label class="uk-form-label">{{ 'configure-app.pow-multiplier' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.optional-increased-work-for-transaction-priority-during')"></span></label>
-                <div class="uk-form-controls">
-
-                  <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedMultiplierOption">
-                      <option *ngFor="let multiplier of multiplierOptions" [value]="multiplier.value">{{ multiplier.name | transloco }}</option>
-                    </select>
+                    <input [(ngModel)]="customWorkServer" class="uk-input uk-margin-small-bottom" type="text" placeholder="http://my-work-server:port">
+                    <span class="uk-text-meta">
+                      {{ 'configure-app.this-has-to-be-a-valid-work.1' | transloco }} <a href="https://docs.nault.cc/2021/02/13/custom-work-server.html" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-work.2-link-work' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-work.3' | transloco }}
+                    </span>
                   </div>
                 </div>
-              </div>
+              }
+              @if (selectedPoWOption === 'clientWebGL' || selectedPoWOption === 'clientCPU' || selectedPoWOption === 'custom') {
+                <div class="uk-margin">
+                  <label class="uk-form-label">{{ 'configure-app.pow-multiplier' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.optional-increased-work-for-transaction-priority-during')"></span></label>
+                  <div class="uk-form-controls">
+                    <div class="uk-inline uk-width-1-1">
+                      <select class="uk-select" [(ngModel)]="selectedMultiplierOption">
+                        @for (multiplier of multiplierOptions; track multiplier) {
+                          <option [value]="multiplier.value">{{ multiplier.name | transloco }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           </div>
 
@@ -203,7 +230,9 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedPendingOption">
-                      <option *ngFor="let pending of pendingOptions" [value]="pending.value">{{ pending.name | transloco }}</option>
+                      @for (pending of pendingOptions; track pending) {
+                        <option [value]="pending.value">{{ pending.name | transloco }}</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -240,7 +269,9 @@
 
                   <div class="uk-inline uk-width-1-1">
                     <select class="uk-select" [(ngModel)]="selectedDecentralizedAliasesOption">
-                      <option *ngFor="let decentralizedAliasesOption of decentralizedAliasesOptions" [value]="decentralizedAliasesOption.value">{{ decentralizedAliasesOption.name | transloco }}</option>
+                      @for (decentralizedAliasesOption of decentralizedAliasesOptions; track decentralizedAliasesOption) {
+                        <option [value]="decentralizedAliasesOption.value">{{ decentralizedAliasesOption.name | transloco }}</option>
+                      }
                     </select>
                   </div>
                 </div>
@@ -258,28 +289,38 @@
                   <div class="uk-inline uk-width-1-1">
                     <a class="uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('rep1','account')" uk-tooltip [title]="t('general.scan-qr-code')"></a>
                     <input (blur)="validateRepresentative()" (input)="searchRepresentatives()" (focus)="searchRepresentatives()" [(ngModel)]="defaultRepresentative" class="uk-input" [ngClass]="{ 'uk-form-success': repStatus === 2, 'uk-form-danger': repStatus === 0 }" id="form-horizontal-text3" type="text" [placeholder]="t('configure-app.leave-blank-to-use-a-recommended-one')" #repInput>
-                    
-                    <div *ngIf="(representativeResults$ | async).length" [hidden]="!showRepresentatives" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
-                      <ul class="uk-nav uk-nav-default">
-                        <li class="uk-nav-header">{{ 'representative-search.representative-list-results' | transloco }}</li>
-                        <li class="uk-nav-divider"></li>
-                        <li *ngFor="let rep of representativeResults$ | async">
-                          <a (click)="selectRepresentative(rep.id)">
-                            {{ rep.name }}
-                            <span *ngIf="rep.trusted" class="uk-text-success" style="margin-left: 4px;"><span uk-icon="icon: star;"></span></span>
-                            <span *ngIf="rep.warn" class="uk-text-warning" style="margin-left: 4px;"><span uk-icon="icon: warning;"></span> {{ 'general.avoid' | transloco }}</span>
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
+
+                    @if ((representativeResults$ | async).length) {
+                      <div [hidden]="!showRepresentatives" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
+                        <ul class="uk-nav uk-nav-default">
+                          <li class="uk-nav-header">{{ 'representative-search.representative-list-results' | transloco }}</li>
+                          <li class="uk-nav-divider"></li>
+                          @for (rep of representativeResults$ | async; track rep) {
+                            <li>
+                              <a (click)="selectRepresentative(rep.id)">
+                                {{ rep.name }}
+                                @if (rep.trusted) {
+                                  <span class="uk-text-success" style="margin-left: 4px;"><span uk-icon="icon: star;"></span></span>
+                                }
+                                @if (rep.warn) {
+                                  <span class="uk-text-warning" style="margin-left: 4px;"><span uk-icon="icon: warning;"></span> {{ 'general.avoid' | transloco }}</span>
+                                }
+                              </a>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </div>
                 </div>
 
-                <div class="uk-form-controls" *ngIf="representativeListMatch">
-                  <div class="uk-inline uk-width-1-1 uk-margin-small-top">
-                    <span class="account-label rep">{{ representativeListMatch }}</span>
+                @if (representativeListMatch) {
+                  <div class="uk-form-controls">
+                    <div class="uk-inline uk-width-1-1 uk-margin-small-top">
+                      <span class="account-label rep">{{ representativeListMatch }}</span>
+                    </div>
                   </div>
-                </div>
+                }
               </div>
 
             </div>
@@ -307,7 +348,9 @@
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.server-configuration' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-which-server-is-used-to-communicate-with-the-nano')"></span></label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [(ngModel)]="selectedServer" (change)="serverConfigChange(selectedServer)" id="form-horizontal-select">
-                    <option *ngFor="let server of serverOptions" [value]="server.value">{{ server.name }}</option>
+                    @for (server of serverOptions; track server) {
+                      <option [value]="server.value">{{ server.name }}</option>
+                    }
                   </select>
                 </div>
               </div>
@@ -315,147 +358,166 @@
             </div>
           </div>
 
-          <div class="uk-width-1-1" *ngIf="showServerValues()">
-            <div class="uk-form-horizontal">
-              <div class="">
-                <label class="uk-form-label uk-text-right">{{ 'configure-app.api-server' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.this-server-is-used-for-rpc-communication-with-the-nano-node')"></span></label>
-                <div class="uk-form-controls">
-
-                  <div class="uk-inline uk-width-1-1" *ngIf="!showServerConfigs()">
-                    <strong>{{ serverAPI }}</strong>
-                  </div>
-                  <div class="uk-inline uk-width-1-1" *ngIf="showServerConfigs()">
-                    <input [(ngModel)]="serverAPI" class="uk-input uk-margin-small-bottom" type="text" placeholder="https://domain.com/path">
-                    <span class="uk-text-meta">
-                      {{ 'configure-app.this-has-to-be-a-valid-rpc.1' | transloco }} <a href="https://docs.nano.org/commands/rpc-protocol/" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-rpc.2-link-rpc' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-rpc.3' | transloco }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="uk-width-1-1" *ngIf="showServerValues()">
-            <div class="uk-form-horizontal">
-              <div class="">
-                <label class="uk-form-label uk-text-right">{{ 'configure-app.websocket-server' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.this-server-is-used-to-notify-the-wallet-in-real-time-when')"></span></label>
-                <div class="uk-form-controls">
-                  <div class="uk-inline uk-width-1-1" *ngIf="!showServerConfigs()">
-                    <strong>{{ serverWS }}</strong>
-                  </div>
-
-                  <div class="uk-inline uk-width-1-1" *ngIf="showServerConfigs()">
-                    <input [(ngModel)]="serverWS" class="uk-input uk-margin-small-bottom" id="form-horizontal-text2" type="text" placeholder="wss://domain.com/path">
-                    <span class="uk-text-meta">
-                      {{ 'configure-app.this-has-to-be-a-valid-websocket.1' | transloco }} <a href="https://docs.nano.org/integration-guides/websockets/#configuration" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-websocket.2-link-websocket' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-websocket.3' | transloco }}<br>
-                      <i>{{ 'configure-app.note-since-this-server-only-notifies-about-new-transactions' | transloco }}</i>
-                    </span>
+          @if (showServerValues()) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div class="">
+                  <label class="uk-form-label uk-text-right">{{ 'configure-app.api-server' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.this-server-is-used-for-rpc-communication-with-the-nano-node')"></span></label>
+                  <div class="uk-form-controls">
+                    @if (!showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <strong>{{ serverAPI }}</strong>
+                      </div>
+                    }
+                    @if (showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <input [(ngModel)]="serverAPI" class="uk-input uk-margin-small-bottom" type="text" placeholder="https://domain.com/path">
+                        <span class="uk-text-meta">
+                          {{ 'configure-app.this-has-to-be-a-valid-rpc.1' | transloco }} <a href="https://docs.nano.org/commands/rpc-protocol/" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-rpc.2-link-rpc' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-rpc.3' | transloco }}
+                        </span>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          }
 
-          <div class="uk-width-1-1" *ngIf="showServerValues()">
-            <div class="uk-form-horizontal">
-              <div class="">
-                <label class="uk-form-label uk-text-right">{{ 'configure-app.authorization' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.use-if-the-api-requires-authentication')"></span></label>
-                <div class="uk-form-controls">
-
-                  <div class="uk-inline uk-width-1-1" *ngIf="!showServerConfigs()">
-                    <strong>{{ serverAuth }}</strong>
-                  </div>
-                  <div class="uk-inline uk-width-1-1" *ngIf="showServerConfigs()">
-                    <input [(ngModel)]="serverAuth" class="uk-input uk-margin-small-bottom" type="text" placeholder="Optional">
-                    <span class="uk-text-meta">
-                      {{ 'configure-app.this-has-to-be-a-valid-authorization-header' | transloco }}<br>
-                      <i>{{ 'configure-app.for-example-using-basic-auth' | transloco }}</i>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="uk-width-1-1" *ngIf="showStatValues() || showServerConfigs()">
-            <div class="uk-form-horizontal">
-              <div>
-                <label class="uk-form-label uk-text-right">{{ 'configure-app.node-stats' | transloco }} <span class="{{statsRefreshEnabled ? '':'node-stats-disabled'}}" id="node-stats" uk-icon="icon: refresh;" (click)="updateNodeStats(true)" uk-tooltip [title]="t('configure-app.click-to-refresh')"></span></label>
-                <div class="uk-form-controls">
-                  <div class="uk-inline uk-width-1-1">
-                    <span class="uk-text-meta">
-                      <table id="node-stats-table">
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.server' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{serverAPIUpdated ? serverAPI: ('configure-app.save-settings-to-update' | transloco)}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.block-count' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{nodeBlockCount || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.uncemented-blocks' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{nodeUncemented || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.peers-stake-required' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{peersStakeReq || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.peers-stake-total' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{peersStakeTotal || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.node-version' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{nodeVendor || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <strong>{{ 'general.network' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{nodeNetwork || 'N/A'}}
-                          </td>
-                        </tr>
-                        <tr *ngIf="showServerValues() && !showServerConfigs()">
-                          <td>
-                            <strong>{{ 'configure-app.random-server' | transloco }}</strong>
-                          </td>
-                          <td>
-                            {{shouldRandom || ('general.no' | transloco)}}
-                          </td>
-                        </tr>
-                      </table>
-                    </span>
+          @if (showServerValues()) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div class="">
+                  <label class="uk-form-label uk-text-right">{{ 'configure-app.websocket-server' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.this-server-is-used-to-notify-the-wallet-in-real-time-when')"></span></label>
+                  <div class="uk-form-controls">
+                    @if (!showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <strong>{{ serverWS }}</strong>
+                      </div>
+                    }
+                    @if (showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <input [(ngModel)]="serverWS" class="uk-input uk-margin-small-bottom" id="form-horizontal-text2" type="text" placeholder="wss://domain.com/path">
+                        <span class="uk-text-meta">
+                          {{ 'configure-app.this-has-to-be-a-valid-websocket.1' | transloco }} <a href="https://docs.nano.org/integration-guides/websockets/#configuration" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-websocket.2-link-websocket' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-websocket.3' | transloco }}<br>
+                          <i>{{ 'configure-app.note-since-this-server-only-notifies-about-new-transactions' | transloco }}</i>
+                        </span>
+                      </div>
+                    }
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          }
+
+          @if (showServerValues()) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div class="">
+                  <label class="uk-form-label uk-text-right">{{ 'configure-app.authorization' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.use-if-the-api-requires-authentication')"></span></label>
+                  <div class="uk-form-controls">
+                    @if (!showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <strong>{{ serverAuth }}</strong>
+                      </div>
+                    }
+                    @if (showServerConfigs()) {
+                      <div class="uk-inline uk-width-1-1">
+                        <input [(ngModel)]="serverAuth" class="uk-input uk-margin-small-bottom" type="text" placeholder="Optional">
+                        <span class="uk-text-meta">
+                          {{ 'configure-app.this-has-to-be-a-valid-authorization-header' | transloco }}<br>
+                          <i>{{ 'configure-app.for-example-using-basic-auth' | transloco }}</i>
+                        </span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          @if (showStatValues() || showServerConfigs()) {
+            <div class="uk-width-1-1">
+              <div class="uk-form-horizontal">
+                <div>
+                  <label class="uk-form-label uk-text-right">{{ 'configure-app.node-stats' | transloco }} <span class="{{statsRefreshEnabled ? '':'node-stats-disabled'}}" id="node-stats" uk-icon="icon: refresh;" (click)="updateNodeStats(true)" uk-tooltip [title]="t('configure-app.click-to-refresh')"></span></label>
+                  <div class="uk-form-controls">
+                    <div class="uk-inline uk-width-1-1">
+                      <span class="uk-text-meta">
+                        <table id="node-stats-table">
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.server' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{serverAPIUpdated ? serverAPI: ('configure-app.save-settings-to-update' | transloco)}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.block-count' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{nodeBlockCount || 'N/A'}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.uncemented-blocks' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{nodeUncemented || 'N/A'}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.peers-stake-required' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{peersStakeReq || 'N/A'}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.peers-stake-total' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{peersStakeTotal || 'N/A'}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.node-version' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{nodeVendor || 'N/A'}}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <strong>{{ 'general.network' | transloco }}</strong>
+                            </td>
+                            <td>
+                              {{nodeNetwork || 'N/A'}}
+                            </td>
+                          </tr>
+                          @if (showServerValues() && !showServerConfigs()) {
+                            <tr>
+                              <td>
+                                <strong>{{ 'configure-app.random-server' | transloco }}</strong>
+                              </td>
+                              <td>
+                                {{shouldRandom || ('general.no' | transloco)}}
+                              </td>
+                            </tr>
+                          }
+                        </table>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
 
         </div>
       </div>

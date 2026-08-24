@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService, NotificationService, RepresentativeService} from '../../services';
 import {ActivatedRoute, Router} from '@angular/router';
 import * as bip39 from 'bip39';
@@ -6,7 +6,7 @@ import {LedgerService, LedgerStatus} from '../../services/ledger.service';
 import { QrModalService } from '../../services/qr-modal.service';
 import {UtilService} from '../../services/util.service';
 import { wallet } from 'nanocurrency-web';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 
@@ -20,11 +20,22 @@ enum panels {
 }
 
 @Component({
+  standalone: false,
   selector: 'app-configure-wallet',
   templateUrl: './configure-wallet.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./configure-wallet.component.css']
 })
 export class ConfigureWalletComponent implements OnInit {
+  private router = inject(ActivatedRoute);
+  walletService = inject(WalletService);
+  private notifications = inject(NotificationService);
+  private route = inject(Router);
+  private qrModalService = inject(QrModalService);
+  private ledgerService = inject(LedgerService);
+  private util = inject(UtilService);
+  private translocoService = inject(TranslocoService);
+
   readonly testIds = TestIds;
   panels = panels;
   activePanel = panels.landing;
@@ -63,15 +74,7 @@ export class ConfigureWalletComponent implements OnInit {
   ledgerStatus = LedgerStatus;
   ledger = this.ledgerService.ledger;
 
-  constructor(
-    private router: ActivatedRoute,
-    public walletService: WalletService,
-    private notifications: NotificationService,
-    private route: Router,
-    private qrModalService: QrModalService,
-    private ledgerService: LedgerService,
-    private util: UtilService,
-    private translocoService: TranslocoService) {
+  constructor() {
     if (this.route.getCurrentNavigation().extras.state && this.route.getCurrentNavigation().extras.state.seed) {
       this.activePanel = panels.import;
       this.importSeedModel = this.route.getCurrentNavigation().extras.state.seed;

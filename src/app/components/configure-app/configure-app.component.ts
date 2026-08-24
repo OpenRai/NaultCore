@@ -1,4 +1,4 @@
-import {Component, OnInit, Renderer2} from '@angular/core';
+import { Component, OnInit, Renderer2, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AppSettingsService} from '../../services/app-settings.service';
@@ -14,38 +14,39 @@ import {BehaviorSubject} from 'rxjs';
 import {RepresentativeService} from '../../services/representative.service';
 import {NinjaService} from '../../services/ninja.service';
 import {QrModalService} from '../../services/qr-modal.service';
-import { TranslocoService } from '@ngneat/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 
 @Component({
+  standalone: false,
   selector: 'app-configure-app',
   templateUrl: './configure-app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./configure-app.component.css']
 })
 
 export class ConfigureAppComponent implements OnInit {
+  private walletService = inject(WalletService);
+  private notifications = inject(NotificationService);
+  private appSettings = inject(AppSettingsService);
+  private addressBook = inject(AddressBookService);
+  private pow = inject(PowService);
+  private api = inject(ApiService);
+  private websocket = inject(WebsocketService);
+  private workPool = inject(WorkPoolService);
+  private repService = inject(RepresentativeService);
+  private node = inject(NodeService);
+  private util = inject(UtilService);
+  private price = inject(PriceService);
+  private ninja = inject(NinjaService);
+  private renderer = inject(Renderer2);
+  private qrModalService = inject(QrModalService);
+  private translocoService = inject(TranslocoService);
+  private nanonymManager = inject(NanoNymManagerService);
+
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
-
-  constructor(
-    private walletService: WalletService,
-    private notifications: NotificationService,
-    private appSettings: AppSettingsService,
-    private addressBook: AddressBookService,
-    private pow: PowService,
-    private api: ApiService,
-    private websocket: WebsocketService,
-    private workPool: WorkPoolService,
-    private repService: RepresentativeService,
-    private node: NodeService,
-    private util: UtilService,
-    private price: PriceService,
-    private ninja: NinjaService,
-    private renderer: Renderer2,
-    private qrModalService: QrModalService,
-    private translocoService: TranslocoService,
-    private nanonymManager: NanoNymManagerService) { }
   wallet = this.walletService.wallet;
 
   languages = this.translocoService.getAvailableLangs() as [{id: string, label: string}];

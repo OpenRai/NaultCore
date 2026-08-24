@@ -5,6 +5,7 @@ export const TestIds = {
     totalBalanceFiatDropdown: 'total-balance-fiat-dropdown',
     totalBalanceXnoCard: 'total-balance-xno-card',
     totalBalanceFiatCard: 'total-balance-fiat-card',
+    incomingBalanceCard: 'incoming-balance-card',
   },
   welcome: {
     pageRoot: 'welcome-page-root',

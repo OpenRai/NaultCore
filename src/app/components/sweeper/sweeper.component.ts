@@ -254,12 +254,25 @@ export class SweeperComponent implements OnInit {
 
   // Process final send block
   async processSend(privKey, previous, sendCallback) {
-    const pubKey = nanocurrency.derivePublicKey(privKey);
-    const address = nanocurrency.deriveAddress(pubKey, {useNanoPrefix: true});
+    let callbackCalled = false;
+    let address = '';
+    const finish = () => {
+      if (callbackCalled) return;
+      callbackCalled = true;
+      sendCallback();
+    };
 
-    // make an extra check on valid destination
-    if (this.validDestination && nanocurrency.checkAddress(this.destinationAccount)) {
-      this.appendLog('Transfer started: ' + address);
+    try {
+      const pubKey = nanocurrency.derivePublicKey(privKey);
+      address = nanocurrency.deriveAddress(pubKey, {useNanoPrefix: true});
+
+      // make an extra check on valid destination
+      if (!this.validDestination || !nanocurrency.checkAddress(this.destinationAccount)) {
+        this.notificationService.sendError(`The destination address is not valid.`);
+        return;
+      }
+
+      this.appendLog('Sending funds from source account ' + address + ' to destination account ' + this.destinationAccount + '.');
       const work = await this.workPool.getWork(previous, 1, address, true); // send threshold
       // create the block with the work found
       const block = nanocurrency.createBlock(privKey, {balance: '0', representative: this.representative,
@@ -268,27 +281,26 @@ export class SweeperComponent implements OnInit {
       block.block.account = block.block.account.replace('xrb', 'nano');
       block.block.link_as_account = block.block.link_as_account.replace('xrb', 'nano');
 
-      // publish block for each iteration
+      // A successful process response is the completion boundary. The optional
+      // block_info lookup can lag or stall while the destination is receiving,
+      // so it must not keep the sweep UI in PROCESSING.
       const data = await this.api.process(block.block, TxType.send);
-      if (data.hash) {
-        const blockInfo = await this.api.blockInfo(data.hash);
-        let nanoAmountSent = null;
-        if (blockInfo.amount) {
-          nanoAmountSent = this.util.nano.rawToMnano(blockInfo.amount);
-          this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
-        }
-        this.notificationService.sendInfo('Account ' + address + ' was swept and ' +
-        (nanoAmountSent ? ( 'Ӿ' + nanoAmountSent.toString(10) ) : '') + ' transferred to ' + this.destinationAccount, {length: 15000});
-        this.appendLog('Funds transferred ' + (nanoAmountSent ? ('(Ӿ' + nanoAmountSent.toString(10) + ')') : '') + ': ' + data.hash);
-        console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
-      } else {
+      if (!data.hash) {
         this.notificationService.sendWarning(`Failed processing block.`);
-        this.appendLog('Failed processing block: ' + data.error);
+        this.appendLog('The node rejected the transfer from source account ' + address + ': ' + data.error);
+        return;
       }
-      sendCallback();
-    } else {
-      this.notificationService.sendError(`The destination address is not valid.`);
-      sendCallback();
+
+      const nanoAmountSent = this.util.nano.rawToMnano(this.adjustedBalance);
+      this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
+      this.notificationService.sendInfo('Account ' + address + ' was swept and Ӿ' + nanoAmountSent.toString(10) + ' transferred to ' + this.destinationAccount, {length: 15000});
+      this.appendLog('Transfer accepted by the node: Ӿ' + nanoAmountSent.toString(10) + ' sent from source account ' + address + ' to destination account ' + this.destinationAccount + '. Block: ' + data.hash);
+      console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
+    } catch (error) {
+      this.notificationService.sendWarning(`Failed processing block.`);
+      this.appendLog('Transfer could not be completed for source account ' + (address || 'the selected account') + ': ' + (error?.message || error));
+    } finally {
+      finish();
     }
   }
 
@@ -302,7 +314,7 @@ export class SweeperComponent implements OnInit {
 
     // generate local work
     try {
-      this.appendLog('Started generating PoW...');
+      this.appendLog('Preparing a receive block for pending funds (proof of work)...');
 
       // determine input work hash depending if open block or receive block
       let workInputHash = this.previous;
@@ -324,7 +336,7 @@ export class SweeperComponent implements OnInit {
       // publish block for each iteration
       const data = await this.api.process(block.block, this.subType === 'open' ? TxType.open : TxType.receive);
       if (data.hash) {
-        this.appendLog('Processed pending: ' + data.hash);
+        this.appendLog('Pending receive accepted by the node. Receive block: ' + data.hash);
 
         // continue with the next pending
         this.keyCount += 1;
@@ -335,12 +347,12 @@ export class SweeperComponent implements OnInit {
           }
           this.processPending(this.blocks, this.keys, this.keyCount);
         } else { // all pending done, now we process the final send block
-          this.appendLog('All pending processed!');
+          this.appendLog('All pending funds received; preparing the final transfer.');
           this.pendingCallback(this.previous);
         }
       } else {
         this.notificationService.sendWarning(`Failed processing block`);
-        this.appendLog('Failed processing block: ' + data.error);
+        this.appendLog('The node rejected the receive block: ' + data.error);
       }
     } catch (error) {
       if (error.message === 'invalid_hash') {
@@ -349,6 +361,7 @@ export class SweeperComponent implements OnInit {
         this.notificationService.sendError(`An unknown error occurred while generating PoW`);
         console.log('An unknown error occurred while generating PoW' + error);
       }
+      this.appendLog('Unable to prepare the receive block: ' + (error?.message || error));
       this.sweeping = false;
       return;
     }
@@ -387,7 +400,7 @@ export class SweeperComponent implements OnInit {
       }.bind(this));
       const nanoAmount = this.util.nano.rawToMnano(raw);
       const pending = {count: Object.keys(data.blocks).length, raw: raw, XNO: nanoAmount, blocks: data.blocks};
-      const row = 'Found ' + pending.count + ' pending containing total ' + pending.XNO + ' XNO';
+      const row = 'Found ' + pending.count + ' pending transfer(s) totaling ' + pending.XNO + ' XNO in source account ' + address + '.';
       this.appendLog(row);
 
       // create receive blocks for all pending
@@ -467,7 +480,7 @@ export class SweeperComponent implements OnInit {
     // delay each process to not hit backend rate limiters
     await this.sleep(300);
     const privKey = privKeys[keyCount][0];
-    this.appendLog('Checking index ' + privKeys[keyCount][2] + ' using ' + privKeys[keyCount][1]);
+    this.appendLog('Checking source account index ' + privKeys[keyCount][2] + ' (' + privKeys[keyCount][1] + ' derivation).');
     this.processAccount(privKey, function() {
       // continue with the next pending
       keyCount += 1;
@@ -475,8 +488,8 @@ export class SweeperComponent implements OnInit {
         this.processIndexRecursive(privKeys, keyCount);
       } else {
         // all private keys have been processed
-        this.appendLog('Finished processing all accounts');
-        this.appendLog('Ӿ' + this.totalSwept + ' transferred');
+        this.appendLog('Sweep complete: all selected source accounts have been checked.');
+        this.appendLog('Total sent to destination account ' + this.destinationAccount + ': Ӿ' + this.totalSwept + '.');
         this.notificationService.sendInfo('Finished processing all accounts. Ӿ' + this.totalSwept + ' transferred', {length: 0});
         this.sweeping = false;
       }
@@ -506,7 +519,7 @@ export class SweeperComponent implements OnInit {
       // nano seed or private key
       if (keyType === 'nano_seed' || seed !== '' || keyType === 'bip39_seed') {
         // check if a private key first (no index)
-        this.appendLog('Checking if input is a private key');
+        this.appendLog('Checking whether the source input is a private key.');
         if (seed === '') { // seed from input, no mnemonic
           seed = this.sourceWallet;
         }

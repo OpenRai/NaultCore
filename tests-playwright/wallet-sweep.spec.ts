@@ -49,7 +49,7 @@ test('sweeps a source wallet through the full UI flow', async ({ page }) => {
 
   await expect(page.getByTestId('sweeper-processing-button')).toBeVisible();
   await expect(page.getByTestId('sweeper-output')).toHaveValue(
-    /Finished processing all accounts[\s\S]*Ӿ0 transferred/,
+    /Sweep complete: all selected source accounts have been checked\.[\s\S]*Total sent to destination account .*: Ӿ0\./,
     { timeout: 30_000 },
   );
   await expect(page.getByTestId('sweeper-start-button')).toBeVisible();

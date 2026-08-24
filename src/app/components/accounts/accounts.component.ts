@@ -17,6 +17,7 @@ import { TestIds } from '../../testing/test-ids';
 import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { UtilService } from '../../services/util.service';
+import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.service';
 
 @Component({
   standalone: false,
@@ -37,6 +38,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   private nanoNymStorage = inject(NanoNymStorageService);
   private nanoNymManager = inject(NanoNymManagerService);
   private util = inject(UtilService);
+  private workPool = inject(WorkPoolService);
 
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
@@ -55,6 +57,8 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   regularAccounts: RegularAccount[] = [];
   nanoNymAccounts: NanoNymAccount[] = [];
   spendableAccountsSub: Subscription | null = null;
+  workStatusByAccount = new Map<string, WorkAccountStatus>();
+  workStatusSub: Subscription | null = null;
 
   // Generate NanoNym Modal
   @ViewChild('generateNanoNymModal') generateNanoNymModalRef!: ElementRef;
@@ -78,11 +82,17 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.nanoNymAccounts = accounts.filter(a => a.type === 'nanonym') as NanoNymAccount[];
       }
     );
+    this.workStatusSub = this.workPool.accountStatus$.subscribe(statuses => {
+      this.workStatusByAccount = new Map(statuses);
+    });
   }
 
   ngOnDestroy() {
     if (this.spendableAccountsSub) {
       this.spendableAccountsSub.unsubscribe();
+    }
+    if (this.workStatusSub) {
+      this.workStatusSub.unsubscribe();
     }
   }
 
@@ -97,6 +107,10 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getAccountLabel(account: RegularAccount): string {
     return account.label;
+  }
+
+  retryWork(account: string): void {
+    this.workPool.retryAccountWork(account);
   }
 
   async createAccount() {

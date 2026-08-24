@@ -1041,8 +1041,9 @@ export class WalletService {
     this.workPool.syncAccountRoots(this.wallet.accounts.map(account => ({
       account: account.id,
       root: account.frontier || this.util.account.getAccountPublicKey(account.id),
-      multiplier: 1,
+      multiplier: account.frontier ? 1 : 1 / 64,
       priority: 10,
+      purpose: account.frontier ? 'frontier' as const : 'receive-open' as const,
     })));
 
     this.wallet.balance = walletBalance;

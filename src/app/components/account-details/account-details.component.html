@@ -407,6 +407,9 @@
                 </ng-template>
                 <td class="amount-column uk-text-middle uk-text-muted" [title]="('Incoming Transaction') + ( (pending.amountRaw && (pending.amountRaw > 0) ) ? ( ', +' + ( pending.amountRaw.toString(10) ) + ' raw' ) : '' )">
                   <span class="uk-text-small">{{ 'general.blockactions.ready-to-receive' | transloco }}</span><br>
+                  @if (showReceiveWorkStatus()) {
+                    <span class="uk-text-warning uk-text-small"><span uk-icon="icon: bolt; ratio: 0.75"></span> Preparing receive work</span><br>
+                  }
                   <span class="amount-integer">{{ pending.amount | rai: 'mnano,true' | amountsplit: 0 }}</span>
                   <span class="amount-fractional">{{ pending.amount | rai: 'mnano,true' | amountsplit: 1 }}</span>
                   <span class="currency-name">XNO</span>
@@ -436,6 +439,15 @@
                   }
                   @if ((history.type == 'change' || history.subtype == 'change')) {
                     <span class="type uk-text-small rep-change" uk-icon="icon: cog; ratio: 1.2;"></span>
+                  }
+                  @if (isCurrentFrontier(history) && workStatus?.activity === 'active') {
+                    <span class="uk-text-warning uk-margin-small-left" title="Preparing work for the next block" uk-tooltip uk-icon="icon: bolt; ratio: 0.9"></span>
+                  }
+                  @if (isCurrentFrontier(history) && workStatus?.activity === 'success') {
+                    <span class="uk-text-success uk-margin-small-left" title="Work ready for the next block" uk-tooltip uk-icon="icon: check; ratio: 0.9"></span>
+                  }
+                  @if (isCurrentFrontier(history) && workStatus?.activity === 'error') {
+                    <span class="uk-text-warning uk-margin-small-left" [title]="workStatus?.lastError || 'Retry transaction work'" uk-tooltip uk-icon="icon: warning; ratio: 0.9" (click)="retryWork(); $event.stopPropagation()"></span>
                   }
                 </td>
                 <td class="account-column uk-text-middle uk-visible-toggle uk-text-truncate">

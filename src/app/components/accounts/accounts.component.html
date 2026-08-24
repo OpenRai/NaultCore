@@ -97,6 +97,21 @@
                               <div class="account-index"><span>#</span>{{ account.index }}</div>
                             }
                             <div class="account-label">{{ getAccountLabel(account) }}</div>
+                            @if (workStatusByAccount.get(account.id)?.activity === 'active') {
+                              <span class="uk-text-warning uk-text-small" title="Preparing transaction work" uk-tooltip>
+                                <span uk-icon="icon: bolt; ratio: 0.75"></span> Preparing
+                              </span>
+                            }
+                            @if (workStatusByAccount.get(account.id)?.activity === 'success') {
+                              <span class="uk-text-success uk-text-small" title="Transaction work ready" uk-tooltip>
+                                <span uk-icon="icon: check; ratio: 0.75"></span> Ready
+                              </span>
+                            }
+                            @if (workStatusByAccount.get(account.id)?.activity === 'error') {
+                              <span class="uk-text-warning uk-text-small" [title]="workStatusByAccount.get(account.id)?.lastError || 'Retry transaction work'" uk-tooltip (click)="retryWork(account.id); $event.stopPropagation()">
+                                <span uk-icon="icon: warning; ratio: 0.75"></span> Attention
+                              </span>
+                            }
                           </div>
                           <div class="nano-address-clickable nano-address-monospace uk-text-truncate">
                             <app-nano-account-id [accountID]="account.id" middle="auto"></app-nano-account-id>

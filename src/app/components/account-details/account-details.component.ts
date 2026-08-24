@@ -20,6 +20,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { NostrNotificationService } from '../../services/nostr-notification.service';
 import { TestIds } from '../../testing/test-ids';
+import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.service';
 
 @Component({
   standalone: false,
@@ -45,6 +46,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   private translocoService = inject(TranslocoService);
   private nostrNotificationService = inject(NostrNotificationService);
   private nanoNymManager = inject(NanoNymManagerService);
+  private workPool = inject(WorkPoolService);
 
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
@@ -69,6 +71,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   nanoNymBalanceFiat: number = 0;
 
   walletAccount = null;
+  workStatus: WorkAccountStatus | null = null;
+  workStatusSub = null;
 
   timeoutIdAllowingManualRefresh: any = null;
   timeoutIdAllowingInstantAutoRefresh: any = null;
@@ -180,6 +184,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.wallet.wallet.pendingBlocksUpdate$.subscribe(async receivableBlockUpdate => {
       this.onReceivableBlockUpdate(receivableBlockUpdate);
     });
+    this.workStatusSub = this.workPool.accountStatus$.subscribe(statuses => {
+      this.workStatus = this.accountID ? (statuses.get(this.accountID) || null) : null;
+    });
 
     const UIkit = window['UIkit'];
     const qrModal = UIkit.modal('#qr-code-modal');
@@ -206,6 +213,22 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       this.representativesOverview = reps;
       this.updateRepresentativeInfo();
     });
+  }
+
+  isCurrentFrontier(history: any): boolean {
+    return !!this.walletAccount?.frontier &&
+      typeof history?.hash === 'string' &&
+      history.hash.toUpperCase() === this.walletAccount.frontier.toUpperCase();
+  }
+
+  showReceiveWorkStatus(): boolean {
+    return !!this.walletAccount && !this.walletAccount.frontier &&
+      this.workStatus?.purpose === 'receive-open' &&
+      this.workStatus.activity !== 'idle';
+  }
+
+  retryWork(): void {
+    this.workPool.retryAccountWork(this.accountID);
   }
 
   async populateRepresentativeList() {
@@ -239,6 +262,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.addressBookModel = '';
     this.showEditAddressBook = false;
     this.walletAccount = null;
+    this.workStatus = null;
     this.account = {};
     this.qrCodeImage = null;
   }
@@ -478,6 +502,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     const accountID = this.router.snapshot.params.account;
     this.accountID = accountID;
+    this.workStatus = this.workPool.getAccountStatus(accountID);
 
     // NEW: Detect account type
     if (accountID.startsWith('nnym_')) {
@@ -742,6 +767,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.mobileAccountMenuModal.hide();
     this.mobileTransactionMenuModal.hide();
+    if (this.workStatusSub) {
+      this.workStatusSub.unsubscribe();
+    }
     if (this.routerSub) {
       this.routerSub.unsubscribe();
     }

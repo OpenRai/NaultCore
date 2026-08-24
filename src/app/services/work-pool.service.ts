@@ -17,6 +17,22 @@ export interface WorkAccountDemand {
   root: string;
   multiplier: number;
   priority?: number;
+  purpose?: WorkPurpose;
+}
+
+export type WorkPurpose = 'frontier' | 'receive-open';
+
+export interface WorkAccountStatus {
+  account: string;
+  root: string;
+  purpose: WorkPurpose;
+  activity: 'idle' | 'active' | 'success' | 'error';
+  phase: 'idle' | 'local' | 'remote';
+  active: boolean;
+  queued: boolean;
+  cached: boolean;
+  activeElapsedMs: number;
+  lastError: string | null;
 }
 
 export interface WorkPoolState {
@@ -73,12 +89,16 @@ export class WorkPoolService {
     receiveHints: 0,
   });
 
+  private readonly accountStatusSubject = new BehaviorSubject<ReadonlyMap<string, WorkAccountStatus>>(new Map());
+  readonly accountStatus$ = this.accountStatusSubject.asObservable();
+
   // Existing callers still see this property, but entries are now account/root scoped.
   workCache: StoredWorkEntry[] = [];
 
   private requests: WorkRequest[] = [];
   private inFlight = new Map<string, Promise<string>>();
   private accountRoots = new Map<string, string>();
+  private accountPurposes = new Map<string, WorkPurpose>();
   private receiveHints = new Map<string, ReceiveWorkHint>();
   private worker: Worker | null = null;
   private workerRequestId = 0;
@@ -92,6 +112,10 @@ export class WorkPoolService {
   private remoteRetryAttempt = 0;
   private remoteFallbackStarted = false;
   private readonly receiveHintTtlMs = 60_000;
+  private lastCompleted: { account: string; root: string; expiresAt: number } | null = null;
+  private completionTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastErrorAccount: string | null = null;
+  private lastErrorRoot: string | null = null;
 
   public loadWorkCache(): StoredWorkEntry[] {
     this.loaded = true;
@@ -131,6 +155,7 @@ export class WorkPoolService {
   public syncAccountRoots(demands: WorkAccountDemand[]): void {
     this.loaded = true;
     this.accountRoots = new Map(demands.map(demand => [demand.account, demand.root.toUpperCase()]));
+    this.accountPurposes = new Map(demands.map(demand => [demand.account, demand.purpose ?? 'frontier']));
     const validAccounts = new Set(this.accountRoots.keys());
     this.pruneReceiveHints();
     for (const [key, hint] of this.receiveHints) {
@@ -155,7 +180,9 @@ export class WorkPoolService {
     this.pruneWorkCache();
     this.persist();
     for (const demand of demands) {
-      this.addWorkToCache(demand.root, demand.multiplier, demand.account, demand.priority ?? 0);
+      const purpose = demand.purpose ?? 'frontier';
+      const multiplier = purpose === 'receive-open' ? Math.min(demand.multiplier, 1 / 64) : demand.multiplier;
+      this.addWorkToCache(demand.root, multiplier, demand.account, demand.priority ?? 0);
     }
     this.publishState();
   }
@@ -340,6 +367,8 @@ export class WorkPoolService {
       this.worker = null;
       if (request) this.requests.unshift(request);
       this.state$.next({ ...this.state$.value, lastError: error.message });
+      this.lastErrorAccount = request?.account || null;
+      this.lastErrorRoot = request?.root || null;
       setTimeout(() => this.processNext(), 1000);
     };
   }
@@ -369,6 +398,8 @@ export class WorkPoolService {
     this.state$.next({ ...this.state$.value, phase: 'local', lastError: null });
     this.remoteFallbackStarted = false;
     this.remoteRetryAttempt = 0;
+    this.lastErrorAccount = null;
+    this.lastErrorRoot = null;
     this.ensureStateTimer();
     const threshold = this.util.nano.difficultyFromMultiplier(
       request.multiplier,
@@ -408,10 +439,18 @@ export class WorkPoolService {
         this.workCache.length = this.cacheLength;
       }
       this.persist();
+      this.lastCompleted = { account: request.account || '', root: request.root, expiresAt: Date.now() + 3000 };
+      if (this.completionTimer) clearTimeout(this.completionTimer);
+      this.completionTimer = setTimeout(() => {
+        this.completionTimer = null;
+        this.publishState();
+      }, 3000);
       request.resolve(entry.work);
     } else {
       const error = new Error(message.error || 'PoW generation failed');
       this.state$.next({ ...this.state$.value, lastError: error.message });
+      this.lastErrorAccount = request.account || null;
+      this.lastErrorRoot = request.root;
       request.reject(error);
     }
     this.publishState();
@@ -444,6 +483,8 @@ export class WorkPoolService {
       this.remoteRetryAttempt += 1;
       const delay = Math.min(30_000, 1_000 * 2 ** Math.min(this.remoteRetryAttempt - 1, 5));
       this.state$.next({ ...this.state$.value, lastError: error instanceof Error ? error.message : String(error) });
+      this.lastErrorAccount = request.account || null;
+      this.lastErrorRoot = request.root;
       this.remoteRetryTimer = setTimeout(() => this.tryRemoteWork(request, threshold), delay);
     }
   }
@@ -603,5 +644,48 @@ export class WorkPoolService {
       activeTier: this.activeRequest?.tier || null,
       receiveHints: this.receiveHints.size,
     });
+    this.publishAccountStatuses();
+  }
+
+  public getAccountStatus(account: string): WorkAccountStatus | null {
+    return this.accountStatusSubject.value.get(account) || null;
+  }
+
+  public retryAccountWork(account: string): void {
+    const root = this.accountRoots.get(account);
+    if (!root) return;
+    const purpose = this.accountPurposes.get(account) || 'frontier';
+    this.addWorkToCache(root, purpose === 'receive-open' ? 1 / 64 : 1, account, 100);
+  }
+
+  private publishAccountStatuses(): void {
+    const now = Date.now();
+    if (this.lastCompleted && this.lastCompleted.expiresAt <= now) this.lastCompleted = null;
+    const statuses = new Map<string, WorkAccountStatus>();
+    for (const [account, root] of this.accountRoots) {
+      const activeRequest = this.activeRequest?.account === account ? this.activeRequest : null;
+      const queuedRequest = this.requests.find(request => request.account === account && request.root === root) || null;
+      const purpose: WorkPurpose = (activeRequest?.tier || queuedRequest?.tier) === 'receive'
+        ? 'receive-open'
+        : (this.accountPurposes.get(account) || 'frontier');
+      const multiplier = purpose === 'receive-open' ? 1 / 64 : 1;
+      const lastError = this.lastErrorAccount === account && this.lastErrorRoot === root
+        ? this.state$.value.lastError
+        : null;
+      const completed = this.lastCompleted?.account === account && this.lastCompleted.root === root;
+      statuses.set(account, {
+        account,
+        root,
+        purpose,
+        activity: activeRequest || queuedRequest ? 'active' : lastError ? 'error' : completed ? 'success' : 'idle',
+        phase: activeRequest ? this.state$.value.phase : 'idle',
+        active: !!activeRequest,
+        queued: !!queuedRequest,
+        cached: this.findValidEntry(root, multiplier, account) !== null,
+        activeElapsedMs: activeRequest ? now - this.activeStartedAt : 0,
+        lastError,
+      });
+    }
+    this.accountStatusSubject.next(statuses);
   }
 }

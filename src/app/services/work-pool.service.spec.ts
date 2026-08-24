@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ApiService } from './api.service';
 import { UtilService } from './util.service';
-import { WorkPoolService } from './work-pool.service';
+import { WorkAccountStatus, WorkPoolService } from './work-pool.service';
 
 describe('WorkPoolService', () => {
   let originalWorker: typeof Worker;
@@ -83,6 +83,40 @@ describe('WorkPoolService', () => {
     ]);
     expect(service.workCache.some(entry => entry.account === 'nano_1' && entry.threshold === receiveThreshold)).toBeTrue();
     expect(service.workCache.some(entry => entry.account === 'nano_1' && entry.threshold === sendThreshold)).toBeTrue();
+  });
+
+  it('schedules unopened accounts for receive/open work only', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const publicKeyRoot = 'D'.repeat(64);
+
+    service.syncAccountRoots([{
+      account: 'nano_unopened',
+      root: publicKeyRoot,
+      multiplier: 1,
+      purpose: 'receive-open',
+    }]);
+
+    await new Promise(resolve => setTimeout(resolve, 25));
+
+    expect(postedWork.map(request => request.threshold)).toEqual([receiveThreshold]);
+    expect(service.getAccountStatus('nano_unopened')?.purpose).toBe('receive-open');
+    expect(service.getAccountStatus('nano_unopened')?.cached).toBeTrue();
+  });
+
+  it('publishes account-local activity without exposing the raw work cache', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const root = 'E'.repeat(64);
+    const snapshots: ReadonlyMap<string, WorkAccountStatus>[] = [];
+    const subscription = service.accountStatus$.subscribe(status => snapshots.push(status));
+
+    service.syncAccountRoots([{ account: 'nano_1', root, multiplier: 1 }]);
+    await new Promise(resolve => setTimeout(resolve, 25));
+    subscription.unsubscribe();
+
+    const status = snapshots.at(-1)?.get('nano_1');
+    expect(status?.activity).toBe('success');
+    expect(status?.root).toBe(root);
+    expect(Object.prototype.hasOwnProperty.call(status, 'work')).toBeFalse();
   });
 
   it('does not let receive-tier work satisfy a send-tier request after restart', async () => {

@@ -112,7 +112,6 @@ export const TestIds = {
   walletWidget: {
     unlockButton: 'wallet-widget-unlock-button',
     cancelButton: 'wallet-widget-cancel-button',
-    workStatus: 'wallet-widget-work-status',
   },
   keyGenerator: {
     generateKeypairButton: 'keygenerator-generate-keypair-button',

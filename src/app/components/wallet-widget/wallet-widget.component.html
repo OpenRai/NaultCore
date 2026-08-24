@@ -47,34 +47,6 @@
   </div>
 }
 
-@if (workState.activeRoot || workState.queued > 0 || workState.ready > 0) {
-  <div class="nav-status-row" data-testid="wallet-widget-work-status">
-    <div class="status-icon">
-      <span [class.uk-text-success]="!workState.activeRoot && !workState.lastError" [class.uk-text-warning]="!!workState.activeRoot || !!workState.lastError" uk-icon="icon: bolt; ratio: 1.2;"></span>
-    </div>
-    <div class="status-labels">
-      <div class="label primary" [class.uk-text-success]="!workState.activeRoot && !workState.lastError" [class.uk-text-warning]="!!workState.activeRoot || !!workState.lastError">
-        PoW ready: {{workState.ready}}@if (workState.queued > 0) {
-        <span> · queued: {{workState.queued}}</span>
-        }@if (workState.receiveHints > 0) {
-        <span> · receive hints: {{workState.receiveHints}}</span>
-      }
-    </div>
-    @if (workState.activeRoot && workState.phase === 'local') {
-      <div class="label secondary">Generating locally@if (workState.activeTier === 'receive') {
-        <span> for an incoming payment</span>
-      }…</div>
-    }
-    @if (workState.activeRoot && workState.phase === 'remote') {
-      <div class="label secondary">Retrying network PoW…</div>
-    }
-    @if (!workState.activeRoot && workState.lastError) {
-      <div class="label secondary">{{workState.lastError}}</div>
-    }
-  </div>
-</div>
-}
-
 @if (walletService.isConfigured() && !walletService.isLedgerWallet()) {
   @if (walletService.isLocked()) {
     <div class="nav-status-row half-muted interactable" (click)="showModal()">

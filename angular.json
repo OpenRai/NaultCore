@@ -9,16 +9,16 @@
       "projectType": "application",
       "architect": {
         "build": {
-          "builder": "@angular-builders/custom-webpack:browser",
+          "builder": "@angular/build:application",
           "options": {
-            "customWebpackConfig": {
-              "path": "./extra-webpack.config.js"
+            "outputPath": {
+              "base": "dist",
+              "browser": ""
             },
-            "outputPath": "dist",
             "index": "src/index.html",
-            "main": "src/main.ts",
+            "browser": "src/main.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "polyfills": "src/polyfills.ts",
+            "polyfills": ["src/polyfills.ts"],
             "assets": [
               "src/assets",
               "src/pow.wasm",
@@ -50,14 +50,19 @@
               "querystring",
               "hw-transport-webusb",
               "hw-transport-web-ble",
-              "tweetnacl"
+              "tweetnacl",
+              "hermes-channel",
+              "nano-base32",
+              "events",
+              "semver"
             ],
-            "vendorChunk": true,
             "extractLicenses": false,
-            "buildOptimizer": false,
             "sourceMap": true,
             "optimization": false,
-            "namedChunks": true
+            "namedChunks": true,
+            "define": {
+              "FEATURE_NANONYMS": "false"
+            }
           },
           "configurations": {
             "production": {
@@ -72,16 +77,13 @@
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
                 }
               ],
-              "serviceWorker": true,
-              "ngswConfigPath": "ngsw-config.json"
+              "serviceWorker": "ngsw-config.json"
             },
             "desktop": {
               "budgets": [
@@ -95,8 +97,9 @@
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
+              "define": {
+                "FEATURE_NANONYMS": "true"
+              },
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -116,16 +119,13 @@
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.naultcore.ts"
                 }
               ],
-              "serviceWorker": true,
-              "ngswConfigPath": "ngsw-config.json"
+              "serviceWorker": "ngsw-config.json"
             },
             "naultcore-e2e": {
               "budgets": [
@@ -139,8 +139,6 @@
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",
@@ -148,12 +146,17 @@
                 }
               ],
               "serviceWorker": false
+            },
+            "nanonyms": {
+              "define": {
+                "FEATURE_NANONYMS": "true"
+              }
             }
           },
           "defaultConfiguration": ""
         },
         "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server",
+          "builder": "@angular/build:dev-server",
           "options": {
             "buildTarget": "nault:build"
           },
@@ -169,21 +172,21 @@
             },
             "naultcore-e2e": {
               "buildTarget": "nault:build:naultcore-e2e"
+            },
+            "nanonyms": {
+              "buildTarget": "nault:build:nanonyms"
             }
           }
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "builder": "@angular/build:extract-i18n",
           "options": {
             "buildTarget": "nault:build"
           }
         },
         "test": {
-          "builder": "@angular-builders/custom-webpack:karma",
+          "builder": "@angular/build:karma",
           "options": {
-            "customWebpackConfig": {
-              "path": "./extra-webpack.config.js"
-            },
             "main": "src/test.ts",
             "karmaConfig": "./karma.conf.js",
             "polyfills": ["src/polyfills.ts", "zone.js/testing"],
@@ -197,7 +200,17 @@
               "src/assets",
               "src/pow.wasm",
               "src/manifest.webmanifest"
-            ]
+            ],
+            "define": {
+              "FEATURE_NANONYMS": "false"
+            }
+          },
+          "configurations": {
+            "nanonyms": {
+              "define": {
+                "FEATURE_NANONYMS": "true"
+              }
+            }
           }
         },
         "lint": {
@@ -207,20 +220,6 @@
               "src/**/*.ts",
               "src/**/*.html"
             ]
-          }
-        }
-      }
-    },
-    "nault-e2e": {
-      "root": "e2e",
-      "sourceRoot": "e2e",
-      "projectType": "application",
-      "architect": {
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "./protractor.conf.js",
-            "devServerTarget": "nault:serve"
           }
         }
       }

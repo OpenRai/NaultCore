@@ -1,17 +1,7 @@
-declare module "worker-loader!*" {
-  class WebpackWorker extends Worker {
-    constructor();
-  }
-  export default WebpackWorker;
-}
-
-declare module "worker-loader!../../assets/lib/rspow.worker.js" {
-  class RspowWorker extends Worker {
-    constructor();
-  }
-  export default RspowWorker;
-}
-
 declare module "*/nanoidenticons.min.js" {
   export function createIcon(options: { seed: string; scale: number }): HTMLCanvasElement;
+}
+
+declare module "pbkdf2/browser" {
+  export function pbkdf2Sync(password: Uint8Array, salt: Uint8Array, iterations: number, keylen: number, digest: string): Buffer;
 }

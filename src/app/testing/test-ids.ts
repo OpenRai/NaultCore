@@ -100,6 +100,7 @@ export const TestIds = {
   },
   accountDetails: {
     workStatus: 'account-details-work-status',
+    workStatusCompact: 'account-details-work-status-compact',
   },
   sweeper: {
     pageRoot: 'sweeper-page-root',

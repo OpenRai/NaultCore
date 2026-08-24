@@ -45,6 +45,16 @@
                 </div>
               }
             </div>
+            <div
+              class="compact-account-work-status"
+              [attr.data-testid]="testIds.accountDetails.workStatusCompact"
+              [class.uk-text-success]="getWorkStatusTone() === 'uk-text-success'"
+              [class.uk-text-warning]="getWorkStatusTone() === 'uk-text-warning'"
+              [class.uk-text-muted]="getWorkStatusTone() === 'uk-text-muted'"
+            >
+              <span uk-icon="icon: bolt; ratio: 0.75;"></span>
+              <span>Proof-of-Work: {{ getWorkStatusLabel() }}</span>
+            </div>
           </div>
         </div>
       }
@@ -130,18 +140,15 @@
           </div>
         }
         @if (walletAccount) {
-          <div class="uk-card-header account-work-status" [class.account-work-status-warning]="workStatus?.activity === 'active' || workStatus?.activity === 'error'" [attr.data-testid]="testIds.accountDetails.workStatus">
-            <div class="account-work-status-icon" [class]="getWorkStatusTone()">
-              <span [attr.uk-icon]="'icon: ' + getWorkStatusIcon() + '; ratio: 1.1;'" ></span>
-            </div>
-            <div class="account-work-status-copy">
-              <div class="details-header">Proof of Work</div>
-              <div class="account-work-status-title" [class]="getWorkStatusTone()">{{ getWorkStatusTitle() }}</div>
-              <div class="uk-text-small text-half-muted">{{ getWorkStatusDetail() }}</div>
-            </div>
-            @if (workStatus?.activity === 'error') {
-              <button class="uk-button uk-button-text uk-text-warning account-work-status-retry" type="button" (click)="retryWork()">Retry</button>
-            }
+          <div
+            class="uk-card-header account-work-status"
+            [attr.data-testid]="testIds.accountDetails.workStatus"
+            [class.uk-text-success]="getWorkStatusTone() === 'uk-text-success'"
+            [class.uk-text-warning]="getWorkStatusTone() === 'uk-text-warning'"
+            [class.uk-text-muted]="getWorkStatusTone() === 'uk-text-muted'"
+          >
+            <span uk-icon="icon: bolt; ratio: 0.85;"></span>
+            <span>Proof-of-Work: {{ getWorkStatusLabel() }}</span>
           </div>
         }
         @if (settings.settings.serverAPI) {

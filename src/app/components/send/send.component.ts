@@ -780,6 +780,14 @@ export class SendComponent implements OnInit {
       );
 
       if (newHash) {
+        try {
+          await this.walletService.reloadBalances();
+        } catch (err) {
+          // The block is already confirmed; a refresh failure must not turn a
+          // successful send into a failed one.
+          console.warn('Unable to refresh balances after sending', err);
+        }
+
         // If NanoNym, send Nostr notification (if enabled)
         if (this.isNanoNymAddress && this.settings.settings.useNostr) {
           await this.sendNostrNotification(newHash);

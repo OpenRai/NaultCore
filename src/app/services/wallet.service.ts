@@ -155,6 +155,7 @@ export class WalletService {
   processingPending = false;
   successfulBlocks = [];
   trackedHashes = [];
+  private balanceReloadQueued = false;
 
   get lifecycle(): WalletLifecycleSnapshot {
     return this.lifecycleSnapshot();
@@ -888,9 +889,29 @@ export class WalletService {
   }
 
   async reloadBalances() {
-    // to block two reloads to happen at the same time (websocket)
-    if (this.wallet.updatingBalance) return;
+    // A websocket update can overlap a confirmed local send. Preserve one
+    // follow-up reload so the local send is not left with the older snapshot.
+    if (this.wallet.updatingBalance) {
+      this.balanceReloadQueued = true;
+      return;
+    }
 
+    do {
+      this.balanceReloadQueued = false;
+      await this.reloadBalancesOnce();
+    } while (this.balanceReloadQueued);
+  }
+
+  private async reloadBalancesOnce() {
+    try {
+      await this.reloadBalancesFromNode();
+    } finally {
+      // A failed node request must not prevent all future balance refreshes.
+      this.wallet.updatingBalance = false;
+    }
+  }
+
+  private async reloadBalancesFromNode() {
     this.wallet.updatingBalance = true;
     const fiatPrice = this.price.price.lastPrice;
 

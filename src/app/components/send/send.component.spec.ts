@@ -48,6 +48,55 @@ describe('SendComponent', () => {
   });
 });
 
+describe('SendComponent - regular wallet balance refresh', () => {
+  function createRegularSendContext(reloadBalances: () => Promise<void>): any {
+    const walletAccount = { id: 'nano_source' };
+
+    return {
+      isSpendingFromNanoNym: false,
+      walletService: {
+        wallet: { accounts: [walletAccount] },
+        isLocked: () => false,
+        isLedgerWallet: () => false,
+        reloadBalances,
+      },
+      nanoBlock: {
+        generateSend: jasmine.createSpy('generateSend').and.resolveTo('confirmed-send-hash'),
+      },
+      notificationService: new MockNotificationService(),
+      fromAccountID: walletAccount.id,
+      rawAmount: new BigNumber(1),
+      isNanoNymAddress: false,
+      amount: '1',
+      selectedAmount: { shortName: 'XNO' },
+      confirmingTransaction: false,
+      getDestinationID: () => 'nano_destination',
+      resetForm: jasmine.createSpy('resetForm'),
+    };
+  }
+
+  it('refreshes all account balances after a confirmed regular send', async () => {
+    const reloadBalances = jasmine.createSpy('reloadBalances').and.resolveTo();
+    const component = createRegularSendContext(reloadBalances);
+
+    await SendComponent.prototype.confirmTransaction.call(component);
+
+    expect(reloadBalances).toHaveBeenCalledTimes(1);
+    expect(component.resetForm).toHaveBeenCalled();
+    expect(component.notificationService.sendSuccess).toHaveBeenCalled();
+  });
+
+  it('keeps a confirmed send successful when the balance refresh fails', async () => {
+    const reloadBalances = jasmine.createSpy('reloadBalances').and.rejectWith(new Error('node unavailable'));
+    const component = createRegularSendContext(reloadBalances);
+
+    await SendComponent.prototype.confirmTransaction.call(component);
+
+    expect(component.notificationService.sendSuccess).toHaveBeenCalled();
+    expect(component.notificationService.sendError).not.toHaveBeenCalled();
+  });
+});
+
 describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
   let component: any; // Use 'any' to access private methods
   let notificationService: MockNotificationService;

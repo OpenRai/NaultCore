@@ -3,6 +3,41 @@ import { TestBed, inject } from '@angular/core/testing';
 import { WalletService } from './wallet.service';
 import BigNumber from 'bignumber.js';
 
+describe('WalletService balance reload coordination', () => {
+  it('runs one follow-up reload when a request arrives during an active reload', async () => {
+    const service: any = Object.create(WalletService.prototype);
+    service.wallet = { updatingBalance: false };
+    service.balanceReloadQueued = false;
+    let reloadRuns = 0;
+
+    service.reloadBalancesOnce = async () => {
+      reloadRuns++;
+      if (reloadRuns === 1) {
+        service.wallet.updatingBalance = true;
+        await service.reloadBalances();
+        service.wallet.updatingBalance = false;
+      }
+    };
+
+    await service.reloadBalances();
+
+    expect(reloadRuns).toBe(2);
+  });
+
+  it('clears the loading state after a failed node refresh', async () => {
+    const service: any = Object.create(WalletService.prototype);
+    service.wallet = { updatingBalance: false };
+    service.reloadBalancesFromNode = async () => {
+      service.wallet.updatingBalance = true;
+      throw new Error('node unavailable');
+    };
+
+    await expectAsync(service.reloadBalancesOnce()).toBeRejectedWithError('node unavailable');
+
+    expect(service.wallet.updatingBalance).toBeFalse();
+  });
+});
+
 describe('WalletService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({

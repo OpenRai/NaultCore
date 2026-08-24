@@ -69,9 +69,8 @@ Nault's test suite exists but provides minimal coverage. Tests are primarily "sm
 **Decision:** Tests can run but have low value. Focus effort on writing proper tests for NanoNymNault features.
 
 ### E2E Tests
-**Problem:** Missing `e2e/tsconfig.e2e.json` referenced by protractor.conf.js  
-**Status:** Not critical - only 1 trivial test exists  
-**Migration Path:** Consider Cypress/Playwright for future NanoNymNault e2e testing
+
+Playwright covers the NaultCore browser workflows. The retired Protractor suite had no maintained role in validation.
 
 ---
 
@@ -169,7 +168,7 @@ karma.conf.js                 - Unit test runner config
 src/test.ts                   - Test entry point
 src/tsconfig.spec.json        - TypeScript config (needs fixing)
 angular.json                  - Angular CLI test target
-protractor.conf.js            - E2E config (deprecated)
+playwright.config.ts          - Browser E2E configuration
 ```
 
 ---

@@ -38,6 +38,12 @@ test('shows the selected account receive address', async ({ seededPage, testWall
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[0]);
 });
 
+test('keeps representative information out of primary wallet status', async ({ seededPage }) => {
+  await expect(seededPage.locator('app-change-rep-widget')).toHaveCount(0);
+  await expect(seededPage.locator('.nav-representative-info')).toHaveCount(0);
+  await expect(seededPage.getByText(/Unknown Rep|Acceptable|Representative Change Required/i)).toHaveCount(0);
+});
+
 test('adds, edits, and removes an address-book contact', async ({ seededPage, testWallet }) => {
   await navigate(seededPage, '/address-book');
   await seededPage.getByTestId('address-book-add-contact-button').click();

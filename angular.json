@@ -45,7 +45,6 @@
               "randombytes",
               "pbkdf2",
               "zxcvbn",
-              "url",
               "punycode",
               "querystring",
               "hw-transport-webusb",

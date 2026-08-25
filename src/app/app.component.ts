@@ -94,6 +94,16 @@ export class AppComponent implements OnInit {
   isConfigured = this.walletService.isConfigured;
   donationAccount = environment.donationAddress;
   public appVersion = version;
+  showAboutOverlay = false;
+
+  openAboutOverlay(): void {
+    this.showAboutOverlay = true;
+  }
+
+  closeAboutOverlay(): void {
+    this.showAboutOverlay = false;
+  }
+
   readonly websocketConnectionState$ = this.websocket.connectionState$;
   readonly websocketSubscriptionState$ = this.websocket.subscriptionState$;
 

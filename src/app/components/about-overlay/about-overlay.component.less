@@ -1,0 +1,176 @@
+.about-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	overflow: auto;
+	overscroll-behavior: contain;
+	background: rgba(0, 0, 0, 0.25);
+	backdrop-filter: blur(25px);
+	-webkit-backdrop-filter: blur(25px);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 240ms ease, visibility 0s linear 240ms;
+}
+
+.about-overlay.is-open {
+	opacity: 1;
+	visibility: visible;
+	pointer-events: auto;
+	transition: opacity 240ms ease;
+}
+
+.about-dialog {
+	position: relative;
+	width: min(680px, calc(100vw - 32px));
+	max-height: calc(100vh - 32px);
+	margin: auto;
+	padding: 20px;
+	background: #22222a;
+	color: #d5d5e8;
+	box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
+	transform: translateY(8px) scale(0.985);
+	transition: transform 240ms ease;
+}
+
+.about-overlay.is-open .about-dialog {
+	transform: translateY(0) scale(1);
+}
+
+.about-demo-frame {
+	position: relative;
+	width: 100%;
+	padding: 8px;
+	border: 1px solid rgba(213, 213, 232, 0.2);
+	border-radius: 5px;
+	background: #19191b;
+}
+
+.about-demo-stage {
+	position: relative;
+	width: 100%;
+	height: min(66vh, 560px);
+	min-height: 300px;
+	overflow: hidden;
+	background: #08090b;
+}
+
+.about-demo-stage canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.about-wordmark {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 9%;
+	text-align: center;
+	pointer-events: none;
+	user-select: none;
+}
+
+.about-wordmark h1 {
+	margin: 0;
+	font-family: 'Open Sans', Arial, sans-serif;
+	font-weight: 700;
+	font-size: clamp(28px, 8vw, 56px);
+	letter-spacing: -0.01em;
+	color: #f4f5f6;
+	text-shadow: 0 0 18px rgba(47, 224, 214, 0.25), 0 0 2px rgba(255, 255, 255, 0.4);
+	clip-path: inset(0 100% 0 0);
+	opacity: 0;
+	filter: blur(6px);
+	transform: translateY(6px);
+}
+
+.about-wordmark h1.play {
+	animation: about-wordmark-reveal 620ms cubic-bezier(.16, .8, .28, 1) 1550ms forwards,
+		about-wordmark-glitch 620ms steps(1, end) 1550ms forwards;
+}
+
+.about-wordmark .rule {
+	width: 0;
+	height: 3px;
+	margin: 10px auto 0;
+	border-radius: 2px;
+	background: linear-gradient(90deg, transparent, #2fe0d6, transparent);
+}
+
+.about-wordmark .rule.play {
+	animation: about-wordmark-rule 550ms cubic-bezier(.2, .7, .2, 1) 2050ms forwards;
+}
+
+.about-version {
+	margin-top: 18px;
+	color: #8f8fbb;
+	font-family: 'Open Sans', Arial, sans-serif;
+	font-size: 30px;
+	line-height: 1.2;
+	text-align: center;
+}
+
+.about-close {
+	z-index: 2;
+	color: #8f8fab;
+}
+
+.about-close:hover,
+.about-close:focus-visible {
+	color: #d5d5e8;
+}
+
+@keyframes about-wordmark-reveal {
+	0% { clip-path: inset(0 100% 0 0); opacity: 0; filter: blur(6px); transform: translateY(6px); }
+	55% { opacity: 1; }
+	100% { clip-path: inset(0 0 0 0); opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+@keyframes about-wordmark-glitch {
+	0% { transform: translate(0, 6px); }
+	18% { transform: translate(-6px, 2px) skewX(6deg); }
+	30% { transform: translate(5px, 0) skewX(-4deg); }
+	45% { transform: translate(-3px, 0) skewX(2deg); }
+	60%, 100% { transform: translate(0, 0) skewX(0deg); }
+}
+
+@keyframes about-wordmark-rule {
+	0% { width: 0; }
+	100% { width: 120px; }
+}
+
+:host-context(body:not(.dark-mode)) .about-dialog {
+	background: #fff;
+	color: #676686;
+}
+
+:host-context(body:not(.dark-mode)) .about-demo-frame {
+	border-color: rgba(103, 102, 134, 0.24);
+	background: #e0ebfa;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.about-overlay,
+	.about-dialog {
+		transition-duration: 1ms;
+	}
+	.about-wordmark h1 {
+		clip-path: none;
+		opacity: 1;
+		filter: none;
+		transform: none;
+	}
+	.about-wordmark .rule {
+		width: 120px;
+	}
+}
+
+@media (max-width: 480px) {
+	.about-overlay { padding: 8px; }
+	.about-dialog { width: calc(100vw - 16px); padding: 14px; }
+	.about-demo-stage { min-height: 270px; }
+}

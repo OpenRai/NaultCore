@@ -1,0 +1,27 @@
+<div
+  class="about-overlay"
+  [class.is-open]="open"
+  [attr.aria-hidden]="!open"
+  role="presentation"
+  (click)="close()"
+>
+  <section
+    class="about-dialog uk-modal-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="about-overlay-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="uk-modal-close-default about-close" aria-label="Close About" (click)="close()">&times;</button>
+    <div class="about-demo-frame">
+      <div class="about-demo-stage">
+        <canvas #canvas aria-hidden="true"></canvas>
+        <div class="about-wordmark" aria-hidden="true">
+          <h1 [class.play]="wordmarkPlaying">OpenRai</h1>
+          <div class="rule" [class.play]="wordmarkPlaying"></div>
+        </div>
+      </div>
+    </div>
+    <div id="about-overlay-title" class="about-version">NaultCore @ {{ version }}</div>
+  </section>
+</div>

@@ -30,6 +30,18 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
 });
 
+test('opens and dismisses the OpenRai About overlay from the build label', async ({ seededPage }) => {
+  await seededPage.getByRole('button', { name: /NaultCore @/ }).click();
+
+  const dialog = seededPage.getByRole('dialog', { name: /NaultCore @/ });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('canvas')).toBeVisible();
+  await expect(dialog.getByText(/NaultCore @/)).toBeVisible();
+
+  await seededPage.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+});
+
 test('keeps the current account PoW status visible in the full Account Details card', async ({ seededPage, testWallet }) => {
   await seededPage.locator(
     `[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`,

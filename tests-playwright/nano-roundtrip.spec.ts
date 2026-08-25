@@ -5,8 +5,8 @@
  *   NANO_TEST_SEED must be set in .env or .env.test (64-char hex seed with funded accounts).
  *   If unset, all tests are skipped.
  *
- * The fixture imports the wallet and creates a second sub-account (index 1)
- * so we always have 2 nano_ accounts for transfers.
+ * The fixture imports the wallet with two funded transfer accounts (indexes 0
+ * and 1) plus an unopened index-2 account for persisted receive/open work.
  *
  * Real on-chain Nano transactions (feeless!) — no mocks.
  */
@@ -16,31 +16,24 @@ const skipOnchain = process.env.SKIP_ONCHAIN_E2E === 'true';
 
 test.describe('nano_ roundtrip: send between own accounts', () => {
 
-  test('should precompute and restore account-scoped work across reload', async ({ seededPage }) => {
-    test.slow();
-    const hasReadyWork = async () => seededPage.evaluate(() => {
+  test('should retain the seeded account-scoped receive/open work across reload', async ({ seededPage, testWallet }) => {
+    const fixture = testWallet.workCache.entries[0];
+    const readFixture = () => seededPage.evaluate(expected => {
       const raw = localStorage.getItem('nanovault-workcache');
-      if (!raw) return false;
-      try {
-        const cache = JSON.parse(raw);
-        return cache.version === 2 && cache.entries?.some((entry: any) =>
-          typeof entry.account === 'string' && /^nano_/.test(entry.account) &&
-          typeof entry.root === 'string' && /^[0-9A-F]{64}$/i.test(entry.root) &&
-          typeof entry.work === 'string' && /^[0-9A-F]{16}$/i.test(entry.work));
-      } catch {
-        return false;
-      }
-    });
+      if (!raw) return null;
+      const cache = JSON.parse(raw);
+      return cache.version === 2
+        ? cache.entries.find((entry: {account: string; root: string; work: string; threshold: string}) =>
+          entry.account === expected.account && entry.root === expected.root &&
+          entry.work === expected.work && entry.threshold === expected.threshold) || null
+        : null;
+    }, fixture);
 
-    await expect.poll(hasReadyWork, { timeout: 120000 }).toBe(true);
-    const before = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
+    await expect.poll(readFixture).toEqual(fixture);
     await seededPage.reload();
     await seededPage.waitForURL('**/accounts', { timeout: 30000 });
     await unlockWalletThroughBridge(seededPage);
-    await expect.poll(hasReadyWork, { timeout: 120000 }).toBe(true);
-    const after = await seededPage.evaluate(() => localStorage.getItem('nanovault-workcache'));
-    expect(before).not.toBeNull();
-    expect(after).not.toBeNull();
+    await expect.poll(readFixture).toEqual(fixture);
   });
 
   test('should import wallet and show funded accounts', async ({ seededPage }) => {

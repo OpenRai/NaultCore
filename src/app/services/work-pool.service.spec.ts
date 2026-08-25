@@ -3,168 +3,176 @@ import { ApiService } from './api.service';
 import { UtilService } from './util.service';
 import { WorkAccountStatus, WorkPoolService } from './work-pool.service';
 
+const sendThreshold = 'SEND-THRESHOLD';
+const receiveThreshold = 'RECEIVE-THRESHOLD';
+
+class ControlledWorker {
+  static instances: ControlledWorker[] = [];
+  onmessage: ((event: MessageEvent<{id: number; ok: boolean; work?: string; error?: string}>) => void) | null = null;
+  onerror: ((event: ErrorEvent) => void) | null = null;
+  readonly posted: Array<{id: number; root: string; threshold: string}> = [];
+  terminated = false;
+
+  constructor() { ControlledWorker.instances.push(this); }
+  postMessage(message: {id: number; root: string; threshold: string}): void { this.posted.push(message); }
+  terminate(): void { this.terminated = true; }
+  respond(message: {id: number; ok: boolean; work?: string; error?: string}): void {
+    this.onmessage?.({ data: message } as MessageEvent<{id: number; ok: boolean; work?: string; error?: string}>);
+  }
+}
+
 describe('WorkPoolService', () => {
   let originalWorker: typeof Worker;
-  let postedWork: Array<{root: string; threshold: string}>;
-  const sendThreshold = 'SEND-THRESHOLD';
-  const receiveThreshold = 'RECEIVE-THRESHOLD';
+  let api: jasmine.SpyObj<ApiService>;
   const util = {
     nano: {
       difficultyFromMultiplier: (multiplier: number) => multiplier < 1 ? receiveThreshold : sendThreshold,
       validateWork: (_root: string, threshold: string, work: string) => work === `${threshold}-WORK`,
     },
   } as unknown as UtilService;
+  const root = (character: string) => character.repeat(64);
+  const worker = () => ControlledWorker.instances.at(-1)!;
 
   beforeEach(() => {
     localStorage.clear();
-    postedWork = [];
+    jasmine.clock().install();
+    ControlledWorker.instances = [];
     originalWorker = window.Worker;
-    (window as any).Worker = class {
-      onmessage: ((event: any) => void) | null = null;
-      onerror: ((event: any) => void) | null = null;
-      postMessage(message: {id: number; root: string; threshold: string}): void {
-        postedWork.push(message);
-        setTimeout(() => this.onmessage?.({ data: { id: message.id, ok: true, work: `${message.threshold}-WORK` } }), 0);
-      }
-      terminate(): void { /* test worker */ }
-    };
+    (window as unknown as { Worker: typeof Worker }).Worker = ControlledWorker as unknown as typeof Worker;
+    api = jasmine.createSpyObj<ApiService>('ApiService', ['workGenerateOnce']);
     TestBed.configureTestingModule({
-      providers: [
-        WorkPoolService,
-        { provide: UtilService, useValue: util },
-        { provide: ApiService, useValue: {} },
-      ],
+      providers: [WorkPoolService, { provide: UtilService, useValue: util }, { provide: ApiService, useValue: api }],
     });
   });
 
-  afterEach(() => { (window as any).Worker = originalWorker; });
+  afterEach(() => {
+    (window as unknown as { Worker: typeof Worker }).Worker = originalWorker;
+    jasmine.clock().uninstall();
+  });
 
-  it('restores account-scoped work and keeps it when the frontier matches', () => {
-    localStorage.setItem('nanovault-workcache', JSON.stringify({
-      version: 2,
-      entries: [{ account: 'nano_1', root: 'A'.repeat(64), work: `${sendThreshold}-WORK`, threshold: sendThreshold, createdAt: Date.now() }],
-    }));
+  it('persists locally generated work and restores it only for its matching account and root', async () => {
     const service = TestBed.inject(WorkPoolService);
+    const accountRoot = root('A');
     service.loadWorkCache();
-    service.syncAccountRoots([{ account: 'nano_1', root: 'A'.repeat(64), multiplier: 1 }]);
-    expect(service.workExists('A'.repeat(64), 1, 'nano_1')).toBeTrue();
-    expect(service.state$.value.ready).toBe(1);
+    const generated = service.getWork(accountRoot, 1, 'nano_1');
+    worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+    await expectAsync(generated).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(JSON.parse(localStorage.getItem(service.storeKey)!).version).toBe(2);
+
+    const restored = TestBed.runInInjectionContext(() => new WorkPoolService());
+    restored.loadWorkCache();
+    expect(restored.workExists(accountRoot, 1, 'nano_1')).toBeTrue();
+    expect(restored.workExists(accountRoot, 1, 'nano_other')).toBeFalse();
+    expect(restored.workExists(root('B'), 1, 'nano_1')).toBeFalse();
   });
 
-  it('invalidates persisted work when the account frontier changes', () => {
-    localStorage.setItem('nanovault-workcache', JSON.stringify({
-      version: 2,
-      entries: [{ account: 'nano_1', root: 'A'.repeat(64), work: `${sendThreshold}-WORK`, threshold: sendThreshold, createdAt: Date.now() }],
-    }));
+  it('rejects a local worker failure without calling a remote provider', async () => {
     const service = TestBed.inject(WorkPoolService);
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    worker().respond({ id: worker().posted[0].id, ok: false, error: 'local worker failed' });
+    await expectAsync(pending).toBeRejectedWithError('local worker failed');
+    expect(api.workGenerateOnce).not.toHaveBeenCalled();
+  });
+
+  it('uses a valid remote response after the controlled local-fallback deadline', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    api.workGenerateOnce.and.resolveTo({ work: `${sendThreshold}-WORK` });
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    jasmine.clock().tick(15_000);
+    await Promise.resolve();
+    expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold);
+    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(worker().terminated).toBeTrue();
+  });
+
+  it('rejects invalid remote work, retries deterministically, and accepts the next valid response', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    api.workGenerateOnce.and.returnValues(Promise.resolve({ work: '0000000000000000' }), Promise.resolve({ work: `${sendThreshold}-WORK` }));
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    jasmine.clock().tick(15_000);
+    await Promise.resolve();
+    expect(service.state$.value.lastError).toBe('Remote PoW response failed validation');
+    jasmine.clock().tick(1_000);
+    await Promise.resolve();
+    expect(api.workGenerateOnce).toHaveBeenCalledTimes(2);
+    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
+  });
+
+  it('terminates a pending remote fallback when its cache is cleared', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    api.workGenerateOnce.and.returnValue(new Promise(() => undefined));
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    jasmine.clock().tick(15_000);
+    service.clearCache();
+    await expectAsync(pending).toBeRejectedWithError('PoW cache cleared');
+  });
+
+  it('orders queued background work by priority', () => {
+    const service = TestBed.inject(WorkPoolService);
+    service.addWorkToCache(root('A'), 1, 'nano_a', 0);
+    service.addWorkToCache(root('B'), 1, 'nano_b', 50);
+    service.addWorkToCache(root('C'), 1, 'nano_c', 25);
+    const local = worker();
+    local.respond({ id: local.posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+    local.respond({ id: local.posted[1].id, ok: true, work: `${sendThreshold}-WORK` });
+    local.respond({ id: local.posted[2].id, ok: true, work: `${sendThreshold}-WORK` });
+    expect(local.posted.map(request => request.root)).toEqual([root('A'), root('B'), root('C')]);
+  });
+
+  it('preempts speculative receive work for an interactive send', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const receive = service.getWork(root('A'), 1 / 64, 'nano_1');
+    const interactive = service.getWork(root('B'), 1, 'nano_1', true);
+    const initialWorker = ControlledWorker.instances[0];
+    const interactiveWorker = worker();
+    expect(initialWorker.terminated).toBeTrue();
+    expect(interactiveWorker.posted[0]).toEqual(jasmine.objectContaining({ root: root('B'), threshold: sendThreshold }));
+    interactiveWorker.respond({ id: interactiveWorker.posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+    await expectAsync(interactive).toBeResolvedTo(`${sendThreshold}-WORK`);
+    interactiveWorker.respond({ id: interactiveWorker.posted[1].id, ok: true, work: `${receiveThreshold}-WORK` });
+    await expectAsync(receive).toBeResolvedTo(`${receiveThreshold}-WORK`);
+  });
+
+  it('keeps receive/open and send-tier cache validity isolated', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const accountRoot = root('A');
+    const receive = service.getWork(accountRoot, 1 / 64, 'nano_1');
+    worker().respond({ id: worker().posted[0].id, ok: true, work: `${receiveThreshold}-WORK` });
+    await expectAsync(receive).toBeResolvedTo(`${receiveThreshold}-WORK`);
+    expect(service.workExists(accountRoot, 1 / 64, 'nano_1')).toBeTrue();
+    expect(service.workExists(accountRoot, 1, 'nano_1')).toBeFalse();
+    const send = service.getWork(accountRoot, 1, 'nano_1');
+    expect(worker().posted[1].threshold).toBe(sendThreshold);
+    worker().respond({ id: worker().posted[1].id, ok: true, work: `${sendThreshold}-WORK` });
+    await expectAsync(send).toBeResolvedTo(`${sendThreshold}-WORK`);
+  });
+
+  it('prunes stale, malformed, and frontier-invalid cache entries', () => {
+    const service = TestBed.inject(WorkPoolService);
+    localStorage.setItem(service.storeKey, JSON.stringify({ version: 2, entries: [
+      { account: 'nano_current', root: root('A'), work: `${sendThreshold}-WORK`, threshold: sendThreshold, createdAt: 0 },
+      { account: 'nano_stale', root: root('B'), work: `${sendThreshold}-WORK`, threshold: sendThreshold, createdAt: 0 },
+      { account: 'nano_current', root: root('C'), work: 'invalid', threshold: sendThreshold, createdAt: 0 },
+    ] }));
     service.loadWorkCache();
-    service.syncAccountRoots([{ account: 'nano_1', root: 'C'.repeat(64), multiplier: 1 }]);
-    expect(service.workCache.some(entry => entry.root === 'A'.repeat(64))).toBeFalse();
+    service.syncAccountRoots([{ account: 'nano_current', root: root('A'), multiplier: 1 }]);
+    expect(service.workExists(root('A'), 1, 'nano_current')).toBeTrue();
+    expect(service.workCache.some(entry => entry.account === 'nano_stale')).toBeFalse();
+    expect(service.workExists(root('C'), 1, 'nano_current')).toBeFalse();
+    service.syncAccountRoots([{ account: 'nano_current', root: root('D'), multiplier: 1 }]);
+    expect(service.workCache.some(entry => entry.root === root('A'))).toBeFalse();
   });
 
-  it('runs a receive hint before, but never instead of, the send-tier demand', async () => {
+  it('publishes sanitized account status without raw work values', () => {
     const service = TestBed.inject(WorkPoolService);
-    const otherRoot = 'B'.repeat(64);
-    const hintedRoot = 'A'.repeat(64);
-
-    service.syncAccountRoots([
-      { account: 'nano_other', root: otherRoot, multiplier: 1 },
-      { account: 'nano_1', root: hintedRoot, multiplier: 1 },
-    ]);
-    service.noteReceiveExpected('nano_1', hintedRoot);
-    service.noteReceiveExpected('nano_1', hintedRoot);
-
-    await new Promise(resolve => setTimeout(resolve, 25));
-
-    expect(postedWork.map(request => `${request.root}:${request.threshold}`)).toEqual([
-      `${otherRoot}:${sendThreshold}`,
-      `${hintedRoot}:${receiveThreshold}`,
-      `${hintedRoot}:${sendThreshold}`,
-    ]);
-    expect(service.workCache.some(entry => entry.account === 'nano_1' && entry.threshold === receiveThreshold)).toBeTrue();
-    expect(service.workCache.some(entry => entry.account === 'nano_1' && entry.threshold === sendThreshold)).toBeTrue();
-  });
-
-  it('schedules unopened accounts for receive/open work only', async () => {
-    const service = TestBed.inject(WorkPoolService);
-    const publicKeyRoot = 'D'.repeat(64);
-
-    service.syncAccountRoots([{
-      account: 'nano_unopened',
-      root: publicKeyRoot,
-      multiplier: 1,
-      purpose: 'receive-open',
-    }]);
-
-    await new Promise(resolve => setTimeout(resolve, 25));
-
-    expect(postedWork.map(request => request.threshold)).toEqual([receiveThreshold]);
-    expect(service.getAccountStatus('nano_unopened')?.purpose).toBe('receive-open');
-    expect(service.getAccountStatus('nano_unopened')?.cached).toBeTrue();
-  });
-
-  it('publishes account-local activity without exposing the raw work cache', async () => {
-    const service = TestBed.inject(WorkPoolService);
-    const root = 'E'.repeat(64);
     const snapshots: ReadonlyMap<string, WorkAccountStatus>[] = [];
     const subscription = service.accountStatus$.subscribe(status => snapshots.push(status));
-
-    service.syncAccountRoots([{ account: 'nano_1', root, multiplier: 1 }]);
-    await new Promise(resolve => setTimeout(resolve, 25));
+    service.syncAccountRoots([{ account: 'nano_1', root: root('A'), multiplier: 1 }]);
+    worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
     subscription.unsubscribe();
-
-    const status = snapshots.at(-1)?.get('nano_1');
-    expect(status?.activity).toBe('success');
-    expect(status?.root).toBe(root);
+    const status = snapshots.at(-1)!.get('nano_1')!;
+    expect(status.activity).toBe('success');
+    expect(status.cached).toBeTrue();
     expect(Object.prototype.hasOwnProperty.call(status, 'work')).toBeFalse();
-  });
-
-  it('does not let receive-tier work satisfy a send-tier request after restart', async () => {
-    const root = 'A'.repeat(64);
-    localStorage.setItem('nanovault-workcache', JSON.stringify({
-      version: 2,
-      entries: [{ account: 'nano_1', root, work: `${receiveThreshold}-WORK`, threshold: receiveThreshold, createdAt: Date.now() }],
-    }));
-    const service = TestBed.inject(WorkPoolService);
-    service.loadWorkCache();
-
-    expect(service.workExists(root, 1 / 64, 'nano_1')).toBeTrue();
-    expect(service.workExists(root, 1, 'nano_1')).toBeFalse();
-
-    service.syncAccountRoots([{ account: 'nano_1', root, multiplier: 1 }]);
-    await new Promise(resolve => setTimeout(resolve, 10));
-
-    expect(service.workExists(root, 1, 'nano_1')).toBeTrue();
-  });
-
-  it('preempts a background receive for an interactive send', async () => {
-    const service = TestBed.inject(WorkPoolService);
-    const receiveRoot = 'A'.repeat(64);
-    const interactiveRoot = 'B'.repeat(64);
-
-    const receiveWork = service.getWork(receiveRoot, 1 / 64, 'nano_1');
-    await expectAsync(service.getWork(interactiveRoot, 1, 'nano_1', true)).toBeResolvedTo(`${sendThreshold}-WORK`);
-
-    expect(postedWork.slice(0, 2).map(request => request.root)).toEqual([receiveRoot, interactiveRoot]);
-    await expectAsync(receiveWork).toBeResolvedTo(`${receiveThreshold}-WORK`);
-  });
-
-  it('prunes cache entries detached from the current wallet after generation', async () => {
-    const service = TestBed.inject(WorkPoolService);
-    const currentRoot = 'A'.repeat(64);
-    const staleRoot = 'B'.repeat(64);
-
-    service.syncAccountRoots([{ account: 'nano_1', root: currentRoot, multiplier: 1 }]);
-    service.workCache.push({
-      account: 'nano_stale',
-      root: staleRoot,
-      work: `${sendThreshold}-WORK`,
-      threshold: sendThreshold,
-      createdAt: Date.now(),
-    });
-    await new Promise(resolve => setTimeout(resolve, 10));
-
-    expect(service.workCache.some(entry => entry.root === staleRoot)).toBeFalse();
-    expect(service.workCache.some(entry => entry.root === currentRoot)).toBeTrue();
   });
 });

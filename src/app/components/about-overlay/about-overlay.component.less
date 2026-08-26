@@ -4,36 +4,47 @@
 	z-index: 10000;
 	display: grid;
 	place-items: center;
-	padding: 16px;
+	padding: 24px;
 	overflow: auto;
 	overscroll-behavior: contain;
-	background: rgba(0, 0, 0, 0.25);
-	backdrop-filter: blur(25px);
-	-webkit-backdrop-filter: blur(25px);
+	background: rgba(4, 6, 10, 0.55);
+	backdrop-filter: blur(28px) saturate(140%);
+	-webkit-backdrop-filter: blur(28px) saturate(140%);
 	opacity: 0;
 	visibility: hidden;
 	pointer-events: none;
-	transition: opacity 240ms ease, visibility 0s linear 240ms;
+	transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		backdrop-filter 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		-webkit-backdrop-filter 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		visibility 0s linear 300ms;
 }
 
 .about-overlay.is-open {
 	opacity: 1;
 	visibility: visible;
 	pointer-events: auto;
-	transition: opacity 240ms ease;
+	transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		backdrop-filter 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		-webkit-backdrop-filter 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .about-dialog {
 	position: relative;
-	width: min(680px, calc(100vw - 32px));
+	/* UIkit's .uk-modal-dialog defaults to opacity: 0 pending a .uk-open > parent this
+	   overlay never has — force the dialog visible and let the overlay handle fading. */
+	opacity: 1;
+	width: min(480px, calc(100vw - 32px));
+	max-width: 480px;
 	max-height: calc(100vh - 32px);
 	margin: auto;
-	padding: 20px;
-	background: #22222a;
+	padding: 16px 18px 18px 18px;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(26, 28, 36, 0.94);
 	color: #d5d5e8;
-	box-shadow: 0 18px 52px rgba(0, 0, 0, 0.28);
-	transform: translateY(8px) scale(0.985);
-	transition: transform 240ms ease;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	transform: translateY(12px) scale(0.97);
+	transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .about-overlay.is-open .about-dialog {
@@ -43,32 +54,65 @@
 .about-demo-frame {
 	position: relative;
 	width: 100%;
-	padding: 8px;
-	border: 1px solid rgba(213, 213, 232, 0.2);
-	border-radius: 5px;
-	background: #19191b;
+	padding: 4px;
+	border: 1px solid rgba(255, 255, 255, 0.09);
+	border-radius: 8px;
+	background: #0d0f14;
+	box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .about-demo-stage {
 	position: relative;
 	width: 100%;
-	height: min(66vh, 560px);
-	min-height: 300px;
+	height: clamp(220px, 28vh, 320px);
+	min-height: 220px;
 	overflow: hidden;
-	background: #08090b;
+	border-radius: 6px;
+	background: #07080c;
 }
 
 .about-demo-stage canvas {
 	display: block;
 	width: 100%;
 	height: 100%;
+	/* The WebGL buffer is rendered at reduced resolution and stretched up — force
+	   nearest-neighbor so the upscale is a crisp blocky look, not a blurry smear. */
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: crisp-edges;
+}
+
+.about-replay {
+	position: absolute;
+	right: 12px;
+	bottom: 12px;
+	z-index: 5;
+	padding: 6px 11px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.06);
+	color: #cfd3d8;
+	font-family: 'Open Sans', Arial, sans-serif;
+	font-size: 11px;
+	letter-spacing: 0.03em;
+	cursor: pointer;
+	backdrop-filter: blur(4px);
+	transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+
+.about-replay:hover,
+.about-replay:focus-visible {
+	background: rgba(47, 224, 214, 0.12);
+	border-color: rgba(47, 224, 214, 0.4);
+	color: #eafffd;
+	outline: none;
 }
 
 .about-wordmark {
 	position: absolute;
 	left: 0;
 	right: 0;
-	bottom: 9%;
+	bottom: 8%;
 	text-align: center;
 	pointer-events: none;
 	user-select: none;
@@ -78,10 +122,10 @@
 	margin: 0;
 	font-family: 'Open Sans', Arial, sans-serif;
 	font-weight: 700;
-	font-size: clamp(28px, 8vw, 56px);
+	font-size: clamp(24px, 6vw, 42px);
 	letter-spacing: -0.01em;
 	color: #f4f5f6;
-	text-shadow: 0 0 18px rgba(47, 224, 214, 0.25), 0 0 2px rgba(255, 255, 255, 0.4);
+	text-shadow: 0 0 20px rgba(47, 224, 214, 0.35), 0 0 2px rgba(255, 255, 255, 0.5);
 	clip-path: inset(0 100% 0 0);
 	opacity: 0;
 	filter: blur(6px);
@@ -96,32 +140,38 @@
 .about-wordmark .rule {
 	width: 0;
 	height: 3px;
-	margin: 10px auto 0;
+	margin: 8px auto 0;
 	border-radius: 2px;
-	background: linear-gradient(90deg, transparent, #2fe0d6, transparent);
+	background: linear-gradient(90deg, transparent, #2fe0d6 50%, transparent);
+	box-shadow: 0 0 10px rgba(47, 224, 214, 0.6);
 }
 
 .about-wordmark .rule.play {
 	animation: about-wordmark-rule 550ms cubic-bezier(.2, .7, .2, 1) 2050ms forwards;
 }
 
-.about-version {
-	margin-top: 18px;
-	color: #8f8fbb;
-	font-family: 'Open Sans', Arial, sans-serif;
-	font-size: 30px;
-	line-height: 1.2;
+.about-footer {
+	margin-top: 14px;
 	text-align: center;
 }
 
-.about-close {
-	z-index: 2;
-	color: #8f8fab;
+.about-version {
+	color: #9da0c2;
+	font-family: 'Open Sans', Arial, sans-serif;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-align: center;
+	letter-spacing: 0.01em;
 }
 
-.about-close:hover,
-.about-close:focus-visible {
-	color: #d5d5e8;
+.about-subtext {
+	margin-top: 4px;
+	color: #65678a;
+	font-size: 13px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
 }
 
 @keyframes about-wordmark-reveal {
@@ -140,17 +190,27 @@
 
 @keyframes about-wordmark-rule {
 	0% { width: 0; }
-	100% { width: 120px; }
+	100% { width: 110px; }
+}
+
+:host-context(body:not(.dark-mode)) .about-overlay {
+	background: rgba(220, 226, 236, 0.45);
 }
 
 :host-context(body:not(.dark-mode)) .about-dialog {
-	background: #fff;
-	color: #676686;
+	background: rgba(255, 255, 255, 0.96);
+	border-color: rgba(0, 0, 0, 0.1);
+	color: #3b3f54;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.2);
 }
 
 :host-context(body:not(.dark-mode)) .about-demo-frame {
-	border-color: rgba(103, 102, 134, 0.24);
-	background: #e0ebfa;
+	border-color: rgba(0, 0, 0, 0.12);
+	background: #e8eef8;
+}
+
+:host-context(body:not(.dark-mode)) .about-version {
+	color: #4b526d;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -165,12 +225,53 @@
 		transform: none;
 	}
 	.about-wordmark .rule {
-		width: 120px;
+		width: 110px;
+	}
+	.about-replay {
+		display: none;
 	}
 }
 
-@media (max-width: 480px) {
-	.about-overlay { padding: 8px; }
-	.about-dialog { width: calc(100vw - 16px); padding: 14px; }
-	.about-demo-stage { min-height: 270px; }
+/* Mobile & narrow screens: Fullscreen modal popover with 50% height 3D canvas */
+@media (max-width: 600px) {
+	.about-overlay {
+		padding: 0;
+		align-items: stretch;
+	}
+
+	.about-dialog {
+		width: 100vw;
+		max-width: 100vw;
+		height: 100vh;
+		max-height: 100vh;
+		margin: 0;
+		border-radius: 0;
+		border: none;
+		padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 20px) 16px;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		box-sizing: border-box;
+	}
+
+	.about-demo-frame {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+		border-radius: 10px;
+		min-height: 0;
+	}
+
+	.about-demo-stage {
+		height: 50vh;
+		min-height: 280px;
+		max-height: 52vh;
+		flex: 1 1 auto;
+	}
+
+	.about-footer {
+		margin-top: 12px;
+		margin-bottom: 8px;
+		flex-shrink: 0;
+	}
 }

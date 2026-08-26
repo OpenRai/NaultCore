@@ -12,16 +12,18 @@
     aria-labelledby="about-overlay-title"
     (click)="$event.stopPropagation()"
   >
-    <button type="button" class="uk-modal-close-default about-close" aria-label="Close About" (click)="close()">&times;</button>
     <div class="about-demo-frame">
       <div class="about-demo-stage">
         <canvas #canvas aria-hidden="true"></canvas>
         <div class="about-wordmark" aria-hidden="true">
-          <h1 [class.play]="wordmarkPlaying">OpenRai</h1>
-          <div class="rule" [class.play]="wordmarkPlaying"></div>
+          <h1 [class.play]="wordmarkPlaying()">OpenRai</h1>
+          <div class="rule" [class.play]="wordmarkPlaying()"></div>
         </div>
+        <button type="button" class="about-replay" aria-label="Replay intro animation" (click)="replayIntro()">&#8635; Replay intro</button>
       </div>
     </div>
-    <div id="about-overlay-title" class="about-version">NaultCore @ {{ version }}</div>
+    <div class="about-footer">
+      <div id="about-overlay-title" class="about-version">NaultCore @ {{ version }}</div>
+    </div>
   </section>
 </div>

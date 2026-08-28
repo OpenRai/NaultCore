@@ -46,6 +46,9 @@ const index = read('src/index.html');
 const previewIndex = read('src/index.preview.html');
 for (const [name, content] of [['src/index.html', index], ['src/index.preview.html', previewIndex]]) {
   if (!content.includes('assets/img/naultcore-logo.png')) throw new Error(`${name} does not use the canonical NaultCore logo`);
+  for (const reference of ['assets/favicon/favicon-16x16.png', 'assets/favicon/favicon-32x32.png', 'assets/favicon/apple-touch-icon.png', 'assets/favicon/safari-pinned-tab.svg']) {
+    if (!content.includes(reference)) throw new Error(`${name} is missing favicon reference: ${reference}`);
+  }
 }
 for (const relative of ['src/app/welcome/welcome.component.html', 'src/app/components/receive/receive.component.css', 'src/less/components/dark-mode.less', 'src/less/components/nano-card.less']) {
   if (!read(relative).includes('naultcore-logo.png')) throw new Error(`${relative} does not use the canonical NaultCore logo`);
@@ -57,5 +60,12 @@ for (const icon of manifest.icons) {
   if (!fs.existsSync(path.join(root, relative))) throw new Error(`Manifest icon is missing: ${icon.src}`);
   if (pngSize(relative) !== icon.sizes) throw new Error(`Manifest size mismatch for ${icon.src}`);
 }
+const legacyManifest = JSON.parse(read('src/assets/favicon/site.webmanifest'));
+if (legacyManifest.name !== 'NaultCore' || legacyManifest.scope !== '/') throw new Error('Legacy manifest does not retain the canonical root identity.');
+for (const icon of legacyManifest.icons) {
+  const relative = `src${icon.src}`;
+  if (!fs.existsSync(path.join(root, relative)) || pngSize(relative) !== icon.sizes) throw new Error(`Legacy manifest icon mismatch: ${icon.src}`);
+}
+if (!read('src/assets/favicon/browserconfig.xml').includes('mstile-150x150.png')) throw new Error('Browserconfig is missing the canonical tile asset.');
 
 console.log(`Branding assets verified (${required.length} files).`);

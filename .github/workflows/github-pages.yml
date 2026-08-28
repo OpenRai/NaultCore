@@ -72,6 +72,7 @@ jobs:
               cp "$index_path" dist/index.html
             fi
           fi
+          node scripts/normalize-pages-artifact.js
 
       - name: Verify PWA preview artifact
         run: pnpm run verify:pwa:preview

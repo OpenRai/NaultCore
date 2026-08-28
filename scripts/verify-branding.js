@@ -16,6 +16,7 @@ const required = [
   'src/assets/favicon/mstile-150x150.png',
   'src/assets/favicon/safari-pinned-tab.svg',
   'src/assets/favicon/browserconfig.xml',
+  'src/assets/favicon/site.webmanifest',
 ];
 
 for (const relative of required) {

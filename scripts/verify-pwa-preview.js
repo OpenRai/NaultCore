@@ -35,7 +35,8 @@ requireCondition(index.includes('rel="manifest" href="/manifest.webmanifest"'), 
 const worker = JSON.parse(read('ngsw.json'));
 requireCondition(worker.index === '/index.html', 'Service worker index must be root-scoped.');
 requireCondition(worker.assetGroups.find(group => group.name === 'app')?.urls.includes('/manifest.webmanifest'), 'Service worker must precache the manifest.');
-requireCondition(!JSON.stringify(worker).includes('site.webmanifest'), 'Generated service worker must not reference the retired manifest.');
+const legacyManifest = JSON.parse(read('assets/favicon/site.webmanifest'));
+requireCondition(legacyManifest.name === 'NaultCore', 'Legacy manifest must retain the canonical application identity.');
 for (const group of worker.dataGroups) {
   requireCondition(group.maxAge === 24 * 60 * 60 * 1000, `${group.name} cache lifetime must be one day.`);
 }

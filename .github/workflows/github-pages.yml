@@ -61,12 +61,22 @@ jobs:
       - name: Normalize Angular browser output
         run: |
           find dist -maxdepth 3 -print
-          index_path="$(find dist -type f -name index.html -print -quit)"
+          index_path="$(find dist -type f \( -name index.html -o -name index.csr.html \) -print -quit)"
           echo "Angular index: ${index_path:-missing}"
-          if [ -n "$index_path" ] && [ "$index_path" != "dist/index.html" ]; then
+          if [ -n "$index_path" ]; then
             artifact_root="${index_path%/index.html}"
-            cp -R "$artifact_root"/. dist/
-            rm -rf "$artifact_root"
+            if [ "$artifact_root" = "$index_path" ]; then
+              artifact_root="${index_path%/index.csr.html}"
+            fi
+            if [ "$artifact_root" != "dist" ]; then
+              cp -R "$artifact_root"/. dist/
+            fi
+            if [ ! -f dist/index.html ]; then
+              cp "$index_path" dist/index.html
+            fi
+            if [ "$artifact_root" != "dist" ]; then
+              rm -rf "$artifact_root"
+            fi
           fi
 
       - name: Verify PWA preview artifact

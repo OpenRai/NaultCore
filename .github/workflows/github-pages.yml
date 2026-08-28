@@ -60,22 +60,16 @@ jobs:
 
       - name: Normalize Angular browser output
         run: |
-          find dist -maxdepth 3 -print
-          index_path="$(find dist -type f \( -name index.html -o -name index.csr.html \) -print -quit)"
+          find dist -maxdepth 4 -print
+          index_path="$(find dist -type f -iname 'index*.html' -print -quit)"
           echo "Angular index: ${index_path:-missing}"
           if [ -n "$index_path" ]; then
-            artifact_root="${index_path%/index.html}"
-            if [ "$artifact_root" = "$index_path" ]; then
-              artifact_root="${index_path%/index.csr.html}"
-            fi
+            artifact_root="${index_path%/*}"
             if [ "$artifact_root" != "dist" ]; then
               cp -R "$artifact_root"/. dist/
             fi
             if [ ! -f dist/index.html ]; then
               cp "$index_path" dist/index.html
-            fi
-            if [ "$artifact_root" != "dist" ]; then
-              rm -rf "$artifact_root"
             fi
           fi
 

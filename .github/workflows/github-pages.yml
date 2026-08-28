@@ -58,6 +58,13 @@ jobs:
       - name: Build application
         run: pnpm run wallet:build:naultcore:preview
 
+      - name: Normalize Angular browser output
+        run: |
+          if [ -f dist/browser/index.html ]; then
+            cp -R dist/browser/. dist/
+            rm -rf dist/browser
+          fi
+
       - name: Verify PWA preview artifact
         run: pnpm run verify:pwa:preview
 

@@ -47,7 +47,7 @@ const previewIndex = read('src/index.preview.html');
 for (const [name, content] of [['src/index.html', index], ['src/index.preview.html', previewIndex]]) {
   if (!content.includes('assets/img/naultcore-logo.png')) throw new Error(`${name} does not use the canonical NaultCore logo`);
 }
-for (const relative of ['src/app/welcome/welcome.component.html', 'src/app/components/receive/receive.component.css', 'src/less/components/dark-mode.less']) {
+for (const relative of ['src/app/welcome/welcome.component.html', 'src/app/components/receive/receive.component.css', 'src/less/components/dark-mode.less', 'src/less/components/nano-card.less']) {
   if (!read(relative).includes('naultcore-logo.png')) throw new Error(`${relative} does not use the canonical NaultCore logo`);
 }
 

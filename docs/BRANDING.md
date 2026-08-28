@@ -22,6 +22,14 @@ The older `nault-logo*.svg` files remain in the repository as upstream/source
 compatibility assets; NaultCore application surfaces must reference the
 canonical ex-3 mark instead.
 
+The remaining literal `Nault` occurrences are intentional exceptions: upstream
+Nault documentation links and titles, the visible `Based on Nault` attribution,
+legacy wallet/address-book export filenames, NanoNym-only messaging, test
+infrastructure comments, package/Electron identifiers, and historical
+documentation. They do not identify the default NaultCore application. All
+other display prose is resolved through `branding.json` and the generated
+translation catalogue.
+
 Some Nault identifiers are compatibility contracts and are not branding:
 
 - the private package name `nault` and Electron app ID `cc.nault`;

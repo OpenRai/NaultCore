@@ -60,6 +60,7 @@ jobs:
 
       - name: Normalize Angular browser output
         run: |
+          find dist -maxdepth 3 -print
           index_path="$(find dist -type f -name index.html -print -quit)"
           echo "Angular index: ${index_path:-missing}"
           if [ -n "$index_path" ] && [ "$index_path" != "dist/index.html" ]; then

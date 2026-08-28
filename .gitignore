@@ -56,6 +56,7 @@ debug.log*-debug-*.log
 src/environments/version.ts
 src/environments/branding.ts
 desktop-app/src/branding.ts
+src/assets/i18n/*.branding.json
 .beads/
 
 # Playwright / test results (ignored by default)

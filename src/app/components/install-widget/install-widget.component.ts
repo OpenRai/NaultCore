@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { NotificationService } from 'app/services/notification.service';
+import { branding } from 'environments/branding';
 
 interface InstallEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed', platform: string }>;
@@ -14,6 +15,7 @@ interface InstallEvent extends Event {
   styleUrls: ['./install-widget.component.less'],
 })
 export class InstallWidgetComponent implements OnInit {
+  readonly branding = branding;
   private notifications = inject(NotificationService);
 
 
@@ -52,7 +54,7 @@ export class InstallWidgetComponent implements OnInit {
     this.installEvent.prompt();
     this.installEvent.userChoice.then((result) => {
       if (result.outcome === 'accepted') {
-        this.notifications.sendSuccess('Nault was successfully installed to the device.');
+        this.notifications.sendSuccess(`${branding.applicationName} was successfully installed to the device.`);
         this.dismiss();
       }
     });

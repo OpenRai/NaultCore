@@ -427,7 +427,7 @@
           <div uk-grid class="uk-animation-slide-left">
             <div class="uk-width-1-1">
               <div class="uk-card uk-card-default uk-width-1-1 uk-text-center">
-                <span style="display: block; padding-top: 8px;">The provided block info is not valid or Nault got connection issues.<br/> Try set Nault in Offline Mode from the app settings if you want to be offline.<br/></span>
+                <span style="display: block; padding-top: 8px;">The provided block info is not valid or {{ branding.applicationName }} got connection issues.<br/> Try set {{ branding.applicationName }} in Offline Mode from the app settings if you want to be offline.<br/></span>
               </div>
             </div>
           </div>
@@ -443,7 +443,7 @@
         <h2 class="uk-modal-title">Signed Block</h2>
       </div>
       <div class="uk-modal-body modal-qr-body">
-        <p><a routerLink="/qr-scan" routerLinkActive="active" class="uk-modal-close">Scan</a> the signed QR with an online Nault, or copy the "Signed Block" to <a routerLink="/remote-signing" routerLinkActive="active" class="uk-modal-close">Step 3</a>.</p>
+        <p><a routerLink="/qr-scan" routerLinkActive="active" class="uk-modal-close">Scan</a> the signed QR with an online {{ branding.applicationName }}, or copy the "Signed Block" to <a routerLink="/remote-signing" routerLinkActive="active" class="uk-modal-close">Step 3</a>.</p>
 
         @if (qrString && finalSignature) {
           <div class="uk-width-1-1 uk-text-center" style="display: flex; justify-content: center;">
@@ -482,5 +482,4 @@
         </div>
       </div>
     </div>
-
 

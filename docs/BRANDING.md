@@ -2,12 +2,25 @@
 
 `branding.json` is the single source for product-facing names and links. The
 `version` script selects the `naultcore` profile by default, or the `nanonyms`
-profile when `FEATURE_NANONYMS=true`, and generates the ignored TypeScript
-outputs consumed by the Angular and Electron applications.
+profile when `FEATURE_NANONYMS=true`, and generates the ignored TypeScript and
+translation outputs consumed by the Angular and Electron applications.
 
 The static NaultCore splash and PWA metadata are intentionally checked in as
 the default web profile. The Angular application and Electron shell use the
 selected build profile after startup.
+
+## Current NaultCore artwork
+
+The interim canonical application mark is the approved ex-3 artwork in
+`src/assets/logo_source/naultcore-ex-3.png`, copied to
+`src/assets/img/naultcore-logo.png` for runtime use. The same source is used
+for the splash screen, welcome screen, receive-mode artwork, and the generated
+favicon/PWA raster set. `scripts/verify-branding.js` checks that those files,
+their declared dimensions, and the manifest references remain consistent.
+
+The older `nault-logo*.svg` files remain in the repository as upstream/source
+compatibility assets; NaultCore application surfaces must reference the
+canonical ex-3 mark instead.
 
 Some Nault identifiers are compatibility contracts and are not branding:
 
@@ -19,4 +32,7 @@ Some Nault identifiers are compatibility contracts and are not branding:
   fixtures, and historical “Based on Nault” attribution.
 
 These references preserve existing installs, update behavior, stored settings,
-and links to the upstream Nault protocol-compatible project.
+and links to the upstream Nault protocol-compatible project. The checked-in
+`src/assets/i18n/en.json` is the upstream translation template; the generated
+`en.branding.json` rewrites display prose to the selected profile while leaving
+URLs and compatibility identifiers unchanged.

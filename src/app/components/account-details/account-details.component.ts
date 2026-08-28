@@ -20,6 +20,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { NostrNotificationService } from '../../services/nostr-notification.service';
 import { TestIds } from '../../testing/test-ids';
+import { branding } from 'environments/branding';
 import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.service';
 
 @Component({
@@ -30,6 +31,7 @@ import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.ser
   styleUrls: ['./account-details.component.css']
 })
 export class AccountDetailsComponent implements OnInit, OnDestroy {
+  readonly branding = branding;
   private router = inject(ActivatedRoute);
   private route = inject(Router);
   private addressBook = inject(AddressBookService);

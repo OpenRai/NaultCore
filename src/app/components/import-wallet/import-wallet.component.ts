@@ -5,6 +5,7 @@ import * as CryptoJS from 'crypto-js';
 import {WalletService, WalletType} from '../../services/wallet.service';
 import {UtilService} from '../../services/util.service';
 import { TestIds } from '../../testing/test-ids';
+import { branding } from 'environments/branding';
 
 @Component({
   standalone: false,
@@ -21,6 +22,7 @@ export class ImportWalletComponent implements OnInit {
   private util = inject(UtilService);
 
   readonly testIds = TestIds;
+  readonly branding = branding;
   activePanel = 'error';
 
   walletPassword = '';

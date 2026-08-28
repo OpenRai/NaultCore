@@ -8,6 +8,7 @@ import * as QRCode from 'qrcode';
 import * as bip from 'bip39';
 import {formatDate} from '@angular/common';
 import { TestIds } from '../../testing/test-ids';
+import { branding } from 'environments/branding';
 
 @Component({
   standalone: false,
@@ -24,6 +25,7 @@ export class ManageWalletComponent implements OnInit {
   settings = inject(AppSettingsService);
 
   readonly testIds = TestIds;
+  readonly branding = branding;
 
   wallet = this.walletService.wallet;
   accounts = this.walletService.wallet.accounts;
@@ -242,7 +244,7 @@ export class ManageWalletComponent implements OnInit {
 
     if (this.invalidCsvCount) {
       if (this.beyondCsvLimit) {
-        return this.notifications.sendWarning(`To export transactions above the limit, please use a custom Nault server`);
+        return this.notifications.sendWarning(`To export transactions above the limit, please use a custom ${branding.applicationName} server`);
       } else {
         return this.notifications.sendWarning(`Invalid limit`);
       }

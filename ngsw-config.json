@@ -10,6 +10,7 @@
           "/favicon.ico",
           "/index.html",
           "/manifest.webmanifest",
+          "/manifest.naultcore.webmanifest",
           "/*.css",
           "/*.js",
           "/*.wasm"
@@ -18,11 +19,15 @@
     },
     {
       "name": "assets",
-      "installMode": "lazy",
+      "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
         "files": [
-          "/assets/**",
+          "/assets/favicon/**",
+          "/assets/fonts/**",
+          "/assets/i18n/**",
+          "/assets/img/**",
+          "/assets/lib/**",
           "/*.(eot|svg|cur|jpg|png|webp|gif|otf|ttf|woff|woff2|ani|wasm)"
         ]
       }
@@ -34,7 +39,7 @@
       "urls": ["https://api.coingecko.com/**"],
       "cacheConfig": {
         "maxSize": 3,
-        "maxAge": "60d",
+        "maxAge": "1d",
         "strategy": "freshness"
       }
     },
@@ -43,7 +48,7 @@
       "urls": ["https://mynano.ninja/api/**"],
       "cacheConfig": {
         "maxSize": 50,
-        "maxAge": "60d",
+        "maxAge": "1d",
         "strategy": "freshness"
       }
     }

@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { branding } from 'environments/branding';
 import * as Rx from 'rxjs';
 
 type NotificationType = 'info'|'success'|'warning'|'error';
@@ -57,7 +58,7 @@ export class NotificationService {
     this.sendWarning(
       `<b>Notice:</b> You may experience issues using a Ledger device with Google Chrome. ` +
       `If you do please use Brave/Opera browser or ` +
-      `<a href="https://github.com/Nault/Nault/releases" target="_blank" rel="noopener noreferrer">Nault Desktop</a>.`,
+      `<a href="https://github.com/Nault/Nault/releases" target="_blank" rel="noopener noreferrer">${branding.applicationName} Desktop</a>.`,
       { length: 0, identifier: 'chrome-ledger' }
       );
   }

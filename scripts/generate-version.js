@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const brandingProfiles = require('../branding.json');
+const sourceTranslations = require('../src/assets/i18n/en.json');
 
 const brandingProfile = process.env.FEATURE_NANONYMS === 'true' ? 'nanonyms' : 'naultcore';
 const branding = brandingProfiles[brandingProfile];
@@ -49,5 +50,18 @@ export const branding = ${JSON.stringify(branding, null, 2)} as const;
 `;
 fs.writeFileSync('src/environments/branding.ts', brandingContent);
 fs.writeFileSync('desktop-app/src/branding.ts', brandingContent);
+
+// Generate profile-specific display prose while preserving URLs and other
+// compatibility identifiers from the upstream translation template.
+const replaceBrandingText = (value) => {
+  if (typeof value === 'string') {
+    if (value.includes('://') || value.includes('nault.cc')) return value;
+    return value.replace(/NanoNymNault/g, branding.applicationName).replace(/\bNault\b/g, branding.applicationName);
+  }
+  if (Array.isArray(value)) return value.map(replaceBrandingText);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, replaceBrandingText(entry)]));
+  return value;
+};
+fs.writeFileSync('src/assets/i18n/en.branding.json', `${JSON.stringify(replaceBrandingText(sourceTranslations), null, 2)}\n`);
 console.log(`Generated version: ${version}`);
 console.log(`Generated branding profile: ${brandingProfile}`);

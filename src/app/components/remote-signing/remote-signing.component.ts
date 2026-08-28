@@ -7,6 +7,7 @@ import { QrModalService } from '../../services/qr-modal.service';
 import { AddressBookService } from 'app/services/address-book.service';
 import {BehaviorSubject} from 'rxjs';
 import { TestIds } from '../../testing/test-ids';
+import { branding } from 'environments/branding';
 
 @Component({
   standalone: false,
@@ -24,6 +25,7 @@ export class RemoteSigningComponent implements OnInit {
   private addressBookService = inject(AddressBookService);
 
   readonly testIds = TestIds;
+  readonly branding = branding;
   toAccountID = '';
   toAccountStatus: number = null;
   unsignedBlock = '';

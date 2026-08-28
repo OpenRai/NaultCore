@@ -56,7 +56,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: pnpm run wallet:build:naultcore
+        run: pnpm run wallet:build:naultcore:preview
+
+      - name: Verify PWA preview artifact
+        run: pnpm run verify:pwa:preview
+
+      - name: Verify canonical branding assets
+        run: pnpm run verify:branding
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

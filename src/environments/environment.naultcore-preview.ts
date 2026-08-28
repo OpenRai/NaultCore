@@ -3,7 +3,7 @@ export const environment = {
   desktop: false,
   e2eUnlockBridge: false,
   featureNanonyms: false,
-  publicUrl: 'https://openrai.github.io/NaultCore',
+  publicUrl: 'https://naultcore-dev.openrai.org',
   donationAddress:
-    "nano_1nnym1fi87ogqqb48ezizfhgfaewn1jmaaw4teaensu8fx9a615if4d96gpc",
+    'nano_1nnym1fi87ogqqb48ezizfhgfaewn1jmaaw4teaensu8fx9a615if4d96gpc',
 };

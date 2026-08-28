@@ -9,6 +9,7 @@ import { wallet } from 'nanocurrency-web';
 import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
+import { branding } from 'environments/branding';
 
 enum panels {
   'landing',
@@ -27,6 +28,7 @@ enum panels {
   styleUrls: ['./configure-wallet.component.css']
 })
 export class ConfigureWalletComponent implements OnInit {
+  readonly branding = branding;
   private router = inject(ActivatedRoute);
   walletService = inject(WalletService);
   private notifications = inject(NotificationService);
@@ -195,7 +197,7 @@ export class ConfigureWalletComponent implements OnInit {
     const UIkit = window['UIkit'];
     try {
       const msg = this.walletService.isLedgerWallet()
-        ? '<p class="uk-alert uk-alert-info"><br><span class="uk-flex"><span uk-icon="icon: info; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to configure a new wallet, which will <b>disconnect your Ledger device from Nault</b>.</span><br><br>If you need to use the Ledger wallet, simply import your device again.</p><br>'
+        ? `<p class="uk-alert uk-alert-info"><br><span class="uk-flex"><span uk-icon="icon: info; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to configure a new wallet, which will <b>disconnect your Ledger device from ${branding.applicationName}</b>.</span><br><br>If you need to use the Ledger wallet, simply import your device again.</p><br>`
         : '<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to configure a new wallet, which will <b>replace your currently configured wallet</b>.</span><br><br><b style="font-size: 18px;">' + this.translocoService.translate('reset-wallet.before-continuing-make-sure-you-have-saved-the-nano-seed') + '</b><br><br><b style="font-size: 18px;">' + this.translocoService.translate('reset-wallet.you-will-not-be-able-to-recover-the-funds-without-a-backup') + '</b></p><br>';
       await UIkit.modal.confirm(msg);
       return true;

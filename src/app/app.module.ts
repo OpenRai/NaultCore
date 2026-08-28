@@ -123,7 +123,10 @@ import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
     ClipboardModule,
     ZXingScannerModule,
     NgbModule,
-    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production && !environment.desktop }),
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: environment.production && !environment.desktop,
+      registrationStrategy: 'registerImmediately',
+    }),
     TranslocoRootModule,
   ],
   providers: [

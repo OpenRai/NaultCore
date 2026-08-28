@@ -8,6 +8,7 @@ export const environment = {
   desktop: false,
   e2eUnlockBridge: false,
   featureNanonyms: true,
+  publicUrl: 'http://localhost:4200',
   donationAddress:
     "nano_1nnym1fi87ogqqb48ezizfhgfaewn1jmaaw4teaensu8fx9a615if4d96gpc",
 };

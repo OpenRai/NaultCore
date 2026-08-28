@@ -1,0 +1,25 @@
+{
+  "name": "NaultCore",
+  "short_name": "NaultCore",
+  "id": "/NaultCore/",
+  "theme_color": "oklch(60.69% 0.09 253.44deg)",
+  "background_color": "oklch(29.7% 0.05 234.3deg)",
+  "display": "standalone",
+  "scope": "/NaultCore/",
+  "start_url": "/NaultCore/?source=pwa",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/NaultCore/assets/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/NaultCore/assets/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

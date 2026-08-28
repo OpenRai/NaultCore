@@ -13,6 +13,7 @@ import * as bip39 from 'bip39';
 import {Router} from '@angular/router';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
+import { branding } from 'environments/branding';
 
 const INDEX_MAX = ACCOUNT_INDEX_MAX;
 const SWEEP_MAX_INDEX = 100; // max index keys to sweep
@@ -39,6 +40,7 @@ export class SweeperComponent implements OnInit {
   private route = inject(Router);
 
   readonly testIds = TestIds;
+  readonly branding = branding;
   accounts = this.walletService.wallet.accounts;
   indexMax = INDEX_MAX;
   incomingMax = SWEEP_MAX_PENDING;

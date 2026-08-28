@@ -23,7 +23,8 @@
               "src/assets",
               "src/pow.wasm",
               "src/404.html",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              "src/manifest.naultcore.webmanifest"
             ],
             "styles": [
               "src/styles.less"
@@ -126,6 +127,27 @@
               ],
               "serviceWorker": "ngsw-config.json"
             },
+            "naultcore-preview": {
+              "index": "src/index.preview.html",
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.naultcore-preview.ts"
+                }
+              ],
+              "serviceWorker": "ngsw-config.json"
+            },
             "naultcore-e2e": {
               "budgets": [
                 {
@@ -169,6 +191,9 @@
             "naultcore": {
               "buildTarget": "nault:build:naultcore"
             },
+            "naultcore-preview": {
+              "buildTarget": "nault:build:naultcore-preview"
+            },
             "naultcore-e2e": {
               "buildTarget": "nault:build:naultcore-e2e"
             },
@@ -198,7 +223,8 @@
             "assets": [
               "src/assets",
               "src/pow.wasm",
-              "src/manifest.webmanifest"
+              "src/manifest.webmanifest",
+              "src/manifest.naultcore.webmanifest"
             ],
             "define": {
               "FEATURE_NANONYMS": "false"

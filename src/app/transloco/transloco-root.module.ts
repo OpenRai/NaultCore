@@ -7,7 +7,7 @@ export class TranslocoHttpLoader implements TranslocoLoader {
   constructor() {}
 
   getTranslation(lang: string) {
-    return import(/* webpackChunkName: "translation" */ `../../assets/i18n/${lang}.json`).then(res => res.default);
+    return import(/* webpackChunkName: "translation" */ `../../assets/i18n/${lang}.branding.json`).then(res => res.default);
   }
 }
 

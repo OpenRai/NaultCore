@@ -646,7 +646,7 @@ export class ConfigureAppComponent implements OnInit {
 
       this.notifications.sendSuccess(this.translocoService.translate('configure-app.clear-all-data.successfully-deleted-locally-stored-data-and-reset-the'));
 
-      // Get a new random API server or Nault will get stuck in offline mode
+      // Get a new random API server or the app will get stuck in offline mode
       this.updateServerSettings();
     } catch (err) {}
   }

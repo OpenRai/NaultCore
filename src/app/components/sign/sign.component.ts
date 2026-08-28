@@ -21,6 +21,7 @@ import { MusigService } from '../../services/musig.service';
 import { environment } from 'environments/environment';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
+import { branding } from 'environments/branding';
 
 const INDEX_MAX = ACCOUNT_INDEX_MAX;
 // navigation source for cancel command (excluding camera source because too complicated to fix)
@@ -49,6 +50,7 @@ export class SignComponent implements OnInit {
   price = inject(PriceService);
 
   readonly testIds = TestIds;
+  readonly branding = branding;
   paramsString = '';
   activePanel = 'error';
   shouldSign: boolean = null; // if a block has been scanned for signing (or if it is a block to process)

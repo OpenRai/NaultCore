@@ -13,6 +13,8 @@ import {PriceService} from '../../services/price.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {TranslocoService} from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
+import { environment } from 'environments/environment';
+import { branding } from 'environments/branding';
 
 export interface BalanceAccount {
   balance: BigNumber;
@@ -30,6 +32,7 @@ export interface BalanceAccount {
 })
 
 export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
+  readonly branding = branding;
   private addressBookService = inject(AddressBookService);
   private walletService = inject(WalletService);
   notificationService = inject(NotificationService);
@@ -380,7 +383,7 @@ export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
   async exportAddressBook() {
     const exportData = this.addressBookService.addressBook;
     const base64Data = btoa(this.toBinary(JSON.stringify(exportData)));
-    const exportUrl = `https://nault.cc/import-address-book#${base64Data}`;
+    const exportUrl = `${environment.publicUrl}/import-address-book#${base64Data}`;
     this.addressBookQRExportUrl = exportUrl;
     this.addressBookShowFileExport = true;
 

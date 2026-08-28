@@ -19,14 +19,14 @@
           <div>
             @if (!walletService.isLedgerWallet()) {
               <div class="uk-alert uk-alert-danger">
-                <b>You already have a local Nault wallet configured</b><br>
+                <b>You already have a local {{ branding.applicationName }} wallet configured</b><br>
                 Before going any further, be 100% certain you have backed up the secret recovery phrase for your current wallet!<br>
                 Without it, <b>any funds you have will become completely unrecoverable!</b>
               </div>
             }
             @if (walletService.isLedgerWallet()) {
               <div class="uk-alert uk-alert-info">
-                <b>You are about to import a new wallet, which will disconnect your Ledger device from Nault</b><br>
+                <b>You are about to import a new wallet, which will disconnect your Ledger device from {{ branding.applicationName }}</b><br>
                 If you need to use the Ledger wallet later, simply import your device again.
               </div>
             }

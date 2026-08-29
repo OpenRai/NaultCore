@@ -56,6 +56,7 @@ describe('SendComponent - regular wallet balance refresh', () => {
       isSpendingFromNanoNym: false,
       walletService: {
         wallet: { accounts: [walletAccount] },
+        getWalletAccount: (accountID: string) => accountID === walletAccount.id ? walletAccount : null,
         isLocked: () => false,
         isLedgerWallet: () => false,
         reloadBalances,

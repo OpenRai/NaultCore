@@ -2,7 +2,6 @@ import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/cor
 import BigNumber from "bignumber.js";
 import { AddressBookService } from "../../services/address-book.service";
 import { BehaviorSubject } from "rxjs";
-import { debounceTime } from "rxjs/operators";
 import { WalletService } from "../../services/wallet.service";
 import { NotificationService } from "../../services/notification.service";
 import { ApiService } from "../../services/api.service";
@@ -62,7 +61,7 @@ export class SendComponent implements OnInit {
   activePanel = "send";
   sendDestinationType = "external-address";
 
-  accounts = this.walletService.wallet.accounts;
+  accounts = this.walletService.walletState.accounts as any;
   spendableAccounts: SpendableAccount[] = [];
   selectedSpendableAccount: SpendableAccount | null = null;
 
@@ -139,7 +138,17 @@ export class SendComponent implements OnInit {
 
     this.addressBookService.loadAddressBook();
 
-    // Load all spendable accounts (regular + NanoNyms)
+    // Subscribe to replayed regular-wallet and NanoNym projections. Both
+    // streams emit immediately for late-mounted send views.
+    this.walletService.walletState$.subscribe(snapshot => {
+      this.accounts = snapshot.accounts as any;
+    });
+    this.walletService.spendableAccounts$.subscribe(accounts => {
+      this.spendableAccounts = accounts;
+    });
+
+    // Refresh NanoNym balances independently; storage publishes its own
+    // projection and does not invalidate regular-wallet state.
     this.loadSpendableAccounts();
 
     // Load privacy warning dismissed setting
@@ -150,7 +159,7 @@ export class SendComponent implements OnInit {
     this.fromAccountID = this.accounts.length ? this.accounts[0].id : "";
 
     // Update selected account if changed in the sidebar
-    this.walletService.wallet.selectedAccount$.subscribe(async (acc) => {
+    this.walletService.selectedAccountState$.subscribe(async (acc) => {
       if (this.activePanel !== "send") {
         // Transaction details already finalized
         return;
@@ -171,24 +180,9 @@ export class SendComponent implements OnInit {
       this.updateQueries(queries);
     });
 
-    // Reload spendable accounts (From Account dropdown) when balance is refreshed
-    // This ensures the dropdown shows updated balances after sends, receives, or wallet reload
-    // Use debounceTime to prevent rapid repeated updates from triggering extra API calls
-    // Use rebuildSpendableAccountsList (not loadSpendableAccounts) to avoid redundant node queries
-    // Use setTimeout to defer the update to the next tick to avoid ExpressionChangedAfterItHasBeenCheckedError
-    this.walletService.wallet.refresh$
-      .pipe(
-        debounceTime(300)
-      )
-      .subscribe(() => {
-        setTimeout(() => {
-          this.rebuildSpendableAccountsList();
-        }, 0);
-      });
-
     // Set the account selected in the sidebar as default
-    if (this.walletService.wallet.selectedAccount !== null) {
-      this.fromAccountID = this.walletService.wallet.selectedAccount.id;
+    if (this.walletService.walletState.selectedAccount !== null) {
+      this.fromAccountID = this.walletService.walletState.selectedAccount.id;
     } else {
       // If "total balance" is selected in the sidebar, use the first account in the wallet that has a balance
       this.findFirstAccount();
@@ -220,7 +214,7 @@ export class SendComponent implements OnInit {
 
   async findFirstAccount() {
     // Load balances before we try to find the right account
-    if (this.walletService.wallet.balance.isZero()) {
+    if (this.walletService.walletState.balance.isZero()) {
       await this.walletService.reloadBalances();
     }
 
@@ -600,9 +594,7 @@ export class SendComponent implements OnInit {
   }
 
   getAccountLabel(accountID, defaultLabel) {
-    const walletAccount = this.walletService.wallet.accounts.find(
-      (a) => a.id === accountID,
-    );
+    const walletAccount = this.walletService.getWalletAccount(accountID);
 
     if (walletAccount == null) {
       return defaultLabel;
@@ -750,9 +742,7 @@ export class SendComponent implements OnInit {
       return await this.confirmNanoNymSpend();
     }
 
-    const walletAccount = this.walletService.wallet.accounts.find(
-      (a) => a.id === this.fromAccountID,
-    );
+    const walletAccount = this.walletService.getWalletAccount(this.fromAccountID);
     if (!walletAccount) {
       throw new Error(`Unable to find sending account in wallet`);
     }
@@ -1112,9 +1102,7 @@ export class SendComponent implements OnInit {
     }
 
     // Regular wallet account
-    const walletAccount = this.walletService.wallet.accounts.find(
-      (a) => a.id === this.fromAccountID,
-    );
+    const walletAccount = this.walletService.getWalletAccount(this.fromAccountID);
     if (!walletAccount) {
       return;
     }
@@ -1531,50 +1519,6 @@ export class SendComponent implements OnInit {
       console.error('[Send] Failed to refresh NanoNym balances:', err);
     });
 
-    // Rebuild the spendable accounts list from current data
-    this.rebuildSpendableAccountsList();
-  }
-
-  /**
-   * Rebuild the spendable accounts dropdown list from current storage
-   * Does NOT refresh balances from node (use loadSpendableAccounts for that)
-   * Called when balance updates occur to refresh the UI without extra API calls
-   */
-  private rebuildSpendableAccountsList(): void {
-    // Convert regular wallet accounts to SpendableAccount format
-    const regularAccounts: any[] = this.accounts.map(account => ({
-      type: 'regular' as const,
-      id: account.id,
-      label: this.util.account.prefixNonStandardLabel(
-        account.addressBookName || `Account #${account.index}`,
-        account.nonStandardIndex
-      ),
-      balance: account.balance,
-      balanceRaw: account.balanceRaw,
-      pending: account.pending,
-      balanceFiat: account.balanceFiat,
-      index: account.index,
-      walletAccount: account
-    }));
-
-    // Get NanoNym accounts
-    const nanoNymAccounts = this.nanoNymManager.getSpendableNanoNymAccounts();
-
-    // Calculate fiat values for NanoNyms
-    nanoNymAccounts.forEach(account => {
-      account.balanceFiat = this.util.nano.rawToMnano(account.balance)
-        .times(this.price.price.lastPrice)
-        .toNumber();
-    });
-
-    // Combine both types
-    this.spendableAccounts = [...regularAccounts, ...nanoNymAccounts];
-
-    console.log('[Send] Loaded spendable accounts:', {
-      regular: regularAccounts.length,
-      nanoNym: nanoNymAccounts.length,
-      total: this.spendableAccounts.length
-    });
   }
 
   /**

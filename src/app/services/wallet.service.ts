@@ -17,7 +17,7 @@ import { NanoNymManagerService } from './nanonym-manager.service';
 import { NanoNymStorageService } from './nanonym-storage.service';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../types/spendable-account.types';
 import { combineLatest, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
@@ -244,6 +244,14 @@ export class WalletService {
 
   get walletState(): WalletStateSnapshot {
     return this.walletStateSubject.value;
+  }
+
+  /** Replayed selected-account projection, emitting only when selection changes. */
+  get selectedAccountState$(): Observable<WalletAccountSnapshot|null> {
+    return this.walletState$.pipe(
+      map(snapshot => snapshot.selectedAccount),
+      distinctUntilChanged((previous, current) => previous?.id === current?.id),
+    );
   }
 
   private createWalletStateSnapshot(sync: WalletSyncState): WalletStateSnapshot {
@@ -1319,18 +1327,23 @@ export class WalletService {
       hasBeenReceived: false,
     });
     this.wallet.pendingBlocksUpdate$.next(null);
+    this.publishWalletState();
     return true;
   }
 
   // Remove a pending account from the pending list
   async removePendingBlock(blockHash) {
     const index = this.wallet.pendingBlocks.findIndex(b => b.hash === blockHash);
-    this.wallet.pendingBlocks.splice(index, 1);
+    if (index !== -1) {
+      this.wallet.pendingBlocks.splice(index, 1);
+      this.publishWalletState();
+    }
   }
 
   // Clear the list of pending blocks
   async clearPendingBlocks() {
     this.wallet.pendingBlocks.splice(0, this.wallet.pendingBlocks.length);
+    this.publishWalletState();
   }
 
   sortByAmount(a, b) {

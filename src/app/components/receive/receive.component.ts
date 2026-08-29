@@ -47,7 +47,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   nano = 1000000000000000000000000;
-  accounts = this.walletService.wallet.accounts;
+  accounts = this.walletService.walletState.accounts as any;
   nanoNymAccounts: any[] = [];
   isSelectedAccountNanoNym = false;
 
@@ -135,8 +135,15 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     );
     }
 
+    // Consume replayed account and receivable projections. The legacy pending
+    // pulse remains only for compatibility with unmigrated views.
+    this.walletService.walletState$.subscribe(snapshot => {
+      this.accounts = snapshot.accounts as any;
+      void this.updatePendingBlocks(snapshot);
+    });
+
     // Update selected account if changed in the sidebar
-    this.walletService.wallet.selectedAccount$.subscribe(async (acc) => {
+    this.walletService.selectedAccountState$.subscribe(async (acc) => {
       if (this.selAccountInit) {
         this.pendingAccountModel = acc ? acc.id : "0";
         this.onSelectedAccountChange(this.pendingAccountModel);
@@ -144,21 +151,11 @@ export class ReceiveComponent implements OnInit, OnDestroy {
       this.selAccountInit = true;
     });
 
-    this.walletService.wallet.pendingBlocksUpdate$.subscribe(
-      async (receivableBlockUpdate) => {
-        if (receivableBlockUpdate === null) {
-          return;
-        }
-
-        this.updatePendingBlocks();
-      },
-    );
-
     await this.updatePendingBlocks();
 
-    if (this.walletService.wallet.selectedAccount !== null) {
+    if (this.walletService.walletState.selectedAccount !== null) {
       // Set the account selected in the sidebar as default
-      this.pendingAccountModel = this.walletService.wallet.selectedAccount.id;
+      this.pendingAccountModel = this.walletService.walletState.selectedAccount.id;
       this.onSelectedAccountChange(this.pendingAccountModel);
     } else if (this.accounts.length === 1) {
       // Auto-select account if it is the only account in the wallet
@@ -206,8 +203,8 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     }
   }
 
-  async updatePendingBlocks() {
-    this.pendingBlocks = this.walletService.wallet.pendingBlocks
+  async updatePendingBlocks(snapshot = this.walletService.walletState) {
+    this.pendingBlocks = snapshot.pendingBlocks
       .map((pendingBlock) =>
         Object.assign({}, pendingBlock, {
           account: pendingBlock.source,
@@ -259,9 +256,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   }
 
   getAccountLabel(accountID, defaultLabel) {
-    const walletAccount = this.walletService.wallet.accounts.find(
-      (a) => a.id === accountID,
-    );
+    const walletAccount = this.walletService.getWalletAccount(accountID);
 
     if (walletAccount == null) {
       return defaultLabel;
@@ -363,8 +358,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   }
 
   async changeQRAccount(account) {
-    this.walletAccount =
-      this.walletService.wallet.accounts.find((a) => a.id === account) || null;
+    this.walletAccount = this.walletService.getWalletAccount(account);
     this.qrAccount = "";
     let qrCode = null;
     if (account.length > 1) {
@@ -419,9 +413,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   async receiveReceivableBlock(receivableBlock) {
     const sourceBlock = receivableBlock.hash;
 
-    const walletAccount = this.walletService.wallet.accounts.find(
-      (a) => a.id === receivableBlock.destination,
-    );
+    const walletAccount = this.walletService.getWalletAccount(receivableBlock.destination);
     if (!walletAccount) {
       throw new Error(`Unable to find receiving account in wallet`);
     }

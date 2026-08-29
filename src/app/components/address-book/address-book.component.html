@@ -116,7 +116,7 @@
                         </ul>
                         @if (addressBook.trackBalance) {
                           <div class="uk-width-expand amount-container">
-                            @if ((walletService.wallet.updatingBalance === false)) {
+                            @if (!loadingBalances) {
                               <div class="account-amounts-primary uk-width-1-1">
                                 <span [title]="( accounts[addressBook.account]?.balanceRaw.gt(0) ? ( '+' + ( accounts[addressBook.account]?.balanceRaw.toString(10) ) + ' raw' ) : '' )">
                                   <span class="amount-integer">{{ $safeNavigationMigration(accounts[addressBook.account]?.balance) | rai: 'mnano,true' | amountsplit: 0 }}</span>

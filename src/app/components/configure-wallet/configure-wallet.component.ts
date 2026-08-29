@@ -41,7 +41,6 @@ export class ConfigureWalletComponent implements OnInit {
   readonly testIds = TestIds;
   panels = panels;
   activePanel = panels.landing;
-  wallet = this.walletService.wallet;
   isConfigured = this.walletService.isConfigured;
   isNewWallet = true;
   hasConfirmedBackup = false;

@@ -254,6 +254,15 @@ export class WalletService {
     );
   }
 
+  /** Read-only transient unlock-modal request stream for UI coordination. */
+  get unlockModalRequested$(): Observable<boolean> {
+    return this.wallet.unlockModalRequested$.asObservable();
+  }
+
+  cancelWalletUnlockRequest(): void {
+    this.wallet.unlockModalRequested$.next(false);
+  }
+
   private createWalletStateSnapshot(sync: WalletSyncState): WalletStateSnapshot {
     const accounts = this.wallet.accounts.map(account => Object.freeze({
       id: account.id,

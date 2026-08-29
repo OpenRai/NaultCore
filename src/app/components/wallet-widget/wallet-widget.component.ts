@@ -21,8 +21,6 @@ export class WalletWidgetComponent implements OnInit {
   private powService = inject(PowService);
 
   readonly testIds = TestIds;
-  wallet = this.walletService.wallet;
-
   ledgerStatus = {
     status: 'not-connected',
     statusText: '',
@@ -58,7 +56,7 @@ export class WalletWidgetComponent implements OnInit {
       }
     });
 
-    this.walletService.wallet.unlockModalRequested$.subscribe(async wasRequested => {
+    this.walletService.unlockModalRequested$.subscribe(async wasRequested => {
       if (wasRequested === true) {
         this.showModal();
       }
@@ -72,7 +70,7 @@ export class WalletWidgetComponent implements OnInit {
 
   onModalHidden() {
     this.unlockPassword = '';
-    this.walletService.wallet.unlockModalRequested$.next(false);
+    this.walletService.cancelWalletUnlockRequest();
   }
 
   async lockWallet() {

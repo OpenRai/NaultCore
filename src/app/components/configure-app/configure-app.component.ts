@@ -47,7 +47,6 @@ export class ConfigureAppComponent implements OnInit {
 
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
-  wallet = this.walletService.wallet;
 
   languages = this.translocoService.getAvailableLangs() as [{id: string, label: string}];
   selectedLanguage = this.languages[0].id;

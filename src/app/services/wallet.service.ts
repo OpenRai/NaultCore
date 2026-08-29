@@ -525,10 +525,6 @@ export class WalletService {
         if (isNewBlock === true) {
           const root = walletAccount.frontier || this.util.account.getAccountPublicKey(walletAccount.id);
           this.workPool.noteReceiveExpected(walletAccount.id, root);
-          this.wallet.pending = this.wallet.pending.plus(txAmount);
-          this.wallet.pendingRaw = this.wallet.pendingRaw.plus(txAmount.mod(this.nano));
-          this.wallet.pendingFiat += this.util.nano.rawToMnano(txAmount).times(this.price.price.lastPrice).toNumber();
-          this.wallet.hasPending = true;
         }
       }
 
@@ -544,6 +540,22 @@ export class WalletService {
     this.wallet.accounts.forEach(account => {
       account.addressBookName = this.addressBook.getAccountName(account.id);
     });
+    this.publishWalletState();
+  }
+
+  /** Select a regular wallet account and publish the coherent snapshot. */
+  selectAccount(accountID: string|null): WalletAccount|null {
+    const account = accountID ? this.wallet.accounts.find(a => a.id === accountID) || null : null;
+    this.wallet.selectedAccountId = account?.id || null;
+    this.wallet.selectedAccount = account;
+    this.wallet.selectedAccount$.next(account);
+    this.publishWalletState();
+    return account;
+  }
+
+  /** Sort regular accounts by derivation index and publish the new order. */
+  sortAccountsByIndex(): void {
+    this.wallet.accounts.sort((a, b) => a.index - b.index);
     this.publishWalletState();
   }
 
@@ -736,9 +748,8 @@ export class WalletService {
           `Please send their funds to standard accounts and remove them.`,
           { length: 0, identifier: 'non-standard-index' }
         );
-        // Trigger UI refresh so account labels pick up the nonStandardIndex flag
-        this.wallet.refresh$.next(true);
-        this.wallet.refresh$.next(false);
+        // Publish the lifecycle/account metadata change through the snapshot.
+        this.publishWalletState();
       }
 
       this.notifications.removeNotification('pending-locked'); // If there is a notification to unlock, remove it
@@ -1051,6 +1062,7 @@ export class WalletService {
 
     this.wallet.balanceFiat = this.util.nano.rawToMnano(this.wallet.balance).times(fiatPrice).toNumber();
     this.wallet.pendingFiat = this.util.nano.rawToMnano(this.wallet.pending).times(fiatPrice).toNumber();
+    this.publishWalletState();
   }
 
   resetBalances() {

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Subject } from 'rxjs';
 import {AppSettingsService} from './app-settings.service';
 
 @Injectable()
@@ -21,7 +21,9 @@ export class WebsocketService {
 
   subscribedAccounts = [];
 
-  newTransactions$ = new BehaviorSubject(null);
+  // Confirmations are transport events, not durable wallet state. Consumers
+  // must reconcile through WalletService rather than replaying an old event.
+  newTransactions$ = new Subject<any>();
 
   /**
    * Normalize websocket timestamp to milliseconds.

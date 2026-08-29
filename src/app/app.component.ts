@@ -145,8 +145,7 @@ export class AppComponent implements OnInit {
 
     // update selected account object with the latest balance, pending, etc
     if (this.wallet.selectedAccountId) {
-      const currentUpdatedAccount = this.wallet.accounts.find(a => a.id === this.wallet.selectedAccountId) ?? null;
-      this.wallet.selectedAccount = currentUpdatedAccount;
+      this.walletService.selectAccount(this.wallet.selectedAccountId);
     }
 
     await this.walletService.reloadBalances();
@@ -344,9 +343,7 @@ export class AppComponent implements OnInit {
 
   selectAccount(account) {
     // note: account is null when user is switching to 'Total Balance'
-    this.wallet.selectedAccountId = account ? account.id : null;
-    this.wallet.selectedAccount = account;
-    this.wallet.selectedAccount$.next(account);
+    this.walletService.selectAccount(account ? account.id : null);
     this.toggleAccountsDropdown();
     this.walletService.saveWalletExport();
   }

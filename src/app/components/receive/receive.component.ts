@@ -166,10 +166,10 @@ export class ReceiveComponent implements OnInit, OnDestroy {
       this.onSelectedAccountChange(this.pendingAccountModel);
     }
 
-    // Listen as new transactions come in. Ignore the latest transaction that is already present on page load.
-    const latest = this.websocket.newTransactions$.getValue();
+    // Confirmations are non-replayed transport events, so only future events
+    // can reach this page after the subscription is established.
     this.websocket.newTransactions$.subscribe(async (transaction) => {
-      if (transaction && latest !== transaction) {
+      if (transaction) {
         const rawAmount = new BigNumber(transaction.amount);
         if (
           transaction.block.link_as_account === this.qrAccount &&

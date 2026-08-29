@@ -20,6 +20,7 @@ function createServiceForStateTests(): any {
     accounts: [],
     selectedAccountId: null,
     selectedAccount: null,
+    selectedAccount$: new BehaviorSubject(null),
     pendingBlocks: [],
   };
   service.walletStateSubject = new BehaviorSubject(
@@ -74,6 +75,26 @@ describe('WalletService wallet state snapshots', () => {
     service.walletStateSubject.subscribe(value => received = value);
 
     expect(received).toBe(snapshot);
+  });
+});
+
+describe('WalletService wallet-owned mutations', () => {
+  it('publishes account ordering and selection through snapshots', () => {
+    const service = createServiceForStateTests();
+    service.wallet.accounts = [
+      { id: 'nano_2', index: 2, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+      { id: 'nano_1', index: 1, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+    ];
+    const initialRevision = service.walletStateSubject.value.revision;
+
+    service.sortAccountsByIndex();
+    expect(service.wallet.accounts.map(account => account.id)).toEqual(['nano_1', 'nano_2']);
+    expect(service.walletStateSubject.value.revision).toBe(initialRevision + 1);
+
+    const selected = service.selectAccount('nano_2');
+    expect(selected?.id).toBe('nano_2');
+    expect(service.walletStateSubject.value.selectedAccountId).toBe('nano_2');
+    expect(service.walletStateSubject.value.revision).toBe(initialRevision + 2);
   });
 });
 

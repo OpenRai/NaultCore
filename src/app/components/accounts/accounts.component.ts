@@ -165,7 +165,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     // }
     if (this.walletService.isLocked() || !this.walletService.isConfigured() ||
       this.walletService.wallet.accounts.length <= 1) return;
-    this.walletService.wallet.accounts = this.walletService.wallet.accounts.sort((a, b) => a.index - b.index);
+    this.walletService.sortAccountsByIndex();
     // this.accounts = this.walletService.wallet.accounts;
     this.walletService.saveWalletExport(); // Save new sorted accounts list
     // this.notificationService.sendSuccess(`Successfully sorted accounts by index!`);
@@ -175,9 +175,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     const isSmallViewport = (window.innerWidth < 940);
 
     if (isSmallViewport === true) {
-        this.walletService.wallet.selectedAccountId = account ? account.id : null;
-        this.walletService.wallet.selectedAccount = account;
-        this.walletService.wallet.selectedAccount$.next(account);
+        this.walletService.selectAccount(account ? account.id : null);
         this.walletService.saveWalletExport();
     }
 

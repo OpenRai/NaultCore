@@ -141,3 +141,48 @@ describe('WalletService reconciliation coordination', () => {
     expect(retrySnapshot.sync.status).toBe('ready');
   });
 });
+
+describe('WalletService WebSocket confirmation guard', () => {
+  it('requires an existing confirmed state block before projection', async () => {
+    const service = createServiceForStateTests();
+    const hash = 'A'.repeat(64);
+    service.api = {
+      blocksInfo: jasmine.createSpy('blocksInfo').and.resolveTo({
+        blocks: {
+          [hash]: { confirmed: 'true', subtype: 'receive' },
+        },
+      }),
+    };
+
+    await expectAsync(service.verifyConfirmedTransaction({
+      hash,
+      block: { type: 'state', subtype: 'receive', account: 'nano_1test' },
+    })).toBeResolvedTo(true);
+    expect(service.api.blocksInfo).toHaveBeenCalledWith([hash]);
+  });
+
+  it('rejects unknown, provisional, and non-state confirmations', async () => {
+    const service = createServiceForStateTests();
+    const hash = 'B'.repeat(64);
+    service.api = {
+      blocksInfo: jasmine.createSpy('blocksInfo').and.resolveTo({
+        blocks: {
+          [hash]: { confirmed: false },
+        },
+      }),
+    };
+
+    await expectAsync(service.verifyConfirmedTransaction({
+      hash,
+      block: { type: 'state', account: 'nano_1test' },
+    })).toBeResolvedTo(false);
+    await expectAsync(service.verifyConfirmedTransaction({
+      hash: 'C'.repeat(64),
+      block: { type: 'state', account: 'nano_1test' },
+    })).toBeResolvedTo(false);
+    await expectAsync(service.verifyConfirmedTransaction({
+      hash,
+      block: { type: 'send', account: 'nano_1test' },
+    })).toBeResolvedTo(false);
+  });
+});

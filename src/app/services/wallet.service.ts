@@ -355,6 +355,10 @@ export class WalletService {
 
     this.websocket.newTransactions$.subscribe(async (transaction) => {
       if (!transaction) return; // Not really a new transaction
+      // The WebSocket event is only a hint. Confirm the block still exists at
+      // the configured Nano RPC endpoint before projecting it to the wallet
+      // or showing a foreground notification.
+      if (!await this.verifyConfirmedTransaction(transaction)) return;
       console.log('New Transaction', transaction);
       let shouldNotify = false;
       if (this.appSettings.settings.minimumReceive) {
@@ -508,6 +512,21 @@ export class WalletService {
     this.addressBook.addressBook$.subscribe(newAddressBook => {
       this.reloadAddressBook();
     });
+  }
+
+  private async verifyConfirmedTransaction(transaction: any): Promise<boolean> {
+    if (!transaction?.hash || transaction.block?.type !== 'state') return false;
+    try {
+      const response = await this.api.blocksInfo([transaction.hash]);
+      const blocks = response?.blocks || {};
+      const block = blocks[transaction.hash] || blocks[String(transaction.hash).toUpperCase()];
+      if (!block || block.error) return false;
+      if (block.confirmed !== undefined && block.confirmed !== true && block.confirmed !== 'true') return false;
+      if (block.subtype && transaction.block.subtype && block.subtype !== transaction.block.subtype) return false;
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async processStateBlock(transaction) {

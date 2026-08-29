@@ -19,7 +19,6 @@ export class WelcomeComponent implements OnInit {
 
   donationAccount = environment.donationAddress;
 
-  wallet = this.walletService.wallet;
   isConfigured = this.walletService.isConfigured;
 
   ngOnInit() {

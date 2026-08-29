@@ -109,7 +109,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   manualRefreshAllowed = true;
   instantAutoRefreshAllowed = true;
   shouldQueueAutoRefresh = false;
-  autoRefreshReasonBlockUpdate = null;
   dateStringToday = '';
   dateStringYesterday = '';
 
@@ -190,7 +189,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
         .map(block => `${block.account}:${block.hash}`)
         .join('|');
       if (this.pendingBlockSnapshotSignature && signature !== this.pendingBlockSnapshotSignature && this.initialLoadDone) {
-        this.loadAccountDetailsThrottled({ receivableBlockUpdate: null });
+        this.loadAccountDetailsThrottled();
       }
       this.pendingBlockSnapshotSignature = signature;
     });
@@ -348,70 +347,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.loadAccountDetails();
   }
 
-  isReceivableBlockUpdateRelevant(receivableBlockUpdate) {
-    let isRelevant = true;
-
-    if (receivableBlockUpdate.account !== this.accountID) {
-      isRelevant = false;
-      return isRelevant;
-    }
-
-    const sourceHashToFind = receivableBlockUpdate.sourceHash;
-
-    const alreadyInReceivableBlocks =
-      this.pendingBlocks.some(
-        (knownReceivableBlock) =>
-          (knownReceivableBlock.hash === sourceHashToFind)
-      );
-
-    if (receivableBlockUpdate.hasBeenReceived === true) {
-      const destinationHashToFind = receivableBlockUpdate.destinationHash;
-
-      const alreadyInAccountHistory =
-        this.accountHistory.some(
-          (knownAccountHistoryBlock) =>
-            (knownAccountHistoryBlock.hash === destinationHashToFind)
-        );
-
-      if (
-            (alreadyInAccountHistory === true)
-          && (alreadyInReceivableBlocks === false)
-        ) {
-          isRelevant = false;
-          return isRelevant;
-      }
-    } else {
-      if (alreadyInReceivableBlocks === true) {
-        isRelevant = false;
-        return isRelevant;
-      }
-    }
-
-    return isRelevant;
-  }
-
-  onReceivableBlockUpdate(receivableBlockUpdate) {
-    if (receivableBlockUpdate === null) {
-      return;
-    }
-
-    const isRelevantUpdate =
-      this.isReceivableBlockUpdateRelevant(receivableBlockUpdate);
-
-    if (isRelevantUpdate === false) {
-      return;
-    }
-
-    this.loadAccountDetailsThrottled({ receivableBlockUpdate });
-  }
-
-  loadAccountDetailsThrottled(params) {
-    this.autoRefreshReasonBlockUpdate = (
-        (params.receivableBlockUpdate != null)
-      ? params.receivableBlockUpdate
-      : null
-    );
-
+  loadAccountDetailsThrottled() {
     if (this.initialLoadDone === false) {
       return;
     }
@@ -466,16 +402,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.timeoutIdQueuedAutoRefresh =
       setTimeout(
         () => {
-          if (this.autoRefreshReasonBlockUpdate !== null) {
-            const isUpdateStillRelevant =
-              this.isReceivableBlockUpdateRelevant(this.autoRefreshReasonBlockUpdate);
-
-            if (isUpdateStillRelevant === false) {
-              this.enableRefreshesEventually();
-              return;
-            }
-          }
-
           this.loadAccountDetails();
         },
         delayMS
@@ -1216,7 +1142,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       this.mobileTransactionMenuModal.hide();
       this.notifications.removeNotification('success-receive');
       this.notifications.sendSuccess(`Successfully received nano!`, { identifier: 'success-receive' });
-      // clear the list of pending blocks. Updated again with reloadBalances()
+      // clear the list of pending blocks. Updated again after reconciliation.
       this.wallet.clearPendingBlocks();
     } else {
       if (hasShownErrorNotification === false) {
@@ -1228,9 +1154,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     receivableBlock.loading = false;
 
-    await this.wallet.reloadBalances();
+    await this.wallet.refreshWalletState('account-details-receive');
 
-    this.loadAccountDetailsThrottled({});
+    this.loadAccountDetailsThrottled();
   }
 
   async generateSend() {

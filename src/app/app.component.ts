@@ -74,7 +74,6 @@ export class AppComponent implements OnInit {
   @ViewChild('selectButton') selectButton: ElementRef;
   @ViewChild('accountsDropdown') accountsDropdown: ElementRef;
 
-  wallet = this.walletService.wallet;
   node = this.nodeService.node;
   nanoPrice = this.price.price;
   totalBalance$ = this.walletService.totalBalance$;
@@ -136,19 +135,19 @@ export class AppComponent implements OnInit {
 
     // Navigate to accounts page if there is wallet, but only if coming from home. On desktop app the path ends with index.html
     if (this.walletService.isConfigured() && (window.location.pathname === '/' || window.location.pathname.endsWith('index.html'))) {
-      if (this.wallet.selectedAccountId) {
-        this.router.navigate([`account/${this.wallet.selectedAccountId}`], { queryParams: {'compact': 1}, replaceUrl: true });
+      if (this.walletService.walletState.selectedAccountId) {
+        this.router.navigate([`account/${this.walletService.walletState.selectedAccountId}`], { queryParams: {'compact': 1}, replaceUrl: true });
       } else {
         this.router.navigate(['accounts'], { replaceUrl: true });
       }
     }
 
     // update selected account object with the latest balance, pending, etc
-    if (this.wallet.selectedAccountId) {
-      this.walletService.selectAccount(this.wallet.selectedAccountId);
+    if (this.walletService.walletState.selectedAccountId) {
+      this.walletService.selectAccount(this.walletService.walletState.selectedAccountId);
     }
 
-    await this.walletService.reloadBalances();
+    await this.walletService.refreshWalletState('startup');
 
     // Start monitoring all NanoNyms on app start
     if (FEATURE_NANONYMS) {
@@ -384,7 +383,7 @@ export class AppComponent implements OnInit {
       this.notifications.sendInfo(`Wallet server settings is set to offline mode. Please change server first!`);
       return;
     }
-    this.walletService.reloadBalances();
+    this.walletService.refreshWalletState('reconnect');
     this.notifications.sendInfo(`Attempting to reconnect to nano node`);
   }
 

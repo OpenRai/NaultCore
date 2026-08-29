@@ -74,7 +74,7 @@ export class DeeplinkService {
   }
 
   hasAccounts() {
-    return this.walletService.wallet.accounts.length > 0;
+    return this.walletService.walletState.accounts.length > 0;
   }
 
   handleSeed(seed) {

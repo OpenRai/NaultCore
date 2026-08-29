@@ -215,7 +215,7 @@ export class SendComponent implements OnInit {
   async findFirstAccount() {
     // Load balances before we try to find the right account
     if (this.walletService.walletState.balance.isZero()) {
-      await this.walletService.reloadBalances();
+      await this.walletService.refreshWalletState('send-selection');
     }
 
     // Look for the first account that has a balance
@@ -771,7 +771,7 @@ export class SendComponent implements OnInit {
 
       if (newHash) {
         try {
-          await this.walletService.reloadBalances();
+          await this.walletService.refreshWalletState('regular-send');
         } catch (err) {
           // The block is already confirmed; a refresh failure must not turn a
           // successful send into a failed one.

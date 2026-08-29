@@ -94,7 +94,6 @@ class MockWalletService {
   isLocked = () => this.locked;
   getRecoverySecret = () => this.locked ? null : 'testseed';
   getWalletAccount = jasmine.createSpy('getWalletAccount');
-  informBalanceRefresh = jasmine.createSpy('informBalanceRefresh');
 }
 
 class MockNanoBlockService {

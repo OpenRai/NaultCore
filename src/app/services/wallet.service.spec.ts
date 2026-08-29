@@ -14,13 +14,10 @@ function createServiceForStateTests(): any {
     pendingRaw: new BigNumber(0),
     balanceFiat: 0,
     pendingFiat: 0,
-    balanceInitialized: false,
     hasPending: false,
-    updatingBalance: false,
     accounts: [],
     selectedAccountId: null,
     selectedAccount: null,
-    selectedAccount$: new BehaviorSubject(null),
     pendingBlocks: [],
   };
   service.walletStateSubject = new BehaviorSubject(
@@ -30,7 +27,6 @@ function createServiceForStateTests(): any {
   service.reconciliationCompletedGeneration = 0;
   service.reconciliationPromise = null;
   service.reconciliationWaiters = [];
-  service.informBalanceRefresh = () => undefined;
   service.processPendingBlocks = async () => undefined;
   return service;
 }
@@ -137,7 +133,6 @@ describe('WalletService reconciliation coordination', () => {
 
     await expectAsync(service.refreshWalletState('manual')).toBeRejectedWithError('node unavailable');
 
-    expect(service.wallet.updatingBalance).toBeFalse();
     expect(service.walletStateSubject.value.sync.status).toBe('error');
     expect(service.walletStateSubject.value.sync.reason).toBe('manual');
 

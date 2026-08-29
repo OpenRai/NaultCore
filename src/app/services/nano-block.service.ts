@@ -377,7 +377,8 @@ export class NanoBlockService {
     if (processResponse && processResponse.hash) {
       walletAccount.frontier = processResponse.hash;
       // Add new hash into the work pool, high PoW threshold since we don't know what the next one will be
-      // Skip adding new work cache directly, let reloadBalances() check for pending and decide instead
+      // Skip adding new work cache directly; the next wallet reconciliation
+      // checks pending state and decides what work is needed.
       // this.workPool.addWorkToCache(processResponse.hash, 1);
       this.workPool.removeFromCache(workBlock, walletAccount.id);
 

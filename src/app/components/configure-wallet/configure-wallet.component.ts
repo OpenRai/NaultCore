@@ -123,7 +123,6 @@ export class ConfigureWalletComponent implements OnInit {
     this.notifications.sendSuccess(`Successfully imported wallet!`, {length: 10000});
 
     // this.repService.detectChangeableReps(); // this is now called from change-rep-widget.component when new wallet
-    this.walletService.informNewWallet();
   }
 
   async importSingleKeyWallet() {
@@ -133,7 +132,6 @@ export class ConfigureWalletComponent implements OnInit {
     this.keyString = '';
 
     this.notifications.sendSuccess(`Successfully imported wallet from a private key!`);
-    this.walletService.informNewWallet();
   }
 
   async connectLedgerByBluetooth() {
@@ -186,7 +184,6 @@ export class ConfigureWalletComponent implements OnInit {
     const newWallet = await this.walletService.createLedgerWallet();
     this.notifications.sendSuccess(`Successfully loaded ledger device!`);
 
-    this.walletService.informNewWallet();
   }
 
   // Send a confirmation dialog to the user if they already have a wallet configured
@@ -343,7 +340,6 @@ export class ConfigureWalletComponent implements OnInit {
 
   saveNewWallet() {
     this.walletService.saveWalletExport();
-    this.walletService.informNewWallet();
 
     this.notifications.sendSuccess(`Successfully created new wallet! Do not lose the secret recovery seed/mnemonic!`);
   }

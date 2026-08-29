@@ -270,11 +270,11 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   }
 
   async getPending() {
-    // clear the list of pending blocks. Updated again with reloadBalances()
+    // clear the list of pending blocks. Updated again after reconciliation.
     this.pendingBlocks = [];
     this.pendingBlocksForSelectedAccount = [];
     this.loadingIncomingTxList = true;
-    await this.walletService.reloadBalances();
+    await this.walletService.refreshWalletState('manual-receive');
     this.loadingIncomingTxList = false;
   }
 
@@ -451,7 +451,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
         identifier: "success-receive",
       });
       // pending has been processed, can be removed from the list
-      // list also updated with reloadBalances but not if called too fast
+      // list also updated after reconciliation but not if called too fast
       this.walletService.removePendingBlock(receivableBlock.hash);
     } else {
       if (hasShownErrorNotification === false) {

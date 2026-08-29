@@ -451,7 +451,7 @@ export class ConfigureAppComponent implements OnInit {
       this.walletService.saveWalletExport(); // If swapping the storage engine, resave the wallet
     }
     if (reloadPending) {
-      this.walletService.reloadBalances();
+      this.walletService.refreshWalletState('settings-change');
     }
   }
 
@@ -489,10 +489,10 @@ export class ConfigureAppComponent implements OnInit {
 
     this.notifications.sendSuccess(this.translocoService.translate('configure-app.server-settings-successfully-updated'));
 
-    this.node.node.status = false; // Directly set node to offline since API url changed.  Status will get set by reloadBalances
+    this.node.node.status = false; // Directly set node to offline since API url changed. Status updates after reconciliation.
 
     // Reload balances which triggers an api check + reconnect to websocket server
-    await this.walletService.reloadBalances();
+    await this.walletService.refreshWalletState('server-change');
     this.websocket.forceReconnect();
     // this is updated after setting server to random and doing recheck of wallet balance
     this.serverAPIUpdated = this.appSettings.settings.serverAPI;

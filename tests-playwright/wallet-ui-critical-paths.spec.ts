@@ -104,7 +104,7 @@ test('exports a wallet backup', async ({ seededPage }) => {
   await expect(seededPage.getByTestId('manage-wallet-page-root')).toBeVisible();
   await seededPage.getByTestId('manage-wallet-backup-wallet-button').click();
 
-  const exportCard = seededPage.locator('.uk-card').filter({ hasText: 'Export Nault Wallet' });
+  const exportCard = seededPage.locator('.uk-card').filter({ hasText: /Export .* Wallet/ });
   await expect(exportCard.locator('input[type="text"]')).toHaveValue(/^http:\/\/localhost:4200\/import-wallet#/);
   await expect(seededPage.getByRole('button', { name: 'Export As File' })).toBeVisible();
 });

@@ -105,13 +105,6 @@ export interface Block {
   source: string;
 }
 
-export interface ReceivableBlockUpdate {
-  account: string;
-  sourceHash: string;
-  destinationHash: string|null;
-  hasBeenReceived: boolean;
-}
-
 export interface FullWallet {
   balance: BigNumber;
   pending: BigNumber;
@@ -120,17 +113,11 @@ export interface FullWallet {
   balanceFiat: number;
   pendingFiat: number;
   hasPending: boolean;
-  updatingBalance: boolean;
-  balanceInitialized: boolean;
   accounts: WalletAccount[];
   selectedAccountId: string|null;
   selectedAccount: WalletAccount|null;
-  selectedAccount$: BehaviorSubject<WalletAccount|null>;
   unlockModalRequested$: BehaviorSubject<boolean|false>;
   pendingBlocks: Block[];
-  pendingBlocksUpdate$: BehaviorSubject<ReceivableBlockUpdate|null>;
-  newWallet$: BehaviorSubject<boolean|false>;
-  refresh$: BehaviorSubject<boolean|false>;
 }
 
 export interface BaseApiAccount {
@@ -180,7 +167,7 @@ export class WalletService {
   private readonly lifecycleSubject = new BehaviorSubject<WalletLifecycleSnapshot>(this.lifecycleSnapshot());
   readonly lifecycle$: Observable<WalletLifecycleSnapshot> = this.lifecycleSubject.asObservable();
 
-  wallet: FullWallet = {
+  private wallet: FullWallet = {
     balance: new BigNumber(0),
     pending: new BigNumber(0),
     balanceRaw: new BigNumber(0),
@@ -188,17 +175,11 @@ export class WalletService {
     balanceFiat: 0,
     pendingFiat: 0,
     hasPending: false,
-    updatingBalance: false,
-    balanceInitialized: false,
     accounts: [],
     selectedAccountId: null,
     selectedAccount: null,
-    selectedAccount$: new BehaviorSubject(null),
     unlockModalRequested$: new BehaviorSubject(false),
     pendingBlocks: [],
-    pendingBlocksUpdate$: new BehaviorSubject(null),
-    newWallet$: new BehaviorSubject(false),
-    refresh$: new BehaviorSubject(false),
   };
 
   private walletStateRevision = 0;
@@ -336,12 +317,9 @@ export class WalletService {
         this.reconciliationCompletedGeneration = generation;
         const snapshot = this.publishWalletState({ status: 'ready', reason });
         this.resolveReconciliationWaiters(generation, snapshot);
-        // Keep the legacy pulse as a temporary adapter for unmigrated callers.
-        this.informBalanceRefresh();
         // Pending processing must not hold the reconciliation coordinator open.
         void this.processPendingBlocks();
       } catch (error) {
-        this.wallet.updatingBalance = false;
         this.reconciliationCompletedGeneration = generation;
         this.publishWalletState({
           status: 'error',
@@ -512,7 +490,7 @@ export class WalletService {
       );
 
       if (shouldReloadBalances === true) {
-        await this.reloadBalances();
+        await this.refreshWalletState('websocket-confirmation');
       }
     });
 
@@ -565,7 +543,6 @@ export class WalletService {
     const account = accountID ? this.wallet.accounts.find(a => a.id === accountID) || null : null;
     this.wallet.selectedAccountId = account?.id || null;
     this.wallet.selectedAccount = account;
-    this.wallet.selectedAccount$.next(account);
     this.publishWalletState();
     return account;
   }
@@ -664,7 +641,7 @@ export class WalletService {
       this.wallet.accounts.push(this.createSingleKeyAccount(walletType === 'expandedKey'));
     }
 
-    await this.reloadBalances();
+    await this.refreshWalletState('wallet-import');
 
     if (this.wallet.accounts.length) {
       this.websocket.subscribeAccounts(this.wallet.accounts.map(a => a.id));
@@ -866,7 +843,7 @@ export class WalletService {
     }
 
     // Reload balances for all accounts
-    this.reloadBalances();
+    this.refreshWalletState('wallet-scan');
   }
 
   async createNewWallet(seed: string) {
@@ -924,7 +901,7 @@ export class WalletService {
     this.commitLifecycle({ kind: 'unlocked', type: expanded ? 'expandedKey' : 'privateKey', secret: key, secretBytes: this.util.hex.toUint8(key), password: '' });
 
     this.wallet.accounts.push(this.createSingleKeyAccount(expanded));
-    await this.reloadBalances();
+    await this.refreshWalletState('single-key-wallet');
     this.saveWalletExport();
   }
 
@@ -1020,7 +997,6 @@ export class WalletService {
     this.wallet.hasPending = false;
     this.wallet.selectedAccountId = null;
     this.wallet.selectedAccount = null;
-    this.wallet.selectedAccount$.next(null);
     this.wallet.pendingBlocks = [];
     this.publishWalletState({ status: 'idle', reason: 'reset' });
   }
@@ -1092,12 +1068,7 @@ export class WalletService {
     this.wallet.hasPending = false;
   }
 
-  async reloadBalances() {
-    return this.refreshWalletState('reload-balances');
-  }
-
   private async reloadBalancesFromNode() {
-    this.wallet.updatingBalance = true;
     const fiatPrice = this.price.price.lastPrice;
 
     const accountIDs = this.wallet.accounts.map(a => a.id);
@@ -1106,8 +1077,6 @@ export class WalletService {
     if (!accounts) {
       // Commit the empty response only after both account RPCs have succeeded.
       this.resetBalances();
-      this.wallet.updatingBalance = false;
-      this.wallet.balanceInitialized = true;
       return;
     }
 
@@ -1216,8 +1185,6 @@ export class WalletService {
     this.wallet.balanceFiat = this.util.nano.rawToMnano(walletBalance).times(fiatPrice).toNumber();
     this.wallet.pendingFiat = this.util.nano.rawToMnano(walletPendingAboveThresholdConfirmed).times(fiatPrice).toNumber();
     this.wallet.hasPending = walletPendingAboveThresholdConfirmed.gt(0);
-    this.wallet.updatingBalance = false;
-    this.wallet.balanceInitialized = true;
 
   }
 
@@ -1248,7 +1215,7 @@ export class WalletService {
     return newAccount;
   }
 
-  async addWalletAccount(accountIndex: number|null = null, reloadBalances: boolean = true) {
+  async addWalletAccount(accountIndex: number|null = null, refreshState: boolean = true) {
     // if (!this.wallet.seedBytes) return;
     let index = accountIndex;
     if (index === null) {
@@ -1283,7 +1250,7 @@ export class WalletService {
     this.wallet.accounts.push(newAccount);
     this.publishWalletState();
 
-    if (reloadBalances) await this.reloadBalances();
+    if (refreshState) await this.refreshWalletState('account-added');
 
     this.websocket.subscribeAccounts([newAccount.id]);
 
@@ -1305,7 +1272,7 @@ export class WalletService {
     this.websocket.unsubscribeAccounts([accountID]);
 
     // Reload the balances, save new wallet state
-    await this.reloadBalances();
+    await this.refreshWalletState('account-removed');
     this.saveWalletExport();
 
     return true;
@@ -1329,13 +1296,6 @@ export class WalletService {
     if (existingHash) return false; // Already added
 
     this.wallet.pendingBlocks.push({ account: accountID, hash: blockHash, amount: amount, source: source });
-    this.wallet.pendingBlocksUpdate$.next({
-      account: accountID,
-      sourceHash: blockHash,
-      destinationHash: null,
-      hasBeenReceived: false,
-    });
-    this.wallet.pendingBlocksUpdate$.next(null);
     this.publishWalletState();
     return true;
   }
@@ -1391,16 +1351,9 @@ export class WalletService {
       this.notifications.sendSuccess(`Successfully received ${receiveAmount.isZero() ? '' : this.noZerosPipe.transform(receiveAmount.toFixed(6)) } XNO!`, { identifier: 'success-receive' });
 
       // remove after processing
-      // list also updated with reloadBalances but not if called too fast
+      // list also updated after reconciliation but not if called too fast
       this.removePendingBlock(nextBlock.hash);
-      await this.reloadBalances();
-      this.wallet.pendingBlocksUpdate$.next({
-        account: nextBlock.account,
-        sourceHash: nextBlock.hash,
-        destinationHash: newHash,
-        hasBeenReceived: true,
-      });
-      this.wallet.pendingBlocksUpdate$.next(null);
+      await this.refreshWalletState('pending-receive');
     } else {
       if (this.isLedgerWallet()) {
         this.processingPending = false;
@@ -1485,18 +1438,6 @@ export class WalletService {
           })
       )
     );
-  }
-
-  // Subscribable event when a new wallet is created
-  informNewWallet() {
-    this.wallet.newWallet$.next(true);
-    this.wallet.newWallet$.next(false);
-  }
-
-  // Subscribable event when balances has been refreshed
-  informBalanceRefresh() {
-    this.wallet.refresh$.next(true);
-    this.wallet.refresh$.next(false);
   }
 
   requestWalletUnlock() {

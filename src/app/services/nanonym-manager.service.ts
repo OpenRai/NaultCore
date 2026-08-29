@@ -712,8 +712,8 @@ export class NanoNymManagerService implements OnDestroy {
     for (const nanoNym of allNanoNyms) {
       await this.refreshBalances(nanoNym.index);
     }
-    // Trigger reactive UI update after all balances are refreshed
-    this.wallet.informBalanceRefresh();
+    // NanoNymStorageService publishes its own snapshot; regular-wallet state
+    // must not be invalidated by a NanoNym-only balance refresh.
   }
 
   /**

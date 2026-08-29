@@ -1052,7 +1052,6 @@ export class SendComponent implements OnInit {
           // Update balance after each transaction to show incremental progress
           const nanoNymAccount = this.selectedSpendableAccount as any;
           await this.nanoNymManager.refreshBalances(nanoNymAccount.index);
-          this.walletService.informBalanceRefresh();
           stealthAccount.done = true;
         } else {
           console.error(`[Send-NanoNym] ❌ Transaction ${i + 1} failed`);

@@ -54,7 +54,7 @@ export class SignComponent implements OnInit {
   paramsString = '';
   activePanel = 'error';
   shouldSign: boolean = null; // if a block has been scanned for signing (or if it is a block to process)
-  accounts = this.walletService.wallet.accounts;
+  accounts = this.walletService.walletState.accounts as any;
   addressBookResults$ = new BehaviorSubject([]);
   showAddressBook = false;
   addressBookMatch = '';
@@ -136,6 +136,10 @@ export class SignComponent implements OnInit {
   @ViewChild('dataAddFocus') _el: ElementRef;
 
   async ngOnInit() {
+    this.walletService.walletState$.subscribe(snapshot => {
+      this.accounts = snapshot.accounts as any;
+    });
+
     const UIkit = window['UIkit'];
     const qrModal = UIkit.modal('#qr-code-modal');
     this.qrModal = qrModal;
@@ -374,7 +378,7 @@ export class SignComponent implements OnInit {
     switch (this.signTypeSelected) {
       // wallet
       case this.signTypes[0]:
-        this.walletAccount = this.accounts.find(a => a.id.replace('xrb_', 'nano_') === this.signatureAccount);
+        this.walletAccount = this.walletService.getWalletAccount(this.signatureAccount);
         if (!this.walletAccount) {
           this.signatureMessage = 'Could not find a matching wallet account to sign with. Make sure it\'s added under your accounts';
         } else {

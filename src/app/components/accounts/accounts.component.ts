@@ -43,7 +43,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
   readonly walletState$ = this.walletService.walletState$;
-  accounts = this.walletService.wallet.accounts;
+  accounts = this.walletService.walletState.accounts as any;
   isLedgerWallet = this.walletService.isLedgerWallet();
   isSingleKeyWallet = this.walletService.isSingleKeyWallet();
   viewAdvanced = false;
@@ -127,7 +127,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
       return this.notificationService.sendWarning(this.translocoService.translate('accounts.ledger-device-must-be-ready'));
     }
     if (!this.walletService.isConfigured()) return this.notificationService.sendError(this.translocoService.translate('accounts.wallet-is-not-configured'));
-    if (this.walletService.wallet.accounts.length >= 20) return this.notificationService.sendWarning(this.translocoService.translate('accounts.you-can-only-track-up-to-x-accounts-at-a-time', { accounts: 20 }));
+    if (this.walletService.walletState.accounts.length >= 20) return this.notificationService.sendWarning(this.translocoService.translate('accounts.you-can-only-track-up-to-x-accounts-at-a-time', { accounts: 20 }));
     // Advanced view, manual account index?
     let accountIndex = null;
     if (this.viewAdvanced && this.newAccountIndex != null) {
@@ -138,7 +138,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
           `Account index must be between 0 and ${this.util.account.ACCOUNT_INDEX_MAX}`
         );
       }
-      const existingAccount = this.walletService.wallet.accounts.find(a => a.index === index);
+      const existingAccount = this.walletService.walletState.accounts.find(a => a.index === index);
       if (existingAccount) {
         return this.notificationService.sendWarning(
           this.translocoService.translate('accounts.the-account-at-this-index-is-already-loaded')
@@ -165,7 +165,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
       // return this.notificationService.sendWarning(`You need at least 2 accounts to sort them`);
     // }
     if (this.walletService.isLocked() || !this.walletService.isConfigured() ||
-      this.walletService.wallet.accounts.length <= 1) return;
+      this.walletService.walletState.accounts.length <= 1) return;
     this.walletService.sortAccountsByIndex();
     // this.accounts = this.walletService.wallet.accounts;
     this.walletService.saveWalletExport(); // Save new sorted accounts list
@@ -187,7 +187,9 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     const isSmallViewport = (window.innerWidth < 940);
 
     if (isSmallViewport) {
-      this.walletService.wallet.selectedAccountId = account.id;
+      // NanoNyms have an independent projection; clear regular-wallet
+      // selection rather than storing a NanoNym ID in regular state.
+      this.walletService.selectAccount(null);
       this.walletService.saveWalletExport();
     }
 

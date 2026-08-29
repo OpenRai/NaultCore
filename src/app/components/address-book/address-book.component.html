@@ -64,7 +64,7 @@
                         {{ 'address-book.reload-balances' | transloco | uppercase }}
                         <ul class="uk-width-auto uk-iconnav uk-margin-remove-left" style="margin-top: -1px;">
                           <li>
-                            @if ((loadingBalances || walletService.wallet.updatingBalance === true)) {
+                            @if (loadingBalances) {
                               <div
                                 uk-spinner="ratio: 0.5;"
                                 class="icon-transactions-refresh spinner"

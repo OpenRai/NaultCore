@@ -156,7 +156,7 @@
                     <select class="uk-select" [(ngModel)]="changeAccountID" (change)="newAccountID()" id="form-horizontal-select">
                       <option [value]="null">Select Accounts to Change</option>
                       <option [value]="'all'">All Current Accounts</option>
-                      @for (account of walletService.wallet.accounts; track account) {
+                      @for (account of walletService.walletState.accounts; track account.id) {
                         <option [value]="account.id">{{account.addressBookName ? account.addressBookName + ' - ' : '#' + account.index + ' - ' }} {{ account.id | squeeze }} ({{ account.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ account.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO)</option>
                       }
                     </select>

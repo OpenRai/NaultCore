@@ -133,7 +133,7 @@ export class RepresentativesComponent implements OnInit {
       return addressBookName;
     }
 
-    const walletAccount = this.walletService.wallet.accounts.find(a => a.id === account.id);
+    const walletAccount = this.walletService.getWalletAccount(account.id);
 
     if (walletAccount == null) {
       return this.translocoService.translate('general.account');
@@ -310,7 +310,11 @@ export class RepresentativesComponent implements OnInit {
     }
 
     const allAccounts = accounts.find(a => a.id === 'All Current Accounts');
-    const accountsToChange = allAccounts ? this.walletService.wallet.accounts : accounts;
+    const accountsToChange = allAccounts
+      ? this.walletService.walletState.accounts
+        .map(account => this.walletService.getWalletAccount(account.id))
+        .filter(account => account !== null)
+      : accounts;
 
     // Remove any that don't need their represetatives to be changed
     const accountsNeedingChange = accountsToChange.filter(account => {

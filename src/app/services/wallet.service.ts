@@ -18,6 +18,7 @@ import { NanoNymStorageService } from './nanonym-storage.service';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../types/spendable-account.types';
 import { combineLatest, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from 'environments/environment';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -34,6 +35,48 @@ export interface WalletLifecycleSnapshot {
   type: WalletType|null;
   locked: boolean;
   configured: boolean;
+}
+
+export type WalletSyncStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+export interface WalletSyncState {
+  status: WalletSyncStatus;
+  reason?: string;
+  error?: string;
+}
+
+export interface WalletAccountSnapshot {
+  id: string;
+  frontier: string|null;
+  index: number;
+  balance: BigNumber;
+  pending: BigNumber;
+  balanceRaw: BigNumber;
+  pendingRaw: BigNumber;
+  balanceFiat: number;
+  pendingFiat: number;
+  addressBookName: string|null;
+  receivePow: boolean;
+  isStealthAccount?: boolean;
+  publicKeyHex?: string;
+  nonStandardIndex?: boolean;
+}
+
+export interface WalletStateSnapshot {
+  revision: number;
+  lifecycle: WalletLifecycleSnapshot;
+  accounts: ReadonlyArray<WalletAccountSnapshot>;
+  selectedAccountId: string|null;
+  selectedAccount: WalletAccountSnapshot|null;
+  balance: BigNumber;
+  pending: BigNumber;
+  balanceRaw: BigNumber;
+  pendingRaw: BigNumber;
+  balanceFiat: number;
+  pendingFiat: number;
+  hasPending: boolean;
+  pendingBlocks: ReadonlyArray<Readonly<Block>>;
+  sync: WalletSyncState;
 }
 
 export interface WalletAccount {
@@ -108,6 +151,12 @@ export interface WalletApiAccount extends BaseApiAccount {
   id?: string;
 }
 
+interface ReconciliationWaiter {
+  generation: number;
+  resolve: (snapshot: WalletStateSnapshot) => void;
+  reject: (error: unknown) => void;
+}
+
 @Injectable()
 export class WalletService {
   private util = inject(UtilService);
@@ -152,10 +201,18 @@ export class WalletService {
     refresh$: new BehaviorSubject(false),
   };
 
+  private walletStateRevision = 0;
+  private readonly walletStateSubject: BehaviorSubject<WalletStateSnapshot>;
+  readonly walletState$: Observable<WalletStateSnapshot>;
+  private reconciliationRequestedGeneration = 0;
+  private reconciliationCompletedGeneration = 0;
+  private reconciliationPromise: Promise<void>|null = null;
+  private reconciliationReason = 'initialization';
+  private reconciliationWaiters: ReconciliationWaiter[] = [];
+
   processingPending = false;
   successfulBlocks = [];
   trackedHashes = [];
-  private balanceReloadQueued = false;
 
   get lifecycle(): WalletLifecycleSnapshot {
     return this.lifecycleSnapshot();
@@ -166,9 +223,10 @@ export class WalletService {
     return { kind: state.kind, type, locked: state.kind === 'locked', configured: state.kind !== 'empty' };
   }
 
-  private commitLifecycle(state: WalletLifecycleState): void {
+  private commitLifecycle(state: WalletLifecycleState, publish = true): void {
     this.lifecycleState = state;
     this.lifecycleSubject.next(this.lifecycleSnapshot(state));
+    if (publish) this.publishWalletState();
   }
 
   private unlockedState(): Extract<WalletLifecycleState, { kind: 'unlocked' }> | null {
@@ -184,7 +242,122 @@ export class WalletService {
     if (bytes) bytes.fill(0);
   }
 
+  get walletState(): WalletStateSnapshot {
+    return this.walletStateSubject.value;
+  }
+
+  private createWalletStateSnapshot(sync: WalletSyncState): WalletStateSnapshot {
+    const accounts = this.wallet.accounts.map(account => Object.freeze({
+      id: account.id,
+      frontier: account.frontier,
+      index: account.index,
+      balance: new BigNumber(account.balance || 0),
+      pending: new BigNumber(account.pending || 0),
+      balanceRaw: new BigNumber(account.balanceRaw || 0),
+      pendingRaw: new BigNumber(account.pendingRaw || 0),
+      balanceFiat: account.balanceFiat,
+      pendingFiat: account.pendingFiat,
+      addressBookName: account.addressBookName,
+      receivePow: account.receivePow,
+      ...(account.isStealthAccount === undefined ? {} : { isStealthAccount: account.isStealthAccount }),
+      ...(account.publicKeyHex === undefined ? {} : { publicKeyHex: account.publicKeyHex }),
+      ...(account.nonStandardIndex === undefined ? {} : { nonStandardIndex: account.nonStandardIndex }),
+    }));
+    const selectedAccountId = this.wallet.selectedAccountId || this.wallet.selectedAccount?.id || null;
+    const selectedAccount = accounts.find(account => account.id === selectedAccountId) || null;
+    const pendingBlocks = this.wallet.pendingBlocks.map(block => Object.freeze({ ...block }));
+
+    return Object.freeze({
+      revision: this.walletStateRevision,
+      lifecycle: Object.freeze(this.lifecycleSnapshot()),
+      accounts: Object.freeze(accounts),
+      selectedAccountId,
+      selectedAccount,
+      balance: new BigNumber(this.wallet.balance || 0),
+      pending: new BigNumber(this.wallet.pending || 0),
+      balanceRaw: new BigNumber(this.wallet.balanceRaw || 0),
+      pendingRaw: new BigNumber(this.wallet.pendingRaw || 0),
+      balanceFiat: this.wallet.balanceFiat,
+      pendingFiat: this.wallet.pendingFiat,
+      hasPending: this.wallet.hasPending,
+      pendingBlocks: Object.freeze(pendingBlocks),
+      sync: Object.freeze({ ...sync }),
+    });
+  }
+
+  private publishWalletState(sync = this.walletStateSubject.value.sync): WalletStateSnapshot {
+    this.walletStateRevision += 1;
+    const snapshot = this.createWalletStateSnapshot(sync);
+    this.walletStateSubject.next(snapshot);
+    return snapshot;
+  }
+
+  async refreshWalletState(reason = 'manual'): Promise<WalletStateSnapshot> {
+    const generation = ++this.reconciliationRequestedGeneration;
+    this.reconciliationReason = reason;
+    const result = new Promise<WalletStateSnapshot>((resolve, reject) => {
+      this.reconciliationWaiters.push({ generation, resolve, reject });
+    });
+
+    if (!this.reconciliationPromise) {
+      this.reconciliationPromise = this.runReconciliation().finally(() => {
+        this.reconciliationPromise = null;
+      });
+    }
+
+    return result;
+  }
+
+  private async runReconciliation(): Promise<void> {
+    while (this.reconciliationCompletedGeneration < this.reconciliationRequestedGeneration) {
+      const generation = this.reconciliationRequestedGeneration;
+      const reason = this.reconciliationReason;
+      this.publishWalletState({ status: 'loading', reason });
+
+      try {
+        await this.reloadBalancesFromNode();
+        this.reconciliationCompletedGeneration = generation;
+        const snapshot = this.publishWalletState({ status: 'ready', reason });
+        this.resolveReconciliationWaiters(generation, snapshot);
+        // Keep the legacy pulse as a temporary adapter for unmigrated callers.
+        this.informBalanceRefresh();
+        // Pending processing must not hold the reconciliation coordinator open.
+        void this.processPendingBlocks();
+      } catch (error) {
+        this.wallet.updatingBalance = false;
+        this.reconciliationCompletedGeneration = generation;
+        this.publishWalletState({
+          status: 'error',
+          reason,
+          error: error instanceof Error ? error.message : 'Wallet state refresh failed',
+        });
+        this.rejectReconciliationWaiters(generation, error);
+      }
+    }
+  }
+
+  private resolveReconciliationWaiters(generation: number, snapshot: WalletStateSnapshot): void {
+    const remaining: ReconciliationWaiter[] = [];
+    this.reconciliationWaiters.forEach(waiter => {
+      if (waiter.generation <= generation) waiter.resolve(snapshot);
+      else remaining.push(waiter);
+    });
+    this.reconciliationWaiters = remaining;
+  }
+
+  private rejectReconciliationWaiters(generation: number, error: unknown): void {
+    const remaining: ReconciliationWaiter[] = [];
+    this.reconciliationWaiters.forEach(waiter => {
+      if (waiter.generation <= generation) waiter.reject(error);
+      else remaining.push(waiter);
+    });
+    this.reconciliationWaiters = remaining;
+  }
+
   constructor() {
+    this.walletStateSubject = new BehaviorSubject(this.createWalletStateSnapshot({ status: 'idle', reason: 'initialization' }));
+    this.walletState$ = this.walletStateSubject.asObservable();
+
     this.websocket.newTransactions$.subscribe(async (transaction) => {
       if (!transaction) return; // Not really a new transaction
       console.log('New Transaction', transaction);
@@ -371,6 +544,7 @@ export class WalletService {
     this.wallet.accounts.forEach(account => {
       account.addressBookName = this.addressBook.getAccountName(account.id);
     });
+    this.publishWalletState();
   }
 
   getWalletAccount(accountID) {
@@ -493,7 +667,7 @@ export class WalletService {
     const exportData = this.generateExportData();
     const base64Data = btoa(JSON.stringify(exportData));
 
-    return `https://nault.cc/import-wallet#${base64Data}`;
+    return `${environment.publicUrl}/import-wallet#${base64Data}`;
   }
 
   lockWallet() {
@@ -807,7 +981,7 @@ export class WalletService {
 
     const state = this.unlockedState();
     if (state) this.clearBytes(state.secretBytes);
-    this.commitLifecycle({ kind: 'empty' });
+    this.commitLifecycle({ kind: 'empty' }, false);
     this.wallet.accounts = [];
     this.wallet.balance = new BigNumber(0);
     this.wallet.pending = new BigNumber(0);
@@ -820,6 +994,7 @@ export class WalletService {
     this.wallet.selectedAccount = null;
     this.wallet.selectedAccount$.next(null);
     this.wallet.pendingBlocks = [];
+    this.publishWalletState({ status: 'idle', reason: 'reset' });
   }
 
   isConfigured = () => {
@@ -889,26 +1064,7 @@ export class WalletService {
   }
 
   async reloadBalances() {
-    // A websocket update can overlap a confirmed local send. Preserve one
-    // follow-up reload so the local send is not left with the older snapshot.
-    if (this.wallet.updatingBalance) {
-      this.balanceReloadQueued = true;
-      return;
-    }
-
-    do {
-      this.balanceReloadQueued = false;
-      await this.reloadBalancesOnce();
-    } while (this.balanceReloadQueued);
-  }
-
-  private async reloadBalancesOnce() {
-    try {
-      await this.reloadBalancesFromNode();
-    } finally {
-      // A failed node request must not prevent all future balance refreshes.
-      this.wallet.updatingBalance = false;
-    }
+    return this.refreshWalletState('reload-balances');
   }
 
   private async reloadBalancesFromNode() {
@@ -918,126 +1074,104 @@ export class WalletService {
     const accountIDs = this.wallet.accounts.map(a => a.id);
     const accounts = await this.api.accountsBalances(accountIDs);
     const frontiers = await this.api.accountsFrontiers(accountIDs);
-    // const allFrontiers = [];
-    // for (const account in frontiers.frontiers) {
-    //   allFrontiers.push({ account, frontier: frontiers.frontiers[account] });
-    // }
-    // const frontierBlocks = await this.api.blocksInfo(allFrontiers.map(f => f.frontier));
-
-    let walletBalance = new BigNumber(0);
-    let walletPendingInclUnconfirmed = new BigNumber(0);
-    let walletPendingAboveThresholdConfirmed = new BigNumber(0);
-
     if (!accounts) {
+      // Commit the empty response only after both account RPCs have succeeded.
       this.resetBalances();
       this.wallet.updatingBalance = false;
       this.wallet.balanceInitialized = true;
       return;
     }
 
-    this.clearPendingBlocks();
+    // Build the complete next state off to the side. Legacy consumers keep
+    // seeing the previous coherent wallet until this bundle is ready.
+    const accountDrafts = new Map(this.wallet.accounts.map(account => [account.id, {
+      balance: new BigNumber(account.balance || 0),
+      balanceRaw: new BigNumber(account.balanceRaw || 0),
+      balanceFiat: account.balanceFiat,
+      frontier: account.frontier,
+      pending: new BigNumber(account.pending || 0),
+      pendingRaw: new BigNumber(account.pendingRaw || 0),
+      pendingFiat: account.pendingFiat,
+      receivePow: account.receivePow,
+    }]));
+    const pendingBlocks: Block[] = [];
+    let walletBalance = new BigNumber(0);
+    let walletPendingInclUnconfirmed = new BigNumber(0);
+    let walletPendingAboveThresholdConfirmed = new BigNumber(0);
+
+    // Receivables are replaced by this authoritative response, not merged
+    // with the previous query's values.
+    for (const draft of accountDrafts.values()) {
+      draft.balance = new BigNumber(0);
+      draft.balanceRaw = new BigNumber(0);
+      draft.balanceFiat = 0;
+      draft.frontier = null;
+      draft.pending = new BigNumber(0);
+      draft.pendingRaw = new BigNumber(0);
+      draft.pendingFiat = 0;
+      draft.receivePow = false;
+    }
 
     for (const accountID in accounts.balances) {
       if (!accounts.balances.hasOwnProperty(accountID)) continue;
 
       const walletAccount = this.wallet.accounts.find(a => a.id === accountID);
+      const draft = accountDrafts.get(accountID);
+      if (!walletAccount || !draft) continue;
 
-      if (!walletAccount) continue;
-
-      walletAccount.balance = new BigNumber(accounts.balances[accountID].balance || 0);
+      draft.balance = new BigNumber(accounts.balances[accountID].balance || 0);
       const accountBalancePendingInclUnconfirmed = new BigNumber(accounts.balances[accountID].pending || 0);
-
-      walletAccount.balanceRaw = new BigNumber(walletAccount.balance).mod(this.nano);
-
-      walletAccount.balanceFiat = this.util.nano.rawToMnano(walletAccount.balance).times(fiatPrice).toNumber();
+      draft.balanceRaw = new BigNumber(draft.balance).mod(this.nano);
+      draft.balanceFiat = this.util.nano.rawToMnano(draft.balance).times(fiatPrice).toNumber();
 
       const walletAccountFrontier = frontiers.frontiers?.[accountID];
-      const walletAccountFrontierIsValidHash = this.util.nano.isValidHash(walletAccountFrontier);
-
-      walletAccount.frontier = (
-          (walletAccountFrontierIsValidHash === true)
-        ? walletAccountFrontier
-        : null
-      );
-
-      walletBalance = walletBalance.plus(walletAccount.balance);
+      draft.frontier = this.util.nano.isValidHash(walletAccountFrontier) ? walletAccountFrontier : null;
+      walletBalance = walletBalance.plus(draft.balance);
       walletPendingInclUnconfirmed = walletPendingInclUnconfirmed.plus(accountBalancePendingInclUnconfirmed);
     }
 
     if (walletPendingInclUnconfirmed.gt(0)) {
-      let pending;
+      const pending = this.appSettings.settings.minimumReceive
+        ? await this.api.accountsPendingLimitSorted(
+          this.wallet.accounts.map(a => a.id),
+          this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive).toString(10)
+        )
+        : await this.api.accountsPendingSorted(this.wallet.accounts.map(a => a.id));
 
-      if (this.appSettings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive);
-        pending = await this.api.accountsPendingLimitSorted(this.wallet.accounts.map(a => a.id), minAmount.toString(10));
-      } else {
-        pending = await this.api.accountsPendingSorted(this.wallet.accounts.map(a => a.id));
-      }
+      if (pending?.blocks) {
+        for (const accountID in pending.blocks) {
+          if (!pending.blocks.hasOwnProperty(accountID)) continue;
+          const walletAccount = this.wallet.accounts.find(a => a.id === accountID);
+          const draft = accountDrafts.get(accountID);
+          if (!walletAccount || !draft) continue;
 
-      if (pending && pending.blocks) {
-        for (const block in pending.blocks) {
-          if (!pending.blocks.hasOwnProperty(block)) {
-            continue;
+          let accountPending = new BigNumber(0);
+          for (const hash in pending.blocks[accountID]) {
+            if (!pending.blocks[accountID].hasOwnProperty(hash)) continue;
+            const pendingBlock = pending.blocks[accountID][hash];
+            pendingBlocks.push({ account: accountID, hash, amount: pendingBlock.amount, source: pendingBlock.source });
+            accountPending = accountPending.plus(pendingBlock.amount);
           }
 
-          const walletAccount = this.wallet.accounts.find(a => a.id === block);
-
-          if (pending.blocks[block]) {
-            let accountPending = new BigNumber(0);
-
-            for (const hash in pending.blocks[block]) {
-              if (!pending.blocks[block].hasOwnProperty(hash)) {
-                continue;
-              }
-
-              const isNewBlock =
-                this.addPendingBlock(
-                  walletAccount.id,
-                  hash,
-                  pending.blocks[block][hash].amount,
-                  pending.blocks[block][hash].source
-                );
-
-              if (isNewBlock === true) {
-                accountPending = accountPending.plus(pending.blocks[block][hash].amount);
-                walletPendingAboveThresholdConfirmed = walletPendingAboveThresholdConfirmed.plus(pending.blocks[block][hash].amount);
-              }
-            }
-
-            walletAccount.pending = accountPending;
-            walletAccount.pendingRaw = accountPending.mod(this.nano);
-            walletAccount.pendingFiat = this.util.nano.rawToMnano(accountPending).times(fiatPrice).toNumber();
-
-            // If there is a pending, it means we want to add to work cache as receive-threshold
-            if (walletAccount.pending.gt(0)) {
-              console.log('Adding single pending account within limit to work cache');
-              walletAccount.receivePow = true;
-            } else {
-              walletAccount.receivePow = false;
-            }
-          } else {
-            walletAccount.pending = new BigNumber(0);
-            walletAccount.pendingRaw = new BigNumber(0);
-            walletAccount.pendingFiat = 0;
-            walletAccount.receivePow = false;
-          }
+          draft.pending = accountPending;
+          draft.pendingRaw = accountPending.mod(this.nano);
+          draft.pendingFiat = this.util.nano.rawToMnano(accountPending).times(fiatPrice).toNumber();
+          draft.receivePow = accountPending.gt(0);
+          walletPendingAboveThresholdConfirmed = walletPendingAboveThresholdConfirmed.plus(accountPending);
         }
-      }
-    } else {
-      // Not clearing those values to zero earlier to avoid zero values while blocks are being loaded
-      for (const accountID in accounts.balances) {
-        if (!accounts.balances.hasOwnProperty(accountID)) continue;
-        const walletAccount = this.wallet.accounts.find(a => a.id === accountID);
-        if (!walletAccount) continue;
-        walletAccount.pending = new BigNumber(0);
-        walletAccount.pendingRaw = new BigNumber(0);
-        walletAccount.pendingFiat = 0;
-        walletAccount.receivePow = false;
       }
     }
 
-    // Every account keeps a send-tier demand. Receive hints are separate,
-    // short-lived scheduler inputs and never weaken this durable safety net.
+    // The staged bundle is complete. Commit all account/totals/pending changes
+    // synchronously, then notify legacy observers as one coherent transition.
+    this.wallet.accounts.forEach(account => {
+      const draft = accountDrafts.get(account.id);
+      if (!draft) return;
+      Object.assign(account, draft);
+    });
+    this.clearPendingBlocks();
+    pendingBlocks.forEach(block => this.addPendingBlock(block.account, block.hash, block.amount, block.source));
+
     this.workPool.syncAccountRoots(this.wallet.accounts.map(account => ({
       account: account.id,
       root: account.frontier || this.util.account.getAccountPublicKey(account.id),
@@ -1048,23 +1182,14 @@ export class WalletService {
 
     this.wallet.balance = walletBalance;
     this.wallet.pending = walletPendingAboveThresholdConfirmed;
-
     this.wallet.balanceRaw = new BigNumber(walletBalance).mod(this.nano);
     this.wallet.pendingRaw = new BigNumber(walletPendingAboveThresholdConfirmed).mod(this.nano);
-
     this.wallet.balanceFiat = this.util.nano.rawToMnano(walletBalance).times(fiatPrice).toNumber();
     this.wallet.pendingFiat = this.util.nano.rawToMnano(walletPendingAboveThresholdConfirmed).times(fiatPrice).toNumber();
-
-
     this.wallet.hasPending = walletPendingAboveThresholdConfirmed.gt(0);
-
     this.wallet.updatingBalance = false;
     this.wallet.balanceInitialized = true;
 
-    if (this.wallet.pendingBlocks.length) {
-      await this.processPendingBlocks();
-    }
-    this.informBalanceRefresh();
   }
 
   async loadWalletAccount(accountIndex, accountID) {
@@ -1089,6 +1214,7 @@ export class WalletService {
 
     this.wallet.accounts.push(newAccount);
     this.websocket.subscribeAccounts([accountID]);
+    this.publishWalletState();
 
     return newAccount;
   }
@@ -1126,6 +1252,7 @@ export class WalletService {
     }
 
     this.wallet.accounts.push(newAccount);
+    this.publishWalletState();
 
     if (reloadBalances) await this.reloadBalances();
 
@@ -1144,6 +1271,7 @@ export class WalletService {
     if (walletAccountIndex === -1) throw new Error(`Account is not in wallet`);
 
     this.wallet.accounts.splice(walletAccountIndex, 1);
+    this.publishWalletState();
 
     this.websocket.unsubscribeAccounts([accountID]);
 

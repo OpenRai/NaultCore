@@ -1,92 +1,127 @@
-import { TestBed, inject } from '@angular/core/testing';
-
-import { WalletService } from './wallet.service';
+import { BehaviorSubject } from 'rxjs';
 import BigNumber from 'bignumber.js';
 
-describe('WalletService balance reload coordination', () => {
-  it('runs one follow-up reload when a request arrives during an active reload', async () => {
-    const service: any = Object.create(WalletService.prototype);
-    service.wallet = { updatingBalance: false };
-    service.balanceReloadQueued = false;
-    let reloadRuns = 0;
+import { WalletService } from './wallet.service';
 
-    service.reloadBalancesOnce = async () => {
-      reloadRuns++;
-      if (reloadRuns === 1) {
-        service.wallet.updatingBalance = true;
-        await service.reloadBalances();
-        service.wallet.updatingBalance = false;
-      }
-    };
+function createServiceForStateTests(): any {
+  const service: any = Object.create(WalletService.prototype);
+  service.lifecycleState = { kind: 'empty' };
+  service.walletStateRevision = 0;
+  service.wallet = {
+    balance: new BigNumber(0),
+    pending: new BigNumber(0),
+    balanceRaw: new BigNumber(0),
+    pendingRaw: new BigNumber(0),
+    balanceFiat: 0,
+    pendingFiat: 0,
+    balanceInitialized: false,
+    hasPending: false,
+    updatingBalance: false,
+    accounts: [],
+    selectedAccountId: null,
+    selectedAccount: null,
+    pendingBlocks: [],
+  };
+  service.walletStateSubject = new BehaviorSubject(
+    service.createWalletStateSnapshot({ status: 'idle', reason: 'test' })
+  );
+  service.reconciliationRequestedGeneration = 0;
+  service.reconciliationCompletedGeneration = 0;
+  service.reconciliationPromise = null;
+  service.reconciliationWaiters = [];
+  service.informBalanceRefresh = () => undefined;
+  service.processPendingBlocks = async () => undefined;
+  return service;
+}
 
-    await service.reloadBalances();
+describe('WalletService wallet state snapshots', () => {
+  it('replays immutable account state without exposing credentials', () => {
+    const service = createServiceForStateTests();
+    const secret = new Uint8Array([1, 2, 3]);
+    service.wallet.accounts = [{
+      id: 'nano_1test',
+      frontier: 'A'.repeat(64),
+      secret,
+      keyPair: { privateKey: secret },
+      index: 0,
+      balance: new BigNumber(10),
+      pending: new BigNumber(2),
+      balanceRaw: new BigNumber(10),
+      pendingRaw: new BigNumber(2),
+      balanceFiat: 1,
+      pendingFiat: 0.2,
+      addressBookName: 'Primary',
+      receivePow: true,
+    }];
+    service.wallet.selectedAccountId = 'nano_1test';
 
-    expect(reloadRuns).toBe(2);
+    const before = service.walletStateSubject.value;
+    const after = service.publishWalletState({ status: 'ready', reason: 'test' });
+
+    expect(after.revision).toBe(before.revision + 1);
+    expect(after.accounts[0].id).toBe('nano_1test');
+    expect(after.accounts[0].balance.eq(10)).toBeTrue();
+    expect((after.accounts[0] as any).secret).toBeUndefined();
+    expect((after.accounts[0] as any).keyPair).toBeUndefined();
+    expect(() => (after.accounts as any).push({})).toThrow();
   });
 
-  it('clears the loading state after a failed node refresh', async () => {
-    const service: any = Object.create(WalletService.prototype);
-    service.wallet = { updatingBalance: false };
-    service.reloadBalancesFromNode = async () => {
-      service.wallet.updatingBalance = true;
-      throw new Error('node unavailable');
-    };
+  it('replays the latest snapshot to late subscribers', () => {
+    const service = createServiceForStateTests();
+    const snapshot = service.publishWalletState({ status: 'ready', reason: 'test' });
+    let received;
 
-    await expectAsync(service.reloadBalancesOnce()).toBeRejectedWithError('node unavailable');
+    service.walletStateSubject.subscribe(value => received = value);
 
-    expect(service.wallet.updatingBalance).toBeFalse();
+    expect(received).toBe(snapshot);
   });
 });
 
-describe('WalletService', () => {
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [WalletService]
-    });
+describe('WalletService reconciliation coordination', () => {
+  it('runs a follow-up generation for invalidation during a query', async () => {
+    const service = createServiceForStateTests();
+    let releaseFirst;
+    let refreshRuns = 0;
+    let activeRuns = 0;
+    let maxActiveRuns = 0;
+    service.reloadBalancesFromNode = async () => {
+      refreshRuns++;
+      activeRuns++;
+      maxActiveRuns = Math.max(maxActiveRuns, activeRuns);
+      if (refreshRuns === 1) await new Promise(resolve => releaseFirst = resolve);
+      activeRuns--;
+    };
+
+    const first = service.refreshWalletState('startup');
+    await Promise.resolve();
+    const second = service.refreshWalletState('websocket');
+    releaseFirst();
+
+    const [firstSnapshot, secondSnapshot] = await Promise.all([first, second]);
+
+    expect(refreshRuns).toBe(2);
+    expect(maxActiveRuns).toBe(1);
+    expect(firstSnapshot.sync.status).toBe('ready');
+    expect(secondSnapshot.sync.status).toBe('ready');
+    expect(secondSnapshot.revision).toBeGreaterThan(firstSnapshot.revision);
   });
 
-  // SKIPPED: Test may fail due to missing DI providers in TestBed configuration.
-  // To fix: Add mock providers for all service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should be created', inject([WalletService], (service: WalletService) => {
-    expect(service).toBeTruthy();
-  }));
+  it('publishes an error snapshot and leaves the wallet retryable', async () => {
+    const service = createServiceForStateTests();
+    let attempts = 0;
+    service.reloadBalancesFromNode = async () => {
+      attempts++;
+      if (attempts === 1) throw new Error('node unavailable');
+    };
 
-  /**
-   * Test suite for totalBalance$ observable
-   * Verifies that the observable combines regular account balances with NanoNym balances
-   * SKIPPED: Tests fail due to missing DI providers in TestBed configuration.
-   * To fix: Add mock providers for all service dependencies.
-   * See NAULT-TESTS.md for details on test infrastructure issues.
-   */
-  describe('totalBalance$ observable', () => {
-    xit('should have getTotalBalanceIncludingNanoNyms method', inject([WalletService], (service: WalletService) => {
-      expect(service.getTotalBalanceIncludingNanoNyms).toBeDefined();
-    }));
+    await expectAsync(service.refreshWalletState('manual')).toBeRejectedWithError('node unavailable');
 
-    xit('should return a BigNumber from getTotalBalanceIncludingNanoNyms', inject([WalletService], (service: WalletService) => {
-      const result = service.getTotalBalanceIncludingNanoNyms();
-      expect(result instanceof BigNumber).toBe(true);
-    }));
+    expect(service.wallet.updatingBalance).toBeFalse();
+    expect(service.walletStateSubject.value.sync.status).toBe('error');
+    expect(service.walletStateSubject.value.sync.reason).toBe('manual');
 
-    xit('should include regular account balance when no NanoNyms exist', inject([WalletService], (service: WalletService) => {
-      const result = service.getTotalBalanceIncludingNanoNyms();
-      // Should be equal to wallet.balance (no NanoNyms added)
-      expect(result.eq(service.wallet.balance)).toBe(true);
-    }));
-
-    xit('should return zero balance when wallet is empty', inject([WalletService], (service: WalletService) => {
-      service.wallet.balance = new BigNumber(0);
-      const result = service.getTotalBalanceIncludingNanoNyms();
-      expect(result.eq(0)).toBe(true);
-    }));
-
-    xit('should define totalBalance$ observable getter', inject([WalletService], (service: WalletService) => {
-      expect(service.totalBalance$).toBeDefined();
-    }));
-
-    xit('should define totalBalanceFiat$ observable getter', inject([WalletService], (service: WalletService) => {
-      expect(service.totalBalanceFiat$).toBeDefined();
-    }));
+    const retrySnapshot = await service.refreshWalletState('retry');
+    expect(attempts).toBe(2);
+    expect(retrySnapshot.sync.status).toBe('ready');
   });
 });

@@ -11,6 +11,7 @@ import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 import { branding } from 'environments/branding';
 import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation } from '../../services/recovery-import.service';
+import { KnownAddressEvidence, RecoveryVerificationResult, RecoveryVerificationService } from '../../services/recovery-verification.service';
 
 enum panels {
   'landing',
@@ -41,6 +42,7 @@ export class ConfigureWalletComponent implements OnInit {
   private util = inject(UtilService);
   private translocoService = inject(TranslocoService);
   private recoveryImport = inject(RecoveryImportService);
+  private recoveryVerification = inject(RecoveryVerificationService);
 
   readonly testIds = TestIds;
   panels = panels;
@@ -81,6 +83,12 @@ export class ConfigureWalletComponent implements OnInit {
   recoveryCandidate: RecoveryCandidate|null = null;
   recoveryInterpretation: RecoveryInterpretation = 'nano-seed';
   recoveryBip39Index = '0';
+  recoveryVerificationResult: RecoveryVerificationResult|null = null;
+  recoveryChecking = false;
+  recoveryScanEnd = 19;
+  recoveryInterpretationTouched = false;
+  recoveryKnownAddress = '';
+  recoveryKnownAddressEvidence: KnownAddressEvidence|null = null;
 
   ledgerStatus = LedgerStatus;
   ledger = this.ledgerService.ledger;
@@ -379,7 +387,51 @@ export class ConfigureWalletComponent implements OnInit {
     }
     this.recoveryCandidate = candidate;
     this.recoveryInterpretation = candidate.likely || candidate.interpretations[0];
+    this.recoveryInterpretationTouched = false;
     this.activePanel = panels.recoveryPreview;
+  }
+
+  async checkRecovery() {
+    if (!this.recoveryCandidate || this.recoveryChecking) return;
+    this.recoveryChecking = true;
+    try {
+      // Reclassify from the memory-only field so a corrected BIP-39
+      // passphrase can be checked without importing or replacing anything.
+      this.recoveryCandidate = this.recoveryImport.classify(
+        this.recoveryMaterial,
+        this.recoveryPassphraseEnabled,
+        this.recoveryPassphrase,
+      );
+      this.recoveryVerificationResult = await this.recoveryVerification.verify(
+        this.recoveryCandidate,
+        0,
+        this.recoveryScanEnd,
+      );
+      if (this.recoveryVerificationResult.activeInterpretations.length === 1) {
+        this.recoveryInterpretation = this.recoveryVerificationResult.activeInterpretations[0];
+        this.recoveryInterpretationTouched = true;
+      } else {
+        this.recoveryInterpretationTouched = false;
+      }
+    } catch {
+      this.recoveryVerificationResult = null;
+      this.notifications.sendError('Unable to check this recovery material against the configured Nano node.');
+    } finally {
+      this.recoveryChecking = false;
+    }
+  }
+
+  invalidateRecoveryPreview() {
+    if (!this.recoveryChecking) this.recoveryVerificationResult = null;
+  }
+
+  async lookupKnownRecoveryAddress() {
+    try {
+      this.recoveryKnownAddressEvidence = await this.recoveryVerification.lookupKnownAddress(this.recoveryKnownAddress);
+    } catch (error) {
+      this.recoveryKnownAddressEvidence = null;
+      this.notifications.sendError(error instanceof Error ? error.message : 'Unable to check that Nano address.');
+    }
   }
 
   continueWithRecoveryPreview() {

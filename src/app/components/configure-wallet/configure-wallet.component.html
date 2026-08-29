@@ -306,11 +306,23 @@
       @if (recoveryCandidate.wordCount) {
         <p><strong>Words:</strong> {{ recoveryCandidate.wordCount }}</p>
       }
+      @if (recoveryCandidate.interpretations.includes('bip39-mnemonic')) {
+        <label class="uk-display-block uk-margin-top" for="recovery-preview-passphrase-toggle">
+          <input id="recovery-preview-passphrase-toggle" type="checkbox" class="uk-checkbox" [(ngModel)]="recoveryPassphraseEnabled" (ngModelChange)="invalidateRecoveryPreview()">
+          This phrase uses a BIP-39 passphrase
+        </label>
+        @if (recoveryPassphraseEnabled) {
+          <div class="uk-margin-small-top">
+            <label for="recovery-preview-passphrase">BIP-39 passphrase</label>
+            <input id="recovery-preview-passphrase" type="password" class="uk-input" autocomplete="off" [(ngModel)]="recoveryPassphrase" (ngModelChange)="invalidateRecoveryPreview()">
+          </div>
+        }
+      }
       <fieldset>
         <legend>Use this material as</legend>
         @for (interpretation of recoveryCandidate.interpretations; track interpretation) {
           <label class="uk-display-block uk-margin-small-top">
-            <input type="radio" class="uk-radio" name="recovery-interpretation" [value]="interpretation" [(ngModel)]="recoveryInterpretation">
+            <input type="radio" class="uk-radio" name="recovery-interpretation" [value]="interpretation" [(ngModel)]="recoveryInterpretation" (ngModelChange)="recoveryInterpretationTouched = true; invalidateRecoveryPreview()">
             {{ interpretation === 'nano-seed' ? 'Nano secret recovery seed' : interpretation === 'bip39-mnemonic' ? 'BIP-39 mnemonic (one account)' : interpretation === 'private-key' ? 'Nano private key (one account)' : 'Expanded private key (one account)' }}
           </label>
         }
@@ -318,13 +330,49 @@
       @if (recoveryInterpretation === 'bip39-mnemonic') {
         <div class="uk-margin-top">
           <label for="recovery-bip39-index">Account index</label>
-          <input id="recovery-bip39-index" type="text" class="uk-input" [(ngModel)]="recoveryBip39Index" (ngModelChange)="accountIndexChange(recoveryBip39Index)" autocomplete="off">
+          <input id="recovery-bip39-index" type="text" class="uk-input" [(ngModel)]="recoveryBip39Index" (ngModelChange)="accountIndexChange(recoveryBip39Index); invalidateRecoveryPreview()" autocomplete="off">
         </div>
       }
-      <p class="uk-text-muted uk-margin-top">The next step asks for a wallet password. The wallet is not persisted until that import is explicitly completed.</p>
+      @if (recoveryVerificationResult) {
+        <div class="uk-alert uk-margin-top" [class.uk-alert-success]="recoveryVerificationResult.hasActivity" [class.uk-alert-warning]="!recoveryVerificationResult.hasActivity">
+          @if (recoveryVerificationResult.hasActivity) {
+            <p><strong>Recovery evidence found.</strong> The accounts below were checked for balances, receivables, and history.</p>
+          } @else {
+            <p><strong>No activity found in the current scan.</strong> This does not prove the material is empty or wrong.</p>
+          }
+          <ul>
+            @for (evidence of recoveryVerificationResult.accounts; track evidence.interpretation + evidence.index) {
+              @if (evidence.hasActivity) {
+                <li>{{ evidence.interpretation }} · account {{ evidence.index }} · {{ evidence.account }} ({{ evidence.pendingCount }} receivables, {{ evidence.historyCount }} history entries)</li>
+              }
+            }
+          </ul>
+          @if (!recoveryVerificationResult.hasActivity) {
+            <label for="recovery-known-address">Check a known Nano address</label>
+            <div class="uk-flex uk-margin-small-top">
+              <input id="recovery-known-address" type="text" class="uk-input" [(ngModel)]="recoveryKnownAddress" autocomplete="off">
+              <button class="uk-button uk-button-default uk-margin-small-left" type="button" (click)="lookupKnownRecoveryAddress()">Check address</button>
+            </div>
+            @if (recoveryKnownAddressEvidence) {
+              <p>{{ recoveryKnownAddressEvidence.account }} · {{ recoveryKnownAddressEvidence.pendingCount }} receivables · {{ recoveryKnownAddressEvidence.historyCount }} history entries · {{ recoveryKnownAddressEvidence.hasActivity ? 'activity found' : 'no activity found' }}</p>
+            }
+          }
+        </div>
+      }
+      <p class="uk-text-muted uk-margin-top">Checking is read-only. The next step asks for a wallet password, and the wallet is not persisted until that import is explicitly completed.</p>
     </div>
     <div class="uk-card-footer uk-text-right">
-      <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Continue with preview</button>
+      @if (!recoveryVerificationResult) {
+        <button class="uk-button uk-button-primary" type="button" (click)="checkRecovery()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">{{ recoveryChecking ? 'Checking recovery…' : 'Check recovery' }}</button>
+      } @else {
+        @if (!recoveryVerificationResult.hasActivity) {
+          <button class="uk-button uk-button-default" type="button" (click)="recoveryScanEnd = 100; checkRecovery()">Scan deeper</button>
+          <button class="uk-button uk-button-secondary" type="button" (click)="checkRecovery()">Re-check</button>
+          <button class="uk-button uk-button-default" type="button" (click)="continueWithRecoveryPreview()">Restore anyway</button>
+        } @else {
+          <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="(recoveryInterpretation === 'bip39-mnemonic' && !validIndex) || (recoveryVerificationResult.activeInterpretations.length > 1 && !recoveryInterpretationTouched)" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Restore selected recovery</button>
+        }
+      }
     </div>
   </div>
 }

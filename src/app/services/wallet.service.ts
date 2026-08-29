@@ -494,6 +494,17 @@ export class WalletService {
       }
     });
 
+    // WebSocket delivery is at-least-once and cannot replay missed blocks. A
+    // fresh foreground connection or resume therefore invalidates the
+    // authoritative snapshot and reloads it from Nano RPC.
+    this.websocket.reconciliationRequested$.subscribe(({ reason }) => {
+      if (!this.isConfigured() || this.wallet.accounts.length === 0) return;
+      void this.refreshWalletState(`websocket-${reason}`).catch(() => {
+        // refreshWalletState publishes the retryable error state; the socket
+        // remains responsible for reconnecting independently.
+      });
+    });
+
     this.addressBook.addressBook$.subscribe(newAddressBook => {
       this.reloadAddressBook();
     });

@@ -1,3 +1,4 @@
+@if (walletService.walletState$ | async; as walletState) {
 <div
   uk-grid
   class="app"
@@ -34,18 +35,18 @@
     <!-- Accounts dropdown -->
     <div #accountsDropdown [class]="[ 'accounts-dropdown', showAccountsDropdown ? 'visible' : 'hidden' ]">
       <div class="header">Currently Selected</div>
-      @if (wallet.selectedAccount !== null) {
+      @if (walletState.selectedAccount !== null) {
         <div class="account active"> <!-- active nano_ account -->
           <div class="name-column">
-            <div class="name">{{ wallet.selectedAccount.addressBookName ? wallet.selectedAccount.addressBookName : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index) }}</div>
-            <div class="address nano-address-monospace">{{ wallet.selectedAccount.id }}</div>
+            <div class="name">{{ walletState.selectedAccount.addressBookName ? walletState.selectedAccount.addressBookName : (('general.account' | transloco) + ' #' + walletState.selectedAccount.index) }}</div>
+            <div class="address nano-address-monospace">{{ walletState.selectedAccount.id }}</div>
           </div>
           <div class="balance-column">
-            @if ((walletService.wallet.updatingBalance === false)) {
+            @if (walletState.sync.status !== 'loading') {
               <div class="balance primary">
-                {{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ wallet.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
+                {{ walletState.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ walletState.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
               </div>
-              <div class="balance converted">{{ wallet.selectedAccount.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
+              <div class="balance converted">{{ walletState.selectedAccount.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
             } @else {
               <div class="balance loading">
                 <div uk-spinner="ratio: 0.5;"></div>
@@ -54,13 +55,13 @@
           </div>
         </div>
       }
-      <div [class]="[ 'account', (wallet.selectedAccount === null) ? 'active' : 'inactive' ]" (click)="selectAccount(null)"> <!-- active/inactive total balance -->
+      <div [class]="[ 'account', (walletState.selectedAccount === null) ? 'active' : 'inactive' ]" (click)="selectAccount(null)"> <!-- active/inactive total balance -->
         <div class="name-column">
           <div class="name">Total Balance</div>
           <div class="address"> </div>
         </div>
         <div class="balance-column">
-          @if ((walletService.wallet.updatingBalance === false)) {
+          @if (walletState.sync.status !== 'loading') {
             <div class="balance primary" [attr.data-testid]="testIds.app.totalBalanceXnoDropdown">{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 0 }}{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 1 }} XNO</div>
             <div class="balance converted" [attr.data-testid]="testIds.app.totalBalanceFiatDropdown">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency }}</div>
           } @else {
@@ -70,16 +71,16 @@
           }
         </div>
       </div>
-      @for (account of wallet.accounts; track account) {
+      @for (account of walletState.accounts; track account.id) {
         <!-- inactive accounts -->
-        @if (( (wallet.selectedAccount === null) || (wallet.selectedAccount.id !== account.id) )) {
+        @if (( (walletState.selectedAccount === null) || (walletState.selectedAccount.id !== account.id) )) {
           <div class="account inactive" (click)="selectAccount(account)">
             <div class="name-column">
               <div class="name">{{ account.addressBookName ? account.addressBookName : (('general.account' | transloco) + ' #' + account.index) }}</div>
               <div class="address nano-address-monospace">{{ account.id }}</div>
             </div>
             <div class="balance-column">
-              @if ((walletService.wallet.updatingBalance === false)) {
+              @if (walletState.sync.status !== 'loading') {
                 <div class="balance primary">
                   @if (account.pending.gt(0)) {
                     <span class="incoming-label">
@@ -117,7 +118,7 @@
           <div uk-grid>
             <div class="uk-width-expand">
 
-              <div [class]="[ 'nano-card', (wallet.selectedAccount === null) ? 'is-wallet' : 'is-card' ]" style="position: relative;">
+              <div [class]="[ 'nano-card', (walletState.selectedAccount === null) ? 'is-wallet' : 'is-card' ]" style="position: relative;">
                 <div class="logo"></div>
                 <!-- "Technical Preview" Sticker -->
                 @if (featureNanonyms) {
@@ -131,18 +132,18 @@
                   <div class="account-name-container">
                     <a
                       [routerLink]="(
-                          (wallet.selectedAccount !== null)
-                        ? '/account/' + wallet.selectedAccount.id
+                          (walletState.selectedAccount !== null)
+                        ? '/account/' + walletState.selectedAccount.id
                         : '/accounts'
                       )"
                       [queryParams]="{ compact: '1' }"
                       class="name"
                       >{{
-                      (wallet.selectedAccount !== null)
+                      (walletState.selectedAccount !== null)
                       ? (
-                      wallet.selectedAccount.addressBookName
-                      ? wallet.selectedAccount.addressBookName
-                      : (('general.account' | transloco) + ' #' + wallet.selectedAccount.index)
+                      walletState.selectedAccount.addressBookName
+                      ? walletState.selectedAccount.addressBookName
+                      : (('general.account' | transloco) + ' #' + walletState.selectedAccount.index)
                       )
                       : 'Total Balance'
                     }}</a>
@@ -153,13 +154,13 @@
                     </div>
                   </div>
                   <div class="account-balances">
-                    @if (( ( node.status && (wallet.balanceInitialized === true) ) || !isConfigured() )) {
+                    @if (( ( node.status && (walletState.sync.status !== 'idle') ) || !isConfigured() )) {
                       <div class="balance-container primary">
                         <div class="currency-name">XNO</div>
                         <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceXnoCard">
-                          <div class="amount-integer">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 0 }}</div>
-                          <div class="amount-fractional">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 1 }}</div>
-                          @if (wallet.updatingBalance && isConfigured()) {
+                          <div class="amount-integer">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 0 }}</div>
+                          <div class="amount-fractional">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 1 }}</div>
+                          @if (walletState.sync.status === 'loading' && isConfigured()) {
                             <div class="amount-updating"><div uk-spinner="ratio: 0.5;"></div></div>
                           }
                         </div>
@@ -168,8 +169,8 @@
                         <div class="balance-container converted">
                           <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
                           <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
-                            <div class="amount-integer">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                            <div class="amount-fractional">{{ (wallet.selectedAccount !== null ? wallet.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                            <div class="amount-integer">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
+                            <div class="amount-fractional">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
                           </div>
                         </div>
                       }
@@ -224,16 +225,16 @@
                       <div class="balance-container primary">
                         <div class="currency-name">XNO</div>
                         <div class="amount-container">
-                          <div class="amount-integer">{{ ((wallet.selectedAccount && wallet.selectedAccount.pending.gt(0)) ? wallet.selectedAccount.pending : wallet.pending) | rai: 'mnano,true' | amountsplit: 0 }}</div>
-                          <div class="amount-fractional">{{ ((wallet.selectedAccount && wallet.selectedAccount.pending.gt(0)) ? wallet.selectedAccount.pending : wallet.pending) | rai: 'mnano,true' | amountsplit: 1 }}</div>
+                          <div class="amount-integer">{{ ((walletState.selectedAccount && walletState.selectedAccount.pending.gt(0)) ? walletState.selectedAccount.pending : walletState.pending) | rai: 'mnano,true' | amountsplit: 0 }}</div>
+                          <div class="amount-fractional">{{ ((walletState.selectedAccount && walletState.selectedAccount.pending.gt(0)) ? walletState.selectedAccount.pending : walletState.pending) | rai: 'mnano,true' | amountsplit: 1 }}</div>
                         </div>
                       </div>
                       @if (settings.settings.displayCurrency) {
                         <div class="balance-container converted">
                           <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
                           <div class="amount-container">
-                            <div class="amount-integer">{{ ((wallet.selectedAccount && wallet.selectedAccount.pending.gt(0)) ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                            <div class="amount-fractional">{{ ((wallet.selectedAccount && wallet.selectedAccount.pending.gt(0)) ? wallet.selectedAccount.pendingFiat : wallet.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                            <div class="amount-integer">{{ ((walletState.selectedAccount && walletState.selectedAccount.pending.gt(0)) ? walletState.selectedAccount.pendingFiat : walletState.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
+                            <div class="amount-fractional">{{ ((walletState.selectedAccount && walletState.selectedAccount.pending.gt(0)) ? walletState.selectedAccount.pendingFiat : walletState.pendingFiat) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
                           </div>
                         </div>
                       }
@@ -380,5 +381,7 @@
     </div>
   </div>
 </div>
+
+}
 
 <app-notifications></app-notifications>

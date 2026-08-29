@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
-import { ChildActivationEnd, Router } from "@angular/router";
+import { ActivatedRoute, ChildActivationEnd, Router } from "@angular/router";
 import { WalletService, WalletAccount } from "../../services/wallet.service";
 import { NotificationService } from "../../services/notification.service";
 import { AddressBookService } from "../../services/address-book.service";
@@ -29,6 +29,7 @@ import { NanoNymStorageService } from "../../services/nanonym-storage.service";
 })
 export class ReceiveComponent implements OnInit, OnDestroy {
   private route = inject(Router);
+  private activatedRoute = inject(ActivatedRoute);
   private walletService = inject(WalletService);
   private notificationService = inject(NotificationService);
   private addressBook = inject(AddressBookService);
@@ -153,7 +154,14 @@ export class ReceiveComponent implements OnInit, OnDestroy {
 
     await this.updatePendingBlocks();
 
-    if (this.walletService.walletState.selectedAccount !== null) {
+    const requestedAccount = this.activatedRoute.snapshot.queryParamMap.get('account');
+    if (requestedAccount && this.accounts.some(account => account.id === requestedAccount)) {
+      // Quick Receive navigation is an explicit account intent, separate from
+      // the wallet-scoped sidebar card's aggregate balance.
+      this.walletService.selectAccount(requestedAccount);
+      this.pendingAccountModel = requestedAccount;
+      this.onSelectedAccountChange(this.pendingAccountModel);
+    } else if (this.walletService.walletState.selectedAccount !== null) {
       // Set the account selected in the sidebar as default
       this.pendingAccountModel = this.walletService.walletState.selectedAccount.id;
       this.onSelectedAccountChange(this.pendingAccountModel);

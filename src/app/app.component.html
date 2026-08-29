@@ -33,10 +33,10 @@
     </div>
 
     <!-- Accounts dropdown -->
-    <div #accountsDropdown [class]="[ 'accounts-dropdown', showAccountsDropdown ? 'visible' : 'hidden' ]">
-      <div class="header">Currently Selected</div>
+    <div #accountsDropdown [class]="[ 'accounts-dropdown', showAccountsDropdown ? 'visible' : 'hidden' ]" [attr.data-testid]="testIds.app.quickReceiveMenu">
+      <div class="header">Quick Receive</div>
       @if (walletState.selectedAccount !== null) {
-        <div class="account active"> <!-- active nano_ account -->
+        <div class="account active" (click)="quickReceive(walletState.selectedAccount)"> <!-- selected nano_ account -->
           <div class="name-column">
             <div class="name">{{ walletState.selectedAccount.addressBookName ? walletState.selectedAccount.addressBookName : (('general.account' | transloco) + ' #' + walletState.selectedAccount.index) }}</div>
             <div class="address nano-address-monospace">{{ walletState.selectedAccount.id }}</div>
@@ -74,7 +74,7 @@
       @for (account of walletState.accounts; track account.id) {
         <!-- inactive accounts -->
         @if (( (walletState.selectedAccount === null) || (walletState.selectedAccount.id !== account.id) )) {
-          <div class="account inactive" (click)="selectAccount(account)">
+          <div class="account inactive" (click)="quickReceive(account)">
             <div class="name-column">
               <div class="name">{{ account.addressBookName ? account.addressBookName : (('general.account' | transloco) + ' #' + account.index) }}</div>
               <div class="address nano-address-monospace">{{ account.id }}</div>
@@ -118,7 +118,7 @@
           <div uk-grid>
             <div class="uk-width-expand">
 
-              <div [class]="[ 'nano-card', (walletState.selectedAccount === null) ? 'is-wallet' : 'is-card' ]" style="position: relative;">
+              <div class="nano-card is-wallet" style="position: relative;">
                 <div class="logo"></div>
                 <!-- "Technical Preview" Sticker -->
                 @if (featureNanonyms) {
@@ -131,23 +131,11 @@
                 <div class="card-contents">
                   <div class="account-name-container">
                     <a
-                      [routerLink]="(
-                          (walletState.selectedAccount !== null)
-                        ? '/account/' + walletState.selectedAccount.id
-                        : '/accounts'
-                      )"
+                      routerLink="/accounts"
                       [queryParams]="{ compact: '1' }"
                       class="name"
-                      >{{
-                      (walletState.selectedAccount !== null)
-                      ? (
-                      walletState.selectedAccount.addressBookName
-                      ? walletState.selectedAccount.addressBookName
-                      : (('general.account' | transloco) + ' #' + walletState.selectedAccount.index)
-                      )
-                      : 'Total Balance'
-                    }}</a>
-                    <div #selectButton [class]="[ 'select-button', showAccountsDropdown ? 'open' : 'closed' ]" (click)="toggleAccountsDropdown()">
+                      >Total Balance</a>
+                    <div #selectButton [class]="[ 'select-button', showAccountsDropdown ? 'open' : 'closed' ]" (click)="toggleAccountsDropdown()" [attr.data-testid]="testIds.app.quickReceiveButton">
                       <div class="circle"></div>
                       <div class="circle"></div>
                       <div class="circle"></div>
@@ -158,8 +146,8 @@
                       <div class="balance-container primary">
                         <div class="currency-name">XNO</div>
                         <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceXnoCard">
-                          <div class="amount-integer">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 0 }}</div>
-                          <div class="amount-fractional">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balance : (totalBalance$ | async)) | rai: 'mnano,true' | amountsplit: 1 }}</div>
+                          <div class="amount-integer">{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 0 }}</div>
+                          <div class="amount-fractional">{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 1 }}</div>
                           @if (walletState.sync.status === 'loading' && isConfigured()) {
                             <div class="amount-updating"><div uk-spinner="ratio: 0.5;"></div></div>
                           }
@@ -169,8 +157,8 @@
                         <div class="balance-container converted">
                           <div class="currency-name"><span class="estimate-symbol">~</span>{{ settings.settings.displayCurrency }}</div>
                           <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
-                            <div class="amount-integer">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                            <div class="amount-fractional">{{ (walletState.selectedAccount !== null ? walletState.selectedAccount.balanceFiat : (totalBalanceFiat$ | async)) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
+                            <div class="amount-integer">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
+                            <div class="amount-fractional">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
                           </div>
                         </div>
                       }
@@ -261,6 +249,29 @@
                       <div class="label secondary"><a routerLink="/configure-app">Select a server</a> to interact with the network</div>
                     </div>
                   }
+                </div>
+              }
+
+              @if (isConfigured() && ((websocketConnectionState$ | async) === 'reconnecting' || (websocketConnectionState$ | async) === 'error')) {
+                <div class="nav-status-row">
+                  <div class="status-icon">
+                    <span class="uk-text-warning" uk-icon="icon: warning; ratio: 1.2;"></span>
+                  </div>
+                  <div class="status-labels">
+                    <div class="label primary uk-text-warning">Live transaction notifications reconnecting</div>
+                    <div class="label secondary">Wallet balances will reconcile from the Nano node when the connection recovers.</div>
+                  </div>
+                </div>
+              }
+              @if (isConfigured() && (websocketSubscriptionState$ | async) === 'error') {
+                <div class="nav-status-row">
+                  <div class="status-icon">
+                    <span class="uk-text-danger" uk-icon="icon: warning; ratio: 1.2;"></span>
+                  </div>
+                  <div class="status-labels">
+                    <div class="label primary uk-text-danger">Live transaction subscription unavailable</div>
+                    <div class="label secondary">The wallet remains usable; choose Refresh or a different Nano node.</div>
+                  </div>
                 </div>
               }
 

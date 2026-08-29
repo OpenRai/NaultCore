@@ -91,6 +91,8 @@ export class AppComponent implements OnInit {
   isConfigured = this.walletService.isConfigured;
   donationAccount = environment.donationAddress;
   public appVersion = version;
+  readonly websocketConnectionState$ = this.websocket.connectionState$;
+  readonly websocketSubscriptionState$ = this.websocket.subscriptionState$;
 
   @HostListener('window:resize', ['$event']) onResize (e) {
     this.onWindowResize(e.target);
@@ -345,6 +347,14 @@ export class AppComponent implements OnInit {
     this.walletService.selectAccount(account ? account.id : null);
     this.toggleAccountsDropdown();
     this.walletService.saveWalletExport();
+  }
+
+  quickReceive(account) {
+    if (!account) return;
+    this.walletService.selectAccount(account.id);
+    this.walletService.saveWalletExport();
+    this.showAccountsDropdown = false;
+    this.router.navigate(['/receive'], { queryParams: { account: account.id } });
   }
 
   performSearch() {

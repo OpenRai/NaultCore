@@ -59,6 +59,20 @@ test('shows the selected account receive address', async ({ seededPage, testWall
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[0]);
 });
 
+test('keeps the sidebar card wallet-scoped and routes Quick Receive to the chosen account', async ({ seededPage, testWallet }) => {
+  await expect(seededPage.getByTestId('total-balance-xno-card')).toBeVisible();
+  await expect(seededPage.getByTestId('total-balance-xno-card')).toHaveText(/\d/);
+
+  await seededPage.getByTestId('quick-receive-button').click();
+  await expect(seededPage.getByTestId('quick-receive-menu')).toContainText('Quick Receive');
+  await expect(seededPage.getByTestId('quick-receive-menu')).not.toContainText('Currently Selected');
+
+  await seededPage.locator('.accounts-dropdown .account').filter({ hasText: testWallet.accounts[1] }).click();
+  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}`));
+  await expect(seededPage.getByRole('combobox', { name: 'Account' })).toHaveValue(testWallet.accounts[1]);
+  await expect(seededPage.getByTestId('total-balance-xno-card')).toBeVisible();
+});
+
 test('keeps representative information out of primary wallet status', async ({ seededPage }) => {
   await expect(seededPage.locator('app-change-rep-widget')).toHaveCount(0);
   await expect(seededPage.locator('.nav-representative-info')).toHaveCount(0);

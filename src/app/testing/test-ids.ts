@@ -6,6 +6,8 @@ export const TestIds = {
     totalBalanceXnoCard: 'total-balance-xno-card',
     totalBalanceFiatCard: 'total-balance-fiat-card',
     incomingBalanceCard: 'incoming-balance-card',
+    quickReceiveButton: 'quick-receive-button',
+    quickReceiveMenu: 'quick-receive-menu',
   },
   welcome: {
     pageRoot: 'welcome-page-root',

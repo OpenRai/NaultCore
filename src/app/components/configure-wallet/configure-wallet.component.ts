@@ -10,9 +10,12 @@ import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 import { branding } from 'environments/branding';
+import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation } from '../../services/recovery-import.service';
 
 enum panels {
   'landing',
+  'recoveryIntake',
+  'recoveryPreview',
   'mnemonicTypeSelection',
   'import',
   'password',
@@ -37,6 +40,7 @@ export class ConfigureWalletComponent implements OnInit {
   private ledgerService = inject(LedgerService);
   private util = inject(UtilService);
   private translocoService = inject(TranslocoService);
+  private recoveryImport = inject(RecoveryImportService);
 
   readonly testIds = TestIds;
   panels = panels;
@@ -71,6 +75,12 @@ export class ConfigureWalletComponent implements OnInit {
   indexMax = ACCOUNT_INDEX_MAX;
 
   selectedImportOption = 'seed';
+  recoveryMaterial = '';
+  recoveryPassphraseEnabled = false;
+  recoveryPassphrase = '';
+  recoveryCandidate: RecoveryCandidate|null = null;
+  recoveryInterpretation: RecoveryInterpretation = 'nano-seed';
+  recoveryBip39Index = '0';
 
   ledgerStatus = LedgerStatus;
   ledger = this.ledgerService.ledger;
@@ -351,6 +361,55 @@ export class ConfigureWalletComponent implements OnInit {
     } else if (panel === panels.import) {
       this.isNewWallet = false;
     }
+  }
+
+  startRecoveryImport() {
+    this.isNewWallet = false;
+    this.activePanel = panels.recoveryIntake;
+  }
+
+  previewRecoveryImport() {
+    const candidate = this.recoveryImport.classify(
+      this.recoveryMaterial,
+      this.recoveryPassphraseEnabled,
+      this.recoveryPassphrase,
+    );
+    if (candidate.kind === 'unknown') {
+      return this.notifications.sendError('Unable to identify that recovery material. Check the pasted value and try again.');
+    }
+    this.recoveryCandidate = candidate;
+    this.recoveryInterpretation = candidate.likely || candidate.interpretations[0];
+    this.activePanel = panels.recoveryPreview;
+  }
+
+  continueWithRecoveryPreview() {
+    const candidate = this.recoveryCandidate;
+    if (!candidate || !candidate.interpretations.includes(this.recoveryInterpretation)) return;
+
+    switch (this.recoveryInterpretation) {
+      case 'nano-seed':
+        this.selectedImportOption = candidate.kind === 'mnemonic' ? 'mnemonic' : 'seed';
+        if (this.selectedImportOption === 'mnemonic') this.importSeedMnemonicModel = candidate.normalizedMaterial;
+        else this.importSeedModel = candidate.normalizedMaterial;
+        break;
+      case 'bip39-mnemonic':
+        this.selectedImportOption = 'bip39-mnemonic';
+        this.importSeedBip39MnemonicModel = candidate.normalizedMaterial;
+        this.importSeedBip39MnemonicIndexModel = this.recoveryBip39Index;
+        this.accountIndexChange(this.recoveryBip39Index);
+        this.importSeedBip39MnemonicPasswordModel = candidate.passphrase || '';
+        break;
+      case 'private-key':
+        this.selectedImportOption = 'privateKey';
+        this.importPrivateKeyModel = candidate.normalizedMaterial;
+        break;
+      case 'expanded-private-key':
+        this.selectedImportOption = 'expandedKey';
+        this.importExpandedKeyModel = candidate.normalizedMaterial;
+        break;
+    }
+    this.activePanel = panels.import;
+    return this.setPasswordInit();
   }
 
   copiedNewWalletSeed() {

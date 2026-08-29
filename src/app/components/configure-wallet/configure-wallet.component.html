@@ -134,6 +134,14 @@
   </div>
 }
 
+@if (activePanel === panels.landing) {
+  <div class="uk-margin uk-text-center">
+    <button class="uk-button uk-button-secondary" type="button" (click)="startRecoveryImport()" [attr.data-testid]="testIds.configureWallet.recoveryImportButton">
+      Paste recovery material
+    </button>
+  </div>
+}
+
 @if (( (activePanel === panels.import) || (activePanel === panels.mnemonicTypeSelection) )) {
   <div
     class="import-panel-navigation"
@@ -255,6 +263,68 @@
         <b>Note:</b> A private key provides access to exactly one account.<br>
         To import a multi-account secret recovery seed instead, <a class="inline-link" (click)="selectedImportOption = 'seed';">click here</a>
       </p>
+    </div>
+  </div>
+}
+
+@if (activePanel === panels.recoveryIntake) {
+  <div class="import-panel-navigation" (click)="setPanel(panels.landing)">
+    <span uk-icon="icon: arrow-left; ratio: 1.5;"></span><span class="label">Back</span>
+  </div>
+  <div class="uk-card uk-card-default" data-testid="configure-wallet-recovery-intake">
+    <div class="uk-card-header"><h3 class="uk-card-title">Import from pasted recovery material</h3></div>
+    <div class="uk-card-body">
+      <p>NaultCore will do its best to identify the recovery format and import your wallet. Do not worry—you can preview the detected results in the next step before anything is saved.</p>
+      <label for="recovery-material">Recovery material</label>
+      <textarea id="recovery-material" class="uk-textarea uk-margin-small-top" rows="5" autocomplete="off" spellcheck="false" [(ngModel)]="recoveryMaterial" [attr.data-testid]="testIds.configureWallet.recoveryMaterialInput"></textarea>
+      <label class="uk-display-block uk-margin-top" for="recovery-passphrase-toggle">
+        <input id="recovery-passphrase-toggle" type="checkbox" class="uk-checkbox" [(ngModel)]="recoveryPassphraseEnabled" [attr.data-testid]="testIds.configureWallet.recoveryPassphraseToggle">
+        This phrase uses a BIP-39 passphrase
+      </label>
+      @if (recoveryPassphraseEnabled) {
+        <div class="uk-margin-small-top">
+          <label for="recovery-passphrase">BIP-39 passphrase</label>
+          <input id="recovery-passphrase" type="password" class="uk-input" autocomplete="off" [(ngModel)]="recoveryPassphrase" [attr.data-testid]="testIds.configureWallet.recoveryPassphraseInput">
+        </div>
+      }
+    </div>
+    <div class="uk-card-footer uk-text-right">
+      <button class="uk-button uk-button-primary" type="button" (click)="previewRecoveryImport()">Preview detected recovery</button>
+    </div>
+  </div>
+}
+
+@if (activePanel === panels.recoveryPreview && recoveryCandidate) {
+  <div class="import-panel-navigation" (click)="setPanel(panels.recoveryIntake)">
+    <span uk-icon="icon: arrow-left; ratio: 1.5;"></span><span class="label">Back</span>
+  </div>
+  <div class="uk-card uk-card-default" [attr.data-testid]="testIds.configureWallet.recoveryPreview">
+    <div class="uk-card-header"><h3 class="uk-card-title">Review detected recovery</h3></div>
+    <div class="uk-card-body">
+      <p>Nothing has been saved. Choose the compatible interpretation to continue.</p>
+      <p><strong>Detected:</strong> {{ recoveryCandidate.kind === 'mnemonic' ? 'mnemonic phrase' : recoveryCandidate.kind === 'hex-secret' ? '64-character hexadecimal secret' : '128-character expanded private key' }}</p>
+      @if (recoveryCandidate.wordCount) {
+        <p><strong>Words:</strong> {{ recoveryCandidate.wordCount }}</p>
+      }
+      <fieldset>
+        <legend>Use this material as</legend>
+        @for (interpretation of recoveryCandidate.interpretations; track interpretation) {
+          <label class="uk-display-block uk-margin-small-top">
+            <input type="radio" class="uk-radio" name="recovery-interpretation" [value]="interpretation" [(ngModel)]="recoveryInterpretation">
+            {{ interpretation === 'nano-seed' ? 'Nano secret recovery seed' : interpretation === 'bip39-mnemonic' ? 'BIP-39 mnemonic (one account)' : interpretation === 'private-key' ? 'Nano private key (one account)' : 'Expanded private key (one account)' }}
+          </label>
+        }
+      </fieldset>
+      @if (recoveryInterpretation === 'bip39-mnemonic') {
+        <div class="uk-margin-top">
+          <label for="recovery-bip39-index">Account index</label>
+          <input id="recovery-bip39-index" type="text" class="uk-input" [(ngModel)]="recoveryBip39Index" (ngModelChange)="accountIndexChange(recoveryBip39Index)" autocomplete="off">
+        </div>
+      }
+      <p class="uk-text-muted uk-margin-top">The next step asks for a wallet password. The wallet is not persisted until that import is explicitly completed.</p>
+    </div>
+    <div class="uk-card-footer uk-text-right">
+      <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Continue with preview</button>
     </div>
   </div>
 }

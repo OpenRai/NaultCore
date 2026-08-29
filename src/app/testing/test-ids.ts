@@ -37,6 +37,12 @@ export const TestIds = {
     createWalletButton: 'configure-wallet-create-wallet-button',
     viewAccountsButton: 'configure-wallet-view-accounts-button',
     passwordNextButton: 'configure-wallet-password-next-button',
+    recoveryImportButton: 'configure-wallet-recovery-import-button',
+    recoveryMaterialInput: 'configure-wallet-recovery-material-input',
+    recoveryPassphraseToggle: 'configure-wallet-recovery-passphrase-toggle',
+    recoveryPassphraseInput: 'configure-wallet-recovery-passphrase-input',
+    recoveryPreview: 'configure-wallet-recovery-preview',
+    recoveryContinueButton: 'configure-wallet-recovery-continue-button',
   },
   send: {
     pageRoot: 'send-page-root',

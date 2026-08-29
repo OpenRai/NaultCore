@@ -27,8 +27,7 @@ export class ManageWalletComponent implements OnInit {
   readonly testIds = TestIds;
   readonly branding = branding;
 
-  wallet = this.walletService.wallet;
-  accounts = this.walletService.wallet.accounts;
+  accounts = this.walletService.walletState.accounts as any;
 
   newPassword = '';
   confirmPassword = '';
@@ -55,10 +54,12 @@ export class ManageWalletComponent implements OnInit {
   exportEnabled = true;
 
   async ngOnInit() {
-    this.wallet = this.walletService.wallet;
+    this.walletService.walletState$.subscribe(snapshot => {
+      this.accounts = snapshot.accounts as any;
+    });
 
     // Update selected account if changed in the sidebar
-    this.walletService.wallet.selectedAccount$.subscribe(async acc => {
+    this.walletService.selectedAccountState$.subscribe(async acc => {
       if (this.selAccountInit) {
         this.csvAccount = acc ? acc.id : (this.accounts.length > 0 ? this.accounts[0].id : '0');
       }
@@ -66,8 +67,8 @@ export class ManageWalletComponent implements OnInit {
     });
 
     // Set the account selected in the sidebar as default
-    if (this.walletService.wallet.selectedAccount !== null) {
-      this.csvAccount = this.walletService.wallet.selectedAccount.id;
+    if (this.walletService.walletState.selectedAccount !== null) {
+      this.csvAccount = this.walletService.walletState.selectedAccount.id;
     }
   }
 

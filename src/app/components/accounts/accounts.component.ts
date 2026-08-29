@@ -42,6 +42,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   readonly testIds = TestIds;
   readonly featureNanonyms = FEATURE_NANONYMS;
+  readonly walletState$ = this.walletService.walletState$;
   accounts = this.walletService.wallet.accounts;
   isLedgerWallet = this.walletService.isLedgerWallet();
   isSingleKeyWallet = this.walletService.isSingleKeyWallet();

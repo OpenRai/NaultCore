@@ -41,7 +41,7 @@ export class ChangeRepWidgetComponent implements OnInit {
       this.initialLoadComplete = true;
     });
 
-    this.walletService.wallet.selectedAccount$.subscribe(async acc => {
+    this.walletService.selectedAccountState$.subscribe(async acc => {
       this.selectedAccount = acc;
       this.updateDisplayedRepresentatives();
     });
@@ -71,7 +71,7 @@ export class ChangeRepWidgetComponent implements OnInit {
       this.updateDisplayedRepresentatives();
     });
 
-    this.selectedAccount = this.walletService.wallet.selectedAccount;
+    this.selectedAccount = this.walletService.walletState.selectedAccount;
     this.updateSelectedAccountHasRep();
     await this.repService.getRepresentativesOverview(); // calls walletReps$.next
   }
@@ -125,7 +125,7 @@ export class ChangeRepWidgetComponent implements OnInit {
     }
 
     this.selectedAccountHasRep =
-      this.walletService.wallet.accounts.some(
+      this.walletService.walletState.accounts.some(
         (acc) =>
           (acc.frontier)
       );

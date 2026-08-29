@@ -769,7 +769,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   getAccountLabel(accountID, defaultLabel) {
-    const walletAccount = this.wallet.wallet.accounts.find(a => a.id === accountID);
+    const walletAccount = this.wallet.getWalletAccount(accountID);
 
     if (walletAccount == null) {
       return defaultLabel;

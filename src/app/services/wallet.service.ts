@@ -1590,13 +1590,13 @@ export class WalletService {
   get spendableAccounts$(): Observable<SpendableAccount[]> {
     if (FEATURE_NANONYMS && this.nanoNymStorage) {
       return combineLatest([
-        this.wallet.refresh$,
+        this.walletState$,
         this.nanoNymStorage.nanonyms$
       ]).pipe(
         map(() => this.getSpendableAccounts())
       );
     }
-    return this.wallet.refresh$.pipe(map(() => this.getSpendableAccounts()));
+    return this.walletState$.pipe(map(() => this.getSpendableAccounts()));
   }
 
   /**
@@ -1606,13 +1606,13 @@ export class WalletService {
   get totalBalance$(): Observable<BigNumber> {
     if (FEATURE_NANONYMS && this.nanoNymStorage) {
       return combineLatest([
-        this.wallet.refresh$,
+        this.walletState$,
         this.nanoNymStorage.nanonyms$
       ]).pipe(
         map(() => this.getTotalBalanceIncludingNanoNyms())
       );
     }
-    return this.wallet.refresh$.pipe(map(() => this.getTotalBalanceIncludingNanoNyms()));
+    return this.walletState$.pipe(map(() => this.getTotalBalanceIncludingNanoNyms()));
   }
 
   /**

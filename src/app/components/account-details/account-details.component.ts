@@ -75,6 +75,8 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   walletAccount = null;
   workStatus: WorkAccountStatus | null = null;
   workStatusSub = null;
+  walletStateSub = null;
+  pendingBlockSnapshotSignature = '';
 
   timeoutIdAllowingManualRefresh: any = null;
   timeoutIdAllowingInstantAutoRefresh: any = null;
@@ -183,8 +185,14 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       this.account.pendingFiat = this.util.nano.rawToMnano(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
     });
 
-    this.wallet.wallet.pendingBlocksUpdate$.subscribe(async receivableBlockUpdate => {
-      this.onReceivableBlockUpdate(receivableBlockUpdate);
+    this.walletStateSub = this.wallet.walletState$.subscribe(snapshot => {
+      const signature = snapshot.pendingBlocks
+        .map(block => `${block.account}:${block.hash}`)
+        .join('|');
+      if (this.pendingBlockSnapshotSignature && signature !== this.pendingBlockSnapshotSignature && this.initialLoadDone) {
+        this.loadAccountDetailsThrottled({ receivableBlockUpdate: null });
+      }
+      this.pendingBlockSnapshotSignature = signature;
     });
     this.workStatusSub = this.workPool.accountStatus$.subscribe(statuses => {
       this.workStatus = this.accountID ? (statuses.get(this.accountID) || null) : null;
@@ -783,6 +791,9 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.mobileTransactionMenuModal.hide();
     if (this.workStatusSub) {
       this.workStatusSub.unsubscribe();
+    }
+    if (this.walletStateSub) {
+      this.walletStateSub.unsubscribe();
     }
     if (this.routerSub) {
       this.routerSub.unsubscribe();

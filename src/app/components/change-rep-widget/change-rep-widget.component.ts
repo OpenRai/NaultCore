@@ -27,6 +27,7 @@ export class ChangeRepWidgetComponent implements OnInit {
   selectedAccount = null;
   selectedAccountHasRep = false;
   initialLoadComplete = false;
+  private hadConfiguredWallet = false;
 
   async ngOnInit() {
     this.repService.walletReps$.subscribe(async reps => {
@@ -46,11 +47,13 @@ export class ChangeRepWidgetComponent implements OnInit {
       this.updateDisplayedRepresentatives();
     });
 
-    // Detect if a wallet is reset
-    this.walletService.wallet.newWallet$.subscribe(shouldReload => {
-      if (shouldReload) {
+    // Detect wallet replacement from the durable lifecycle projection rather
+    // than relying on a replayed transient event.
+    this.walletService.lifecycle$.subscribe(lifecycle => {
+      if (this.hadConfiguredWallet && !lifecycle.configured) {
         this.resetRepresentatives();
       }
+      this.hadConfiguredWallet = lifecycle.configured;
     });
 
     // Detect if a new open block is received

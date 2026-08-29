@@ -2,7 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { TranslocoService, getBrowserCultureLang, getBrowserLang } from '@jsverse/transloco';
 
 export type WalletStore = 'localStorage'|'none';
-export type PoWSource = 'server'|'clientCPU'|'clientWebGL'|'best'|'custom';
+// The legacy values remain accepted when loading persisted settings so they can
+// be migrated to the simpler Auto/Local/Remote policy at the next save.
+export type PoWSource = 'auto'|'local'|'remote'|'server'|'clientCPU'|'clientWebGL'|'best'|'custom';
 export type LedgerConnectionType = 'usb'|'bluetooth';
 
 interface AppSettings {
@@ -48,7 +50,7 @@ export class AppSettingsService {
     lockOnClose: 1,
     lockInactivityMinutes: 30,
     ledgerReconnect: 'usb',
-    powSource: 'best',
+    powSource: 'auto',
     multiplierSource: 1,
     customWorkServer: '',
     pendingOption: 'amount',
@@ -245,7 +247,7 @@ export class AppSettingsService {
       lockOnClose: 1,
       lockInactivityMinutes: 30,
       ledgerReconnect: 'usb',
-      powSource: 'best',
+      powSource: 'auto',
       multiplierSource: 1,
       customWorkServer: '',
       pendingOption: 'amount',

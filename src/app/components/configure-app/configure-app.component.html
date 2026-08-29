@@ -174,26 +174,35 @@
             <div class="uk-form-horizontal">
 
               <div class="uk-margin">
-                <label class="uk-form-label">{{ 'configure-app.pow-source' | transloco }}</label>
+                <fieldset class="uk-form-controls pow-source-fieldset" [attr.aria-busy]="(powRoutingState$ | async)?.status === 'probing'">
+                  <legend class="uk-form-label">{{ 'configure-app.pow-source' | transloco }}</legend>
                 <div class="uk-form-controls">
-
-                  <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedPoWOption">
-                      @for (pow of powOptions; track pow) {
-                        <option [value]="pow.value">
-                          @if (pow.value === 'server') {
-                            <ng-element>{{ getRemotePoWOptionName() }}</ng-element>
-                          }
-                          @if (pow.value !== 'server') {
-                            <ng-element>{{ pow.name | transloco }}</ng-element>
-                          }
-                        </option>
-                      }
-                    </select>
+                  <div class="pow-source-segments" role="radiogroup" [attr.aria-label]="'configure-app.pow-source' | transloco">
+                    @for (pow of powOptions; track pow.value) {
+                      <input class="pow-source-radio" type="radio" [id]="'pow-source-' + pow.value" name="powSource" [value]="pow.value" [(ngModel)]="selectedPoWOption">
+                      <label class="pow-source-segment" [for]="'pow-source-' + pow.value">{{ pow.name | transloco }}</label>
+                    }
                   </div>
                 </div>
+                </fieldset>
+                @if (powRoutingState$ | async; as powState) {
+                  <div class="pow-source-status" [attr.aria-busy]="powState.status === 'probing'">
+                    @if (powState.status === 'probing') {
+                      <span class="pow-source-spinner" aria-hidden="true"></span>
+                      <span>{{ 'configure-app.pow-status.probing' | transloco }}</span>
+                    } @else if (powState.status === 'error') {
+                      <span>{{ 'configure-app.pow-status.unavailable' | transloco }}</span>
+                      <button class="uk-button uk-button-text" type="button" (click)="reprobePoW()">{{ 'configure-app.pow-status.retry' | transloco }}</button>
+                    } @else if (selectedPoWOption === 'auto' && powState.route) {
+                      <span>{{ (powState.route === 'local' ? 'configure-app.pow-status.auto-resolved-local' : 'configure-app.pow-status.auto-resolved-remote') | transloco }}</span>
+                      <button class="uk-button uk-button-text" type="button" (click)="reprobePoW()" [disabled]="powState.status === 'probing'">{{ 'configure-app.pow-status.reprobe' | transloco }}</button>
+                    } @else if (selectedPoWOption === 'local' || selectedPoWOption === 'remote') {
+                      <span>{{ (selectedPoWOption === 'local' ? 'configure-app.pow-status.manual-override-local' : 'configure-app.pow-status.manual-override-remote') | transloco }}</span>
+                    }
+                  </div>
+                }
               </div>
-              @if (selectedPoWOption === 'custom') {
+              @if (selectedPoWOption === 'remote') {
                 <div class="uk-margin">
                   <label class="uk-form-label">{{ 'configure-app.work-server' | transloco }}</label>
                   <div class="uk-form-controls">
@@ -204,7 +213,7 @@
                   </div>
                 </div>
               }
-              @if (selectedPoWOption === 'clientWebGL' || selectedPoWOption === 'clientCPU' || selectedPoWOption === 'custom') {
+              @if (selectedPoWOption === 'local') {
                 <div class="uk-margin">
                   <label class="uk-form-label">{{ 'configure-app.pow-multiplier' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.optional-increased-work-for-transaction-priority-during')"></span></label>
                   <div class="uk-form-controls">

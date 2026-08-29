@@ -3,6 +3,8 @@ import { BehaviorSubject } from 'rxjs';
 import { workDifficultyToThreshold } from '@openrai/nano-core';
 import { ApiService } from './api.service';
 import { UtilService } from './util.service';
+import { AppSettingsService } from './app-settings.service';
+import { PowRoute, PowRoutingService } from './pow-routing.service';
 
 export interface StoredWorkEntry {
   account: string | null;
@@ -74,6 +76,8 @@ interface PersistedWorkCache {
 export class WorkPoolService {
   private api = inject(ApiService);
   private util = inject(UtilService);
+  private appSettings = inject(AppSettingsService);
+  private powRouting = inject(PowRoutingService);
 
   readonly storeKey = 'nanovault-workcache';
   readonly cacheLength = 25;
@@ -107,10 +111,8 @@ export class WorkPoolService {
   private activeRequest: WorkRequest | null = null;
   private loaded = false;
   private stateTimer: ReturnType<typeof setInterval> | null = null;
-  private slowTimer: ReturnType<typeof setTimeout> | null = null;
   private remoteRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private remoteRetryAttempt = 0;
-  private remoteFallbackStarted = false;
   private readonly receiveHintTtlMs = 60_000;
   private lastCompleted: { account: string; root: string; expiresAt: number } | null = null;
   private completionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -348,7 +350,6 @@ export class WorkPoolService {
     if (duplicate) return;
     this.requests.push(request);
     this.requests.sort((a, b) => b.priority - a.priority);
-    this.ensureWorker();
     this.processNext();
     this.publishState();
   }
@@ -395,8 +396,6 @@ export class WorkPoolService {
     }
     this.activeRequest = request;
     this.activeStartedAt = Date.now();
-    this.state$.next({ ...this.state$.value, phase: 'local', lastError: null });
-    this.remoteFallbackStarted = false;
     this.remoteRetryAttempt = 0;
     this.lastErrorAccount = null;
     this.lastErrorRoot = null;
@@ -405,10 +404,40 @@ export class WorkPoolService {
       request.multiplier,
       workDifficultyToThreshold('send'),
     );
+    const currentRouting = this.powRouting.state;
+    if (currentRouting.policy !== 'auto' && currentRouting.route) {
+      this.startGeneration(request, threshold, currentRouting.route);
+      return;
+    }
+    void this.powRouting.resolveRoute()
+      .then(route => this.startGeneration(request, threshold, route))
+      .catch(error => this.failRouteResolution(request, error));
+  }
+
+  private startGeneration(request: WorkRequest, threshold: string, route: PowRoute): void {
+    if (this.activeRequest !== request) return;
     this.activeWorkerRequestId = ++this.workerRequestId;
-    this.worker!.postMessage({ id: this.activeWorkerRequestId, root: request.root, threshold });
-    this.slowTimer = setTimeout(() => this.startRemoteFallback(request, threshold), 15_000);
+    if (route === 'remote') {
+      this.state$.next({ ...this.state$.value, phase: 'remote', lastError: null });
+      void this.tryRemoteWork(request, threshold);
+    } else {
+      this.state$.next({ ...this.state$.value, phase: 'local', lastError: null });
+      this.ensureWorker();
+      this.worker!.postMessage({ id: this.activeWorkerRequestId, root: request.root, threshold });
+    }
     this.publishState();
+  }
+
+  private failRouteResolution(request: WorkRequest, error: unknown): void {
+    if (this.activeRequest !== request) return;
+    this.activeRequest = null;
+    this.clearActiveTimers();
+    this.lastErrorAccount = request.account || null;
+    this.lastErrorRoot = request.root;
+    this.state$.next({ ...this.state$.value, lastError: error instanceof Error ? error.message : String(error) });
+    request.reject(error instanceof Error ? error : new Error(String(error)));
+    this.publishState();
+    this.processNext();
   }
 
   private onWorkerMessage(message: {id: number; ok: boolean; work?: string; error?: string}): void {
@@ -457,18 +486,14 @@ export class WorkPoolService {
     this.processNext();
   }
 
-  private startRemoteFallback(request: WorkRequest, threshold: string): void {
-    if (this.activeRequest !== request || this.remoteFallbackStarted) return;
-    this.remoteFallbackStarted = true;
-    this.remoteRetryAttempt = 0;
-    this.state$.next({ ...this.state$.value, phase: 'remote', lastError: 'Local PoW is taking longer than expected; retrying through the network' });
-    this.tryRemoteWork(request, threshold);
-  }
-
   private async tryRemoteWork(request: WorkRequest, threshold: string): Promise<void> {
     if (this.activeRequest !== request) return;
     try {
-      const response = await this.api.workGenerateOnce(request.root, threshold);
+      const response = await this.api.workGenerateOnce(
+        request.root,
+        threshold,
+        this.appSettings.settings.customWorkServer || '',
+      );
       const work = response?.work?.toUpperCase();
       if (work && this.util.nano.validateWork(request.root, threshold, work)) {
         this.clearActiveTimers();
@@ -490,9 +515,7 @@ export class WorkPoolService {
   }
 
   private clearActiveTimers(): void {
-    if (this.slowTimer) clearTimeout(this.slowTimer);
     if (this.remoteRetryTimer) clearTimeout(this.remoteRetryTimer);
-    this.slowTimer = null;
     this.remoteRetryTimer = null;
   }
 

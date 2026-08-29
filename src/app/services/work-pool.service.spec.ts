@@ -2,6 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { ApiService } from './api.service';
 import { UtilService } from './util.service';
 import { WorkAccountStatus, WorkPoolService } from './work-pool.service';
+import { AppSettingsService } from './app-settings.service';
+import { PowRoutingService } from './pow-routing.service';
 
 const sendThreshold = 'SEND-THRESHOLD';
 const receiveThreshold = 'RECEIVE-THRESHOLD';
@@ -41,7 +43,13 @@ describe('WorkPoolService', () => {
     (window as unknown as { Worker: typeof Worker }).Worker = ControlledWorker as unknown as typeof Worker;
     api = jasmine.createSpyObj<ApiService>('ApiService', ['workGenerateOnce']);
     TestBed.configureTestingModule({
-      providers: [WorkPoolService, { provide: UtilService, useValue: util }, { provide: ApiService, useValue: api }],
+      providers: [
+        WorkPoolService,
+        { provide: UtilService, useValue: util },
+        { provide: ApiService, useValue: api },
+        { provide: AppSettingsService, useValue: { settings: { customWorkServer: '' } } },
+        { provide: PowRoutingService, useValue: { state: { policy: 'local', route: 'local' }, resolveRoute: () => Promise.resolve('local') } },
+      ],
     });
   });
 
@@ -74,22 +82,24 @@ describe('WorkPoolService', () => {
     expect(api.workGenerateOnce).not.toHaveBeenCalled();
   });
 
-  it('uses a valid remote response after the controlled local-fallback deadline', async () => {
+  it('uses the selected remote route without starting the local worker', async () => {
     const service = TestBed.inject(WorkPoolService);
+    const routing = TestBed.inject(PowRoutingService) as any;
+    routing.state = { policy: 'remote', route: 'remote' };
     api.workGenerateOnce.and.resolveTo({ work: `${sendThreshold}-WORK` });
     const pending = service.getWork(root('A'), 1, 'nano_1');
-    jasmine.clock().tick(15_000);
     await Promise.resolve();
-    expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold);
+    expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold, '');
     await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
-    expect(worker().terminated).toBeTrue();
+    expect(ControlledWorker.instances).toHaveSize(0);
   });
 
   it('rejects invalid remote work, retries deterministically, and accepts the next valid response', async () => {
     const service = TestBed.inject(WorkPoolService);
+    const routing = TestBed.inject(PowRoutingService) as any;
+    routing.state = { policy: 'remote', route: 'remote' };
     api.workGenerateOnce.and.returnValues(Promise.resolve({ work: '0000000000000000' }), Promise.resolve({ work: `${sendThreshold}-WORK` }));
     const pending = service.getWork(root('A'), 1, 'nano_1');
-    jasmine.clock().tick(15_000);
     await Promise.resolve();
     expect(service.state$.value.lastError).toBe('Remote PoW response failed validation');
     jasmine.clock().tick(1_000);
@@ -98,11 +108,13 @@ describe('WorkPoolService', () => {
     await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
   });
 
-  it('terminates a pending remote fallback when its cache is cleared', async () => {
+  it('cancels pending remote work when its cache is cleared', async () => {
     const service = TestBed.inject(WorkPoolService);
+    const routing = TestBed.inject(PowRoutingService) as any;
+    routing.state = { policy: 'remote', route: 'remote' };
     api.workGenerateOnce.and.returnValue(new Promise(() => undefined));
     const pending = service.getWork(root('A'), 1, 'nano_1');
-    jasmine.clock().tick(15_000);
+    await Promise.resolve();
     service.clearCache();
     await expectAsync(pending).toBeRejectedWithError('PoW cache cleared');
   });

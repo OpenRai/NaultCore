@@ -227,6 +227,9 @@
     },
     "pow-multiplier": "PoW Multiplier",
     "pow-options": {
+      "auto": "Auto",
+      "local": "Local",
+      "remote": "Remote",
       "best-option-available": "Best Option Available",
       "client-side-cpu-slowest": "Client-side - CPU (Slowest)",
       "client-side-gpu-webgl": "Client-side - GPU/WebGL",
@@ -234,6 +237,16 @@
       "external-selected-server": "External - Selected Server"
     },
     "pow-source": "PoW Source",
+    "pow-status": {
+      "auto-resolved-local": "Auto (Resolved to Local)",
+      "auto-resolved-remote": "Auto (Resolved to Remote)",
+      "manual-override-local": "Manual Override (Local selected)",
+      "manual-override-remote": "Manual Override (Remote selected)",
+      "probing": "Probing capabilities...",
+      "reprobe": "Re-probe",
+      "retry": "Try again",
+      "unavailable": "Unable to resolve PoW preference."
+    },
     "random-server": "Random Server",
     "receive-method": "Receive Method",
     "save-settings-to-update": "Save settings to update",

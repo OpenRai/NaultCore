@@ -3,8 +3,8 @@ import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {PriceService} from '../../services/price.service';
-import {PowService} from '../../services/pow.service';
 import {WorkPoolService} from '../../services/work-pool.service';
+import {PowPolicy, PowRoutingService} from '../../services/pow-routing.service';
 import {AddressBookService} from '../../services/address-book.service';
 import {ApiService} from '../../services/api.service';
 import {WebsocketService} from '../../services/websocket.service';
@@ -31,7 +31,7 @@ export class ConfigureAppComponent implements OnInit {
   private notifications = inject(NotificationService);
   private appSettings = inject(AppSettingsService);
   private addressBook = inject(AddressBookService);
-  private pow = inject(PowService);
+  private powRouting = inject(PowRoutingService);
   private api = inject(ApiService);
   private websocket = inject(WebsocketService);
   private workPool = inject(WorkPoolService);
@@ -130,14 +130,13 @@ export class ConfigureAppComponent implements OnInit {
   ];
   selectedInactivityMinutes = this.inactivityOptions[4].value;
 
-  powOptions = [
-    { name: 'configure-app.pow-options.best-option-available', value: 'best' },
-    { name: 'configure-app.pow-options.client-side-gpu-webgl', value: 'clientWebGL' },
-    { name: 'configure-app.pow-options.client-side-cpu-slowest', value: 'clientCPU' },
-    { name: 'configure-app.pow-options.external-selected-server', value: 'server' },
-    { name: 'configure-app.pow-options.external-custom-server', value: 'custom' },
+  powOptions: Array<{ name: string; value: PowPolicy }> = [
+    { name: 'configure-app.pow-options.auto', value: 'auto' },
+    { name: 'configure-app.pow-options.local', value: 'local' },
+    { name: 'configure-app.pow-options.remote', value: 'remote' },
   ];
-  selectedPoWOption = this.powOptions[0].value;
+  selectedPoWOption: PowPolicy = 'auto';
+  powRoutingState$ = this.powRouting.state$;
 
   multiplierOptions = [
     { name: 'configure-app.multiplier-options.default-1x-or-1-64x', value: 1 },
@@ -204,6 +203,8 @@ export class ConfigureAppComponent implements OnInit {
 
   async ngOnInit() {
     this.loadFromSettings();
+    this.powRouting.syncFromSettings();
+    void this.powRouting.resolveRoute();
     this.updateNodeStats();
 
     setTimeout(() => this.populateRepresentativeList(), 500);
@@ -289,8 +290,7 @@ export class ConfigureAppComponent implements OnInit {
     const matchingInactivityMinutes = this.inactivityOptions.find(d => d.value === settings.lockInactivityMinutes);
     this.selectedInactivityMinutes = matchingInactivityMinutes ? matchingInactivityMinutes.value : this.inactivityOptions[4].value;
 
-    const matchingPowOption = this.powOptions.find(d => d.value === settings.powSource);
-    this.selectedPoWOption = matchingPowOption ? matchingPowOption.value : this.powOptions[0].value;
+    this.selectedPoWOption = this.powRouting.policyFromSource(settings.powSource);
 
     const matchingMultiplierOption = this.multiplierOptions.find(d => d.value === settings.multiplierSource);
     this.selectedMultiplierOption = matchingMultiplierOption ? matchingMultiplierOption.value : this.multiplierOptions[0].value;
@@ -363,6 +363,14 @@ export class ConfigureAppComponent implements OnInit {
 
   }
 
+  async reprobePoW(): Promise<void> {
+    try {
+      await this.powRouting.reprobe();
+    } catch {
+      // The routing status exposes the diagnostic; keep the settings page usable.
+    }
+  }
+
   async updateWalletSettings() {
     const newStorage = this.selectedStorage;
     const resaveWallet = this.appSettings.settings.walletStore !== newStorage;
@@ -386,7 +394,7 @@ export class ConfigureAppComponent implements OnInit {
       }
     }
 
-    let newPoW = this.selectedPoWOption;
+    const newPoW = this.selectedPoWOption;
     const newMultiplier = this.selectedMultiplierOption;
     const pendingOption = this.selectedPendingOption;
     let minReceive = null;
@@ -409,40 +417,13 @@ export class ConfigureAppComponent implements OnInit {
       }
     }
 
-    if (this.appSettings.settings.powSource !== newPoW) {
-      if (newPoW === 'clientWebGL' && !this.pow.hasWebGLSupport()) {
-        this.notifications.sendWarning(this.translocoService.translate('configure-app.webgl-support-not-available-set-pow-to-best'));
-        newPoW = 'best';
-      }
-      if (newPoW === 'clientCPU' && !this.pow.hasWorkerSupport()) {
-        this.notifications.sendWarning(this.translocoService.translate('configure-app.cpu-worker-support-not-available-set-pow-to-best'));
-        newPoW = 'best';
-      }
-      // reset multiplier when not using it to avoid user mistake
-      if (newPoW !== 'clientWebGL' && newPoW !== 'clientCPU' && newPoW !== 'custom') {
-        this.selectedMultiplierOption = this.multiplierOptions[0].value;
-      }
-      // Cancel ongoing PoW if the old method was local PoW
-      if (this.appSettings.settings.powSource === 'clientWebGL' || this.appSettings.settings.powSource === 'clientCPU') {
-        // Check if work is ongoing, and cancel it
-        if (this.pow.cancelAllPow(false)) {
-          reloadPending = true; // force reload balance => re-work pow
-        }
-      }
-    } else if ((newPoW === 'clientWebGL' || newPoW === 'clientCPU') &&
-      newMultiplier < this.appSettings.settings.multiplierSource) {
-      // Cancel pow and re-work if multiplier is lower than earlier
-      if (this.pow.cancelAllPow(false)) {
-        reloadPending = true;
-      }
-    }
+    if (newPoW !== 'local') this.selectedMultiplierOption = this.multiplierOptions[0].value;
 
     // reset work cache so that the new PoW will be used but only if larger than before
     if (
       newMultiplier > this.appSettings.settings.multiplierSource &&
       newMultiplier > 1 &&
-      ((newPoW === 'clientWebGL' && this.pow.hasWebGLSupport()) ||
-      (newPoW === 'clientCPU' && this.pow.hasWorkerSupport()))
+      newPoW === 'local'
     ) {
       // if user accept to reset cache
       if (await this.clearWorkCache()) {
@@ -463,6 +444,8 @@ export class ConfigureAppComponent implements OnInit {
     };
 
     this.appSettings.setAppSettings(newSettings);
+    this.powRouting.applyPolicy(newPoW);
+    if (newPoW === 'auto') void this.powRouting.resolveRoute();
     this.notifications.sendSuccess(this.translocoService.translate('configure-app.app-wallet-settings-successfully-updated'));
 
     if (resaveWallet) {

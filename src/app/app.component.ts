@@ -21,6 +21,7 @@ import { version } from 'environments/version';
 import { TestIds } from './testing/test-ids';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 import { branding } from 'environments/branding';
+import { PowRoutingService } from './services/pow-routing.service';
 
 
 @Component({
@@ -41,6 +42,7 @@ export class AppComponent implements OnInit {
   private router = inject(Router);
   updates = inject(SwUpdate);
   private workPool = inject(WorkPoolService);
+  private powRouting = inject(PowRoutingService);
   price = inject(PriceService);
   private util = inject(UtilService);
   private desktop = inject(DesktopService);
@@ -107,6 +109,8 @@ export class AppComponent implements OnInit {
   async ngOnInit() {
     this.onWindowResize(window);
     this.settings.loadAppSettings();
+    this.powRouting.syncFromSettings();
+    void this.powRouting.resolveRoute();
 
     // Check for testnet URL parameter
     this.checkTestnetParameter();

@@ -8,6 +8,7 @@ export * from './nano-block.service';
 export * from './node.service';
 export * from './notification.service';
 export * from './pow.service';
+export * from './pow-routing.service';
 export * from './price.service';
 export * from './representative.service';
 export * from './util.service';

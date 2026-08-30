@@ -297,6 +297,7 @@ export class SweeperComponent implements OnInit {
         return;
       }
 
+      this.workPool.suppressPrecomputation(address, data.hash);
       const nanoAmountSent = this.util.nano.rawToMnano(this.adjustedBalance);
       this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
       this.notificationService.sendInfo('Account ' + address + ' was swept and Ӿ' + nanoAmountSent.toString(10) + ' transferred to ' + this.destinationAccount, {length: 15000});
@@ -437,6 +438,14 @@ export class SweeperComponent implements OnInit {
 
     this.pubKey = nanocurrency.derivePublicKey(privKey);
     const address = nanocurrency.deriveAddress(this.pubKey, {useNanoPrefix: true});
+
+    if (address.toLowerCase() === this.destinationAccount.toLowerCase()) {
+      const message = `Skipped source account ${address}: it is already the sweep destination.`;
+      this.notificationService.sendInfo(message, {length: 10000});
+      this.appendLog(message);
+      accountCallback();
+      return;
+    }
 
     // get account info required to build the block
     let balance = 0; // balance will be 0 if open block

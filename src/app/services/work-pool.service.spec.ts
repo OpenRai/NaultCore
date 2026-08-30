@@ -175,6 +175,25 @@ describe('WorkPoolService', () => {
     expect(service.workCache.some(entry => entry.root === root('A'))).toBeFalse();
   });
 
+  it('does not precompute a frontier deliberately drained by a sweep', () => {
+    const service = TestBed.inject(WorkPoolService);
+    service.syncAccountRoots([{ account: 'nano_current', root: root('A'), multiplier: 1 }]);
+    const firstWorker = worker();
+    firstWorker.respond({ id: firstWorker.posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+
+    service.syncAccountRoots([{ account: 'nano_current', root: root('B'), multiplier: 1 }]);
+    expect(firstWorker.posted[1].root).toBe(root('B'));
+    service.suppressPrecomputation('nano_current', root('B'));
+    expect(firstWorker.terminated).toBeTrue();
+
+    service.syncAccountRoots([{ account: 'nano_current', root: root('B'), multiplier: 1 }]);
+    expect(ControlledWorker.instances).toHaveSize(1);
+
+    service.syncAccountRoots([{ account: 'nano_current', root: root('C'), multiplier: 1 }]);
+    expect(ControlledWorker.instances).toHaveSize(2);
+    expect(worker().posted[0].root).toBe(root('C'));
+  });
+
   it('publishes sanitized account status without raw work values', () => {
     const service = TestBed.inject(WorkPoolService);
     const snapshots: ReadonlyMap<string, WorkAccountStatus>[] = [];

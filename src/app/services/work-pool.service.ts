@@ -103,6 +103,10 @@ export class WorkPoolService {
   private inFlight = new Map<string, Promise<string>>();
   private accountRoots = new Map<string, string>();
   private accountPurposes = new Map<string, WorkPurpose>();
+  // A sweeper may deliberately drain an account and know that its just-created
+  // frontier will not be used. Keep this transient: a later frontier change
+  // restores ordinary wallet preparation automatically.
+  private suppressedPrecomputation = new Map<string, string>();
   private receiveHints = new Map<string, ReceiveWorkHint>();
   private worker: Worker | null = null;
   private workerRequestId = 0;
@@ -159,6 +163,11 @@ export class WorkPoolService {
     this.accountRoots = new Map(demands.map(demand => [demand.account, demand.root.toUpperCase()]));
     this.accountPurposes = new Map(demands.map(demand => [demand.account, demand.purpose ?? 'frontier']));
     const validAccounts = new Set(this.accountRoots.keys());
+    for (const [account, root] of this.suppressedPrecomputation) {
+      if (!validAccounts.has(account) || this.accountRoots.get(account) !== root) {
+        this.suppressedPrecomputation.delete(account);
+      }
+    }
     this.pruneReceiveHints();
     for (const [key, hint] of this.receiveHints) {
       if (!validAccounts.has(hint.account) || this.accountRoots.get(hint.account) !== hint.root) {
@@ -183,6 +192,9 @@ export class WorkPoolService {
     this.persist();
     for (const demand of demands) {
       const purpose = demand.purpose ?? 'frontier';
+      if (purpose === 'frontier' && this.suppressedPrecomputation.get(demand.account) === demand.root.toUpperCase()) {
+        continue;
+      }
       const multiplier = purpose === 'receive-open' ? Math.min(demand.multiplier, 1 / 64) : demand.multiplier;
       this.addWorkToCache(demand.root, multiplier, demand.account, demand.priority ?? 0);
     }
@@ -191,6 +203,17 @@ export class WorkPoolService {
 
   public workExists(hash: string, multiplier = 1, account: string | null = null): boolean {
     return this.findValidEntry(hash.toUpperCase(), multiplier, account) !== null;
+  }
+
+  /**
+   * Prevents speculative next-block work for a frontier intentionally drained
+   * by a sweep. Interactive requests still work, and a future frontier change
+   * clears this short-lived suppression.
+   */
+  public suppressPrecomputation(account: string, hash: string): void {
+    const root = hash.toUpperCase();
+    this.suppressedPrecomputation.set(account, root);
+    this.removeFromCache(root, account);
   }
 
   /**

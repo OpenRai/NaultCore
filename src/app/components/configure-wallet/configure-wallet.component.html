@@ -18,9 +18,9 @@
 @if (activePanel === panels.landing) {
   <div class="uk-card uk-card-default wallet-setup-card">
     <div class="uk-card-body">
-      <div class="landing-container uk-grid-divider" uk-grid>
-        <div class="uk-width-auto@l uk-width-1-1@m">
-          <button class="wallet-option" (click)="setPasswordInit()" [attr.data-testid]="testIds.configureWallet.newWalletButton">
+      <div class="landing-container" uk-grid>
+        <div>
+          <button class="wallet-option" (click)="startRecoveryImport()" [attr.data-testid]="testIds.configureWallet.recoveryImportButton">
             <div class="icon">
               <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
                 <path d="m132.03 98.355v26.667c0 1.662-1.338 3-3 3h-112.4c-1.662 0-3-1.338-3-3v-78.19c0-1.662 1.338-3 3-3h112.4c1.662 0 3 1.338 3 3v26.132" fill="none" stroke="#000" stroke-linejoin="round" stroke-width="2"/>
@@ -39,11 +39,9 @@
                 </g>
               </svg>
             </div>
-            <h2>New<br>Wallet</h2>
-            <p>Generate seed<br>and mnemonic</p>
+            <h2>Restore<br>Wallet</h2>
+            <p>Seed, keys, or<br>recovery words</p>
           </button>
-        </div>
-        <div class="uk-width-expand">
           <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'ledger';" [attr.data-testid]="testIds.configureWallet.useLedgerButton">
             <div class="icon">
               <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
@@ -59,86 +57,25 @@
             <h2>Use<br>Ledger</h2>
             <p>Nano S / Nano X</p>
           </button>
-          <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'seed';" [attr.data-testid]="testIds.configureWallet.importSeedButton">
+          <button class="wallet-option" (click)="setPasswordInit()" [attr.data-testid]="testIds.configureWallet.newWalletButton">
             <div class="icon">
               <div class="seed">{{ exampleSeed }}</div>
             </div>
-            <h2>Import<br>Seed</h2>
-            <p>64 hex<br>characters</p>
+            <h2>New<br>Wallet</h2>
+            <p>Generate seed<br>and mnemonic</p>
           </button>
-          <button class="wallet-option" (click)="setPanel(panels.mnemonicTypeSelection);" [attr.data-testid]="testIds.configureWallet.importMnemonicButton">
+          <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'file';" [attr.data-testid]="testIds.configureWallet.importFileButton">
             <div class="icon">
-              <div class="mnemonic">
-                <div class="mnemonic-row">
-                  <div class="number">1.</div>
-                  <div class="word">{{ exampleMnemonicWords[0] }}</div>
-                </div>
-                <div class="mnemonic-row">
-                  <div class="number">2.</div>
-                  <div class="word">{{ exampleMnemonicWords[1] }}</div>
-                </div>
-                <div class="mnemonic-row">
-                  <div class="number">3.</div>
-                  <div class="word">{{ exampleMnemonicWords[2] }}</div>
-                </div>
-                <div class="mnemonic-row">
-                  <div class="number">4.</div>
-                  <div class="word">{{ exampleMnemonicWords[3] }}</div>
-                </div>
-              </div>
+              <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <path d="m111.24 21.503c6.0699 1.9309 10.664 6.5178 13.516 14.24m-88.044-14.24h74.527l0.32099 14.165 13.195 0.07558v99.871c0 1.5009-1.2083 2.7092-2.7092 2.7092h-85.334c-1.5009 0-2.7092-1.2083-2.7092-2.7092v-111.4c0-1.5009 1.2083-2.7092 2.7092-2.7092z" fill="none" stroke="#000" stroke-width="2"/>
+              </svg>
             </div>
-            <h2>Import<br>Mnemonic</h2>
-            <p>12, 15, 18, 21<br>or 24 words</p>
+            <h2>Restore<br>Wallet File</h2>
+            <p>Exported {{ branding.applicationName }} wallet</p>
           </button>
-          @if (!showMoreImportOptions) {
-            <button class="wallet-option more-options" (click)="showMoreImportOptions = true;" [attr.data-testid]="testIds.configureWallet.moreOptionsButton">
-              <div class="icon">
-                <div class="more-options">···</div>
-              </div>
-              <h2>More<br>Options</h2>
-              <p>Import from file<br>or a private key</p>
-            </button>
-          }
-          @if (showMoreImportOptions) {
-            <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'file';" [attr.data-testid]="testIds.configureWallet.importFileButton">
-              <div class="icon">
-                <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-                  <path d="m111.24 21.503c6.0699 1.9309 10.664 6.5178 13.516 14.24m-88.044-14.24h74.527l0.32099 14.165 13.195 0.07558v99.871c0 1.5009-1.2083 2.7092-2.7092 2.7092h-85.334c-1.5009 0-2.7092-1.2083-2.7092-2.7092v-111.4c0-1.5009 1.2083-2.7092 2.7092-2.7092z" fill="none" stroke="#000" stroke-width="2"/>
-                </svg>
-              </div>
-              <h2>Import<br>File</h2>
-              <p>exported<br>{{ branding.applicationName }} wallet</p>
-            </button>
-          }
-          @if (showMoreImportOptions) {
-            <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'privateKey';" [attr.data-testid]="testIds.configureWallet.importPrivateKeyButton">
-              <div class="icon">
-                <div class="seed">{{ examplePrivateKey }}</div>
-              </div>
-              <h2>Import<br>Private Key</h2>
-              <p>64 hex<br>characters</p>
-            </button>
-          }
-          @if (showMoreImportOptions) {
-            <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'expandedKey';" [attr.data-testid]="testIds.configureWallet.importExpandedKeyButton">
-              <div class="icon">
-                <div class="seed">{{ exampleExpandedPrivateKey }}</div>
-              </div>
-              <h2 class="long-header">Import<br>Expanded<br>Private Key</h2>
-              <p>64 or 128 hex<br>characters</p>
-            </button>
-          }
         </div>
       </div>
     </div>
-  </div>
-}
-
-@if (activePanel === panels.landing) {
-  <div class="uk-margin uk-text-center">
-    <button class="uk-button uk-button-secondary" type="button" (click)="startRecoveryImport()" [attr.data-testid]="testIds.configureWallet.recoveryImportButton">
-      Paste recovery material
-    </button>
   </div>
 }
 
@@ -274,7 +211,7 @@
   <div class="uk-card uk-card-default" data-testid="configure-wallet-recovery-intake">
     <div class="uk-card-header"><h3 class="uk-card-title">Import from pasted recovery material</h3></div>
     <div class="uk-card-body">
-      <p>NaultCore will do its best to identify the recovery format and import your wallet. Do not worry—you can preview the detected results in the next step before anything is saved.</p>
+      <p>Paste the backup material you have. {{ branding.applicationName }} identifies compatible formats and shows the results before anything is saved.</p>
       <label for="recovery-material">Recovery material</label>
       <textarea id="recovery-material" class="uk-textarea uk-margin-small-top" rows="5" autocomplete="off" spellcheck="false" [(ngModel)]="recoveryMaterial" [attr.data-testid]="testIds.configureWallet.recoveryMaterialInput"></textarea>
       <label class="uk-display-block uk-margin-top" for="recovery-passphrase-toggle">

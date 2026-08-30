@@ -55,10 +55,6 @@ export class ConfigureWalletComponent implements OnInit {
   keyString = '';
 
   exampleSeed = '';
-  examplePrivateKey = '';
-  exampleExpandedPrivateKey = '';
-  exampleMnemonicWords = [];
-  showMoreImportOptions = false;
 
   newWalletSeed = '';
   newWalletMnemonic = '';
@@ -123,12 +119,6 @@ export class ConfigureWalletComponent implements OnInit {
     // must have both letters and numbers
     this.exampleSeed = exampleSeedTrimmed + '...';
 
-    // may have only letters or only numbers with enough luck
-    this.examplePrivateKey = exampleSeedFull.slice(trimIdx + 6, trimIdx + 12) + '...';
-    this.exampleExpandedPrivateKey = exampleSeedFull.slice(trimIdx + 12, trimIdx + 18) + '...';
-
-    // array of mnemonic words
-    this.exampleMnemonicWords = bip39.entropyToMnemonic(exampleSeedFull).split(' ');
   }
 
   async importExistingWallet() {

@@ -1,8 +1,27 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { recommendLocalPow } from '@openrai/nano-core/web';
+import initRspow, { probe_local_pow } from 'nano-rspow-web';
 
 import { AppSettingsService, PoWSource } from './app-settings.service';
+
+let rspowInitialization: Promise<void> | null = null;
+
+function initializeRspow(): Promise<void> {
+  rspowInitialization ??= fetch(new URL('assets/lib/nano_rspow_web_bg.wasm', document.baseURI))
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Unable to load local PoW WASM (${response.status})`);
+      }
+      return initRspow({ module_or_path: response });
+    })
+    .then(() => undefined);
+  return rspowInitialization;
+}
+
+async function recommendLocalPow(_reprobe = false): Promise<boolean> {
+  await initializeRspow();
+  return probe_local_pow();
+}
 
 export type PowPolicy = 'auto' | 'local' | 'remote';
 export type PowRoute = Exclude<PowPolicy, 'auto'>;

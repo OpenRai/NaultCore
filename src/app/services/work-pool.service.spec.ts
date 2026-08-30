@@ -194,6 +194,30 @@ describe('WorkPoolService', () => {
     expect(worker().posted[0].root).toBe(root('C'));
   });
 
+  it('logs cache events with correlation metadata but never work values', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const debug = spyOn(console, 'debug');
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
+
+    await expectAsync(service.getWork(root('A'), 1, 'nano_1')).toBeResolvedTo(`${sendThreshold}-WORK`);
+
+    const cacheHit = debug.calls.allArgs().find(args => args[1] === 'cache-hit')!;
+    expect(cacheHit).toEqual([
+      '[WorkPool]',
+      'cache-hit',
+      jasmine.objectContaining({
+        requestId: null,
+        account: 'nano_1',
+        root: root('A'),
+        threshold: sendThreshold,
+        purpose: 'send',
+      }),
+    ]);
+    expect((cacheHit[2] as Record<string, unknown>).work).toBeUndefined();
+  });
+
   it('publishes sanitized account status without raw work values', () => {
     const service = TestBed.inject(WorkPoolService);
     const snapshots: ReadonlyMap<string, WorkAccountStatus>[] = [];

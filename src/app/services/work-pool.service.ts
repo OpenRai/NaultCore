@@ -50,6 +50,7 @@ export interface WorkPoolState {
 }
 
 interface WorkRequest {
+  id: number;
   account: string | null;
   root: string;
   multiplier: number;
@@ -101,6 +102,7 @@ export class WorkPoolService {
 
   private requests: WorkRequest[] = [];
   private inFlight = new Map<string, Promise<string>>();
+  private nextRequestId = 0;
   private accountRoots = new Map<string, string>();
   private accountPurposes = new Map<string, WorkPurpose>();
   // A sweeper may deliberately drain an account and know that its just-created
@@ -213,6 +215,7 @@ export class WorkPoolService {
   public suppressPrecomputation(account: string, hash: string): void {
     const root = hash.toUpperCase();
     this.suppressedPrecomputation.set(account, root);
+    this.logWorkEvent('suppressed', root, 1, account);
     this.removeFromCache(root, account);
   }
 
@@ -233,6 +236,7 @@ export class WorkPoolService {
       expiresAt: Date.now() + this.receiveHintTtlMs,
     });
     this.enqueue({
+      id: ++this.nextRequestId,
       account,
       root,
       multiplier: 1 / 64,
@@ -268,6 +272,7 @@ export class WorkPoolService {
     const root = hash.toUpperCase();
     if (this.findValidEntry(root, multiplier, account)) return;
     this.enqueue({
+      id: ++this.nextRequestId,
       account,
       root,
       multiplier,
@@ -324,13 +329,19 @@ export class WorkPoolService {
     if (interactive && multiplier >= 1 && account) this.revokeReceiveHint(account, root);
     if (multiplier < 1 && account) this.receiveHints.delete(this.receiveHintKey(account, root));
     const cached = this.findValidEntry(root, multiplier, account);
-    if (cached) return cached.work;
+    if (cached) {
+      this.logWorkEvent('cache-hit', root, multiplier, account);
+      return cached.work;
+    }
 
     if (interactive) this.preemptBackgroundForInteractiveWork(root, multiplier, account);
 
     const key = this.requestKey(root, multiplier, account);
     const existing = this.inFlight.get(key);
-    if (existing) return existing;
+    if (existing) {
+      this.logWorkEvent('joined', root, multiplier, account, this.findPendingRequest(root, multiplier, account)?.id ?? null);
+      return existing;
+    }
 
     const pending = this.findPendingRequest(root, multiplier, account);
     if (pending) {
@@ -340,6 +351,7 @@ export class WorkPoolService {
       }
       pending.priority = interactive ? 100 : Math.max(pending.priority, 50);
       this.requests.sort((a, b) => b.priority - a.priority);
+      this.logWorkEvent('joined', root, multiplier, account, pending.id);
       this.ensureWorker();
       this.processNext();
       const promise = this.attachRequestListener(pending);
@@ -350,6 +362,7 @@ export class WorkPoolService {
 
     const promise = new Promise<string>((resolve, reject) => {
       this.enqueue({
+        id: ++this.nextRequestId,
         account,
         root,
         multiplier,
@@ -373,6 +386,7 @@ export class WorkPoolService {
     if (duplicate) return;
     this.requests.push(request);
     this.requests.sort((a, b) => b.priority - a.priority);
+    this.logWorkEvent('queued', request.root, request.multiplier, request.account, request.id);
     this.processNext();
     this.publishState();
   }
@@ -440,6 +454,7 @@ export class WorkPoolService {
   private startGeneration(request: WorkRequest, threshold: string, route: PowRoute): void {
     if (this.activeRequest !== request) return;
     this.activeWorkerRequestId = ++this.workerRequestId;
+    this.logWorkEvent(`started-${route}`, request.root, request.multiplier, request.account, request.id, threshold);
     if (route === 'remote') {
       this.state$.next({ ...this.state$.value, phase: 'remote', lastError: null });
       void this.tryRemoteWork(request, threshold);
@@ -492,6 +507,7 @@ export class WorkPoolService {
       }
       this.persist();
       this.lastCompleted = { account: request.account || '', root: request.root, expiresAt: Date.now() + 3000 };
+      this.logWorkEvent('completed', request.root, request.multiplier, request.account, request.id, threshold);
       if (this.completionTimer) clearTimeout(this.completionTimer);
       this.completionTimer = setTimeout(() => {
         this.completionTimer = null;
@@ -500,6 +516,7 @@ export class WorkPoolService {
       request.resolve(entry.work);
     } else {
       const error = new Error(message.error || 'PoW generation failed');
+      this.logWorkEvent('failed', request.root, request.multiplier, request.account, request.id);
       this.state$.next({ ...this.state$.value, lastError: error.message });
       this.lastErrorAccount = request.account || null;
       this.lastErrorRoot = request.root;
@@ -606,6 +623,23 @@ export class WorkPoolService {
 
   private requestKey(root: string, multiplier: number, account: string | null): string {
     return `${account || '*'}:${root}:${multiplier}`;
+  }
+
+  private logWorkEvent(
+    event: string,
+    root: string,
+    multiplier: number,
+    account: string | null,
+    requestId: number | null = null,
+    threshold?: string,
+  ): void {
+    console.debug('[WorkPool]', event, {
+      requestId,
+      account,
+      root,
+      threshold: threshold || this.util.nano.difficultyFromMultiplier(multiplier, workDifficultyToThreshold('send')),
+      purpose: multiplier < 1 ? 'receive' : 'send',
+    });
   }
 
   private receiveHintKey(account: string, root: string): string {

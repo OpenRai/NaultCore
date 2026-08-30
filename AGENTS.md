@@ -120,7 +120,7 @@ The code, tests, and this file are the current NaultCore source of truth. Histor
 ## Quick Reference
 
 - **Test suite (macOS):** `source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test`
-- **Dev server:** `source ~/.nvm/nvm.sh && FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore` → http://localhost:4200/
+- **Dev server:** `source ~/.nvm/nvm.sh && FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore-dev` → http://localhost:4200/ (service worker disabled for live rebuilds)
 - **E2E test IDs:** `docs/E2E-TEST-IDS.md`
 
 ---

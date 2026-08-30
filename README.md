@@ -24,7 +24,7 @@ NaultCore uses Node 22 and pnpm. On macOS, run pnpm through nvm.
 ```bash
 source ~/.nvm/nvm.sh
 nvm exec pnpm install
-FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore
+FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore-dev
 ```
 
 Open `http://localhost:4200/`.

@@ -8,9 +8,9 @@ describe('RecoveryVerificationService', () => {
   let service: RecoveryVerificationService;
   let api: jasmine.SpyObj<ApiService>;
   const util = {
-    hex: { toUint8: (value: string) => new Uint8Array(Math.max(1, value.length / 2)) },
+    hex: { toUint8: (value: string) => new Uint8Array([parseInt(value.slice(0, 2), 16) || 0]) },
     account: {
-      generateAccountSecretKeyBytes: (_seed: Uint8Array, index: number) => new Uint8Array([index]),
+      generateAccountSecretKeyBytes: (seed: Uint8Array, index: number) => new Uint8Array([(seed[0] || 0) + index + 1]),
       generateAccountKeyPair: (secret: Uint8Array) => ({ publicKey: new Uint8Array(32).fill(secret[0] || 0) }),
       getPublicAccountID: (publicKey: Uint8Array) => `nano_test_${publicKey[0] || 0}`,
     },
@@ -49,7 +49,12 @@ describe('RecoveryVerificationService', () => {
     expect(api.accountsPending).toHaveBeenCalledTimes(1);
     expect(api.accountHistory).toHaveBeenCalledTimes(1);
     expect(result.accounts[0].pendingCount).toBe(1);
+    expect(result.accounts[0].receivableRaw).toBe('1');
     expect(result.accounts[0].historyCount).toBe(1);
+    expect(result.interpretations[0].spendableRaw).toBe('0');
+    expect(result.interpretations[0].receivableRaw).toBe('1');
+    expect(result.interpretations[0].combinedRaw).toBe('1');
+    expect(result.recommendedInterpretation).toBe('private-key');
     expect(result.activeInterpretations).toEqual(['private-key']);
     expect(result.hasActivity).toBeTrue();
   });
@@ -68,5 +73,67 @@ describe('RecoveryVerificationService', () => {
     expect(result.hasActivity).toBeFalse();
     expect(result.activeInterpretations).toEqual([]);
     expect((service as any).wallet).toBeUndefined();
+  });
+
+  it('checks the standard first ten seed accounts and recommends the interpretation with the greatest total', async () => {
+    const candidate: RecoveryCandidate = {
+      kind: 'hex-secret',
+      normalizedMaterial: 'AA'.repeat(32),
+      wordCount: null,
+      likely: 'nano-seed',
+      interpretations: ['nano-seed', 'private-key'],
+    };
+    api.accountsBalances.and.callFake(async accounts => ({
+      balances: {
+        [accounts[10]]: { balance: '200' },
+        [accounts[0]]: { balance: '100' },
+      },
+    }));
+    api.accountsPending.and.callFake(async accounts => ({
+      blocks: { [accounts[0]]: { HASH: { amount: '25' } } },
+    }));
+
+    const result = await service.verify(candidate, 0, 9);
+
+    expect(result.interpretations).toEqual([
+      jasmine.objectContaining({ interpretation: 'nano-seed', checkedAccounts: 10, spendableRaw: '100', receivableRaw: '25', combinedRaw: '125' }),
+      jasmine.objectContaining({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
+    ]);
+    expect(result.recommendedInterpretation).toBe('private-key');
+  });
+
+  it('keeps the canonical Nano seed selected when compatible interpretations have equal totals', async () => {
+    const candidate: RecoveryCandidate = {
+      kind: 'hex-secret',
+      normalizedMaterial: 'AA'.repeat(32),
+      wordCount: null,
+      likely: 'nano-seed',
+      interpretations: ['nano-seed', 'private-key'],
+    };
+
+    const result = await service.verify(candidate, 0, 0);
+
+    expect(result.recommendedInterpretation).toBe('nano-seed');
+  });
+
+  it('does not apply a BIP-39 passphrase to the Nano seed interpretation', async () => {
+    const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+    const withoutPassphrase: RecoveryCandidate = {
+      kind: 'mnemonic',
+      normalizedMaterial: mnemonic,
+      wordCount: 12,
+      likely: 'nano-seed',
+      interpretations: ['nano-seed'],
+    };
+    const withBogusPassphrase: RecoveryCandidate = {
+      ...withoutPassphrase,
+      passphrase: 'this does not belong to the Nano seed path',
+    };
+
+    const withoutPassphraseResult = await service.verify(withoutPassphrase, 0, 0);
+    const withBogusPassphraseResult = await service.verify(withBogusPassphrase, 0, 0);
+
+    expect(withBogusPassphraseResult.accounts).toEqual(withoutPassphraseResult.accounts);
+    expect(withBogusPassphraseResult.interpretations).toEqual(withoutPassphraseResult.interpretations);
   });
 });

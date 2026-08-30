@@ -34,4 +34,15 @@ describe('RecoveryImportService', () => {
     expect(candidate.interpretations).toEqual(['expanded-private-key']);
     expect((service as any).rawMaterial).toBeUndefined();
   });
+
+  it('reports BIP-39 word recognition without treating known words as a valid phrase', () => {
+    const statuses = service.inspectMnemonicWords('abandon notaword about');
+
+    expect(statuses).toEqual([
+      { word: 'abandon', recognized: true },
+      { word: 'notaword', recognized: false },
+      { word: 'about', recognized: true },
+    ]);
+    expect(service.classify('abandon about abandon')).toEqual(jasmine.objectContaining({ kind: 'unknown' }));
+  });
 });

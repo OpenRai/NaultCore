@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ConfigureWalletComponent } from './configure-wallet.component';
+import { RecoveryImportService } from '../../services/recovery-import.service';
 
 describe('ConfigureWalletComponent', () => {
   let component: ConfigureWalletComponent;
@@ -24,5 +25,67 @@ describe('ConfigureWalletComponent', () => {
   // See NAULT-TESTS.md for details on test infrastructure issues.
   xit('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+});
+
+describe('ConfigureWalletComponent recovery material validation', () => {
+  const classifier = new RecoveryImportService();
+
+  function validate(material: string, passphraseEnabled = false, passphrase = ''): ConfigureWalletComponent {
+    const validationComponent = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
+    validationComponent.recoveryMaterial = material;
+    validationComponent.recoveryMaterialInvalid = false;
+    validationComponent.recoveryMaterialIsBip39 = false;
+    validationComponent.recoveryPassphraseEnabled = passphraseEnabled;
+    validationComponent.recoveryPassphrase = passphrase;
+    (validationComponent as any).recoveryImport = classifier;
+    validationComponent.updateRecoveryMaterialValidity();
+    return validationComponent;
+  }
+
+  [
+    { name: 'empty input', material: '', invalid: false, supportsPassphrase: false },
+    { name: 'whitespace-only input', material: ' \n\t ', invalid: false, supportsPassphrase: false },
+    { name: 'unrecognized non-empty input', material: 'not a recovery secret', invalid: true, supportsPassphrase: false },
+    { name: '64-character hexadecimal secret', material: 'a'.repeat(64), invalid: false, supportsPassphrase: false },
+    { name: '128-character expanded private key', material: 'a'.repeat(128), invalid: false, supportsPassphrase: false },
+    { name: 'BIP-39 mnemonic with normalized whitespace', material: '  abandon\n\tabandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about  ', invalid: false, supportsPassphrase: true },
+  ].forEach(({ name, material, invalid, supportsPassphrase }) => {
+    it(`marks ${name} as ${invalid ? 'invalid' : 'valid'}`, () => {
+      const component = validate(material);
+      expect(component.recoveryMaterialInvalid).toBe(invalid);
+      expect(component.recoveryMaterialIsBip39).toBe(supportsPassphrase);
+    });
+  });
+
+  it('clears a BIP-39 passphrase when material changes to another recovery shape', () => {
+    const component = validate('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', true, 'keep this only for BIP-39');
+    expect(component.recoveryMaterialIsBip39).toBeTrue();
+    expect(component.recoveryPassphraseEnabled).toBeTrue();
+
+    component.recoveryMaterial = 'a'.repeat(64);
+    component.updateRecoveryMaterialValidity();
+
+    expect(component.recoveryPassphraseEnabled).toBeFalse();
+    expect(component.recoveryPassphrase).toBe('');
+  });
+
+  it('starts read-only probing immediately after accepting detected material', () => {
+    const component = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
+    component.recoveryMaterial = 'a'.repeat(64);
+    component.recoveryPassphraseEnabled = false;
+    component.recoveryPassphrase = '';
+    component.recoveryVerificationResult = null;
+    component.recoveryInterpretationTouched = true;
+    (component as any).recoveryImport = classifier;
+    spyOn(component, 'checkRecovery').and.resolveTo();
+
+    component.previewRecoveryImport();
+
+    expect(component.recoveryCandidate?.interpretations).toEqual(['nano-seed', 'private-key']);
+    expect(component.recoveryVerificationResult).toBeNull();
+    expect(component.recoveryInterpretationTouched).toBeFalse();
+    expect(component.checkRecovery).toHaveBeenCalledTimes(1);
   });
 });

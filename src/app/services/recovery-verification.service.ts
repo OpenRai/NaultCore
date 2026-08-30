@@ -11,8 +11,19 @@ export interface RecoveryAccountEvidence {
   index: number;
   account: string;
   balanceRaw: string;
+  receivableRaw: string;
   pendingCount: number;
   historyCount: number;
+  hasActivity: boolean;
+}
+
+export interface RecoveryInterpretationEvidence {
+  interpretation: RecoveryInterpretation;
+  checkedAccounts: number;
+  activeAccounts: number;
+  spendableRaw: string;
+  receivableRaw: string;
+  combinedRaw: string;
   hasActivity: boolean;
 }
 
@@ -21,6 +32,8 @@ export interface RecoveryVerificationResult {
   scanStart: number;
   scanEnd: number;
   accounts: ReadonlyArray<RecoveryAccountEvidence>;
+  interpretations: ReadonlyArray<RecoveryInterpretationEvidence>;
+  recommendedInterpretation: RecoveryInterpretation;
   activeInterpretations: ReadonlyArray<RecoveryInterpretation>;
   hasActivity: boolean;
 }
@@ -60,25 +73,49 @@ export class RecoveryVerificationService {
 
     const evidence = derived.map((derivedAccount, index) => {
       const balance = balances?.balances?.[derivedAccount.account]?.balance || '0';
-      const pendingCount = this.pendingCount(pending?.blocks?.[derivedAccount.account]);
+      const pendingBlocks = pending?.blocks?.[derivedAccount.account];
+      const receivableRaw = this.receivableRaw(pendingBlocks);
+      const pendingCount = this.pendingCount(pendingBlocks);
       const historyCount = Array.isArray(history[index]?.history) ? history[index].history.length : 0;
-      const hasActivity = new BigNumber(balance).gt(0) || pendingCount > 0 || historyCount > 0;
+      const hasActivity = new BigNumber(balance).gt(0) || new BigNumber(receivableRaw).gt(0) || historyCount > 0;
       return {
         interpretation: derivedAccount.interpretation,
         index: derivedAccount.index,
         account: derivedAccount.account,
         balanceRaw: balance,
+        receivableRaw,
         pendingCount,
         historyCount,
         hasActivity,
       };
     });
+    const interpretations = candidate.interpretations.map(interpretation => {
+      const accounts = evidence.filter(account => account.interpretation === interpretation);
+      const spendable = accounts.reduce((sum, account) => sum.plus(account.balanceRaw), new BigNumber(0));
+      const receivable = accounts.reduce((sum, account) => sum.plus(account.receivableRaw), new BigNumber(0));
+      const combined = spendable.plus(receivable);
+      const activeAccounts = accounts.filter(account => account.hasActivity).length;
+      return {
+        interpretation,
+        checkedAccounts: accounts.length,
+        activeAccounts,
+        spendableRaw: spendable.toFixed(0),
+        receivableRaw: receivable.toFixed(0),
+        combinedRaw: combined.toFixed(0),
+        hasActivity: activeAccounts > 0,
+      };
+    });
     const activeInterpretations = [...new Set(evidence.filter(item => item.hasActivity).map(item => item.interpretation))];
+    const recommendedInterpretation = interpretations.reduce((recommended, interpretation) => {
+      return new BigNumber(interpretation.combinedRaw).gt(recommended.combinedRaw) ? interpretation : recommended;
+    }).interpretation;
     return {
       checkedAt: Date.now(),
       scanStart: start,
       scanEnd: end,
       accounts: evidence,
+      interpretations,
+      recommendedInterpretation,
       activeInterpretations,
       hasActivity: activeInterpretations.length > 0,
     };
@@ -136,5 +173,17 @@ export class RecoveryVerificationService {
     if (Array.isArray(value)) return value.length;
     if (value && typeof value === 'object') return Object.keys(value).length;
     return 0;
+  }
+
+  private receivableRaw(value: unknown): string {
+    if (!value || typeof value !== 'object') return '0';
+    return Object.values(value as Record<string, unknown>).reduce<BigNumber>((sum, block) => {
+      const amount = typeof block === 'string'
+        ? block
+        : block && typeof block === 'object' && typeof (block as { amount?: unknown }).amount === 'string'
+          ? (block as { amount: string }).amount
+          : '0';
+      return sum.plus(amount);
+    }, new BigNumber(0)).toFixed(0);
   }
 }

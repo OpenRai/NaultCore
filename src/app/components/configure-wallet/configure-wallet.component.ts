@@ -10,7 +10,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 import { branding } from 'environments/branding';
-import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation } from '../../services/recovery-import.service';
+import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation, RecoveryMnemonicWordStatus } from '../../services/recovery-import.service';
 import { KnownAddressEvidence, RecoveryVerificationResult, RecoveryVerificationService } from '../../services/recovery-verification.service';
 
 enum panels {
@@ -74,6 +74,10 @@ export class ConfigureWalletComponent implements OnInit {
 
   selectedImportOption = 'seed';
   recoveryMaterial = '';
+  recoveryMaterialInvalid = false;
+  recoveryMaterialHint = '';
+  recoveryMnemonicWordStatuses: ReadonlyArray<RecoveryMnemonicWordStatus> = [];
+  recoveryMaterialIsBip39 = false;
   recoveryPassphraseEnabled = false;
   recoveryPassphrase = '';
   recoveryCandidate: RecoveryCandidate|null = null;
@@ -81,7 +85,7 @@ export class ConfigureWalletComponent implements OnInit {
   recoveryBip39Index = '0';
   recoveryVerificationResult: RecoveryVerificationResult|null = null;
   recoveryChecking = false;
-  recoveryScanEnd = 19;
+  recoveryScanEnd = 9;
   recoveryInterpretationTouched = false;
   recoveryKnownAddress = '';
   recoveryKnownAddressEvidence: KnownAddressEvidence|null = null;
@@ -366,6 +370,32 @@ export class ConfigureWalletComponent implements OnInit {
     this.activePanel = panels.recoveryIntake;
   }
 
+  updateRecoveryMaterialValidity() {
+    const material = this.recoveryMaterial.trim();
+    const candidate = this.recoveryImport.classify(material);
+    this.recoveryMaterialInvalid = material.length > 0 && candidate.kind === 'unknown';
+    this.recoveryMnemonicWordStatuses = this.recoveryImport.inspectMnemonicWords(material);
+    this.recoveryMaterialHint = this.recoveryMaterialInvalid ? this.recoveryMaterialInvalidReason(material) : '';
+    this.recoveryMaterialIsBip39 = candidate.kind === 'mnemonic';
+    if (!this.recoveryMaterialIsBip39) {
+      this.recoveryPassphraseEnabled = false;
+      this.recoveryPassphrase = '';
+    }
+  }
+
+  private recoveryMaterialInvalidReason(material: string): string {
+    const account = material.replace(/^xrb_/, 'nano_');
+    if (this.util?.account?.isValidAccount(account)) {
+      return 'A Nano account address identifies an account, but cannot restore a wallet. Enter a seed, private key, or mnemonic instead.';
+    }
+    if (this.recoveryMnemonicWordStatuses.length > 1) {
+      return this.recoveryMnemonicWordStatuses.every(status => status.recognized)
+        ? 'All words are recognized, but this is not a valid BIP-39 recovery phrase.'
+        : 'Red words are not recognized BIP-39 recovery words.';
+    }
+    return 'Enter a 64-character seed or private key, a 128-character expanded private key, or a valid BIP-39 recovery phrase.';
+  }
+
   previewRecoveryImport() {
     const candidate = this.recoveryImport.classify(
       this.recoveryMaterial,
@@ -373,12 +403,14 @@ export class ConfigureWalletComponent implements OnInit {
       this.recoveryPassphrase,
     );
     if (candidate.kind === 'unknown') {
-      return this.notifications.sendError('Unable to identify that recovery material. Check the pasted value and try again.');
+      return this.notifications.sendError('Unable to identify that recovery material. Check the entered value and try again.');
     }
     this.recoveryCandidate = candidate;
     this.recoveryInterpretation = candidate.likely || candidate.interpretations[0];
     this.recoveryInterpretationTouched = false;
+    this.recoveryVerificationResult = null;
     this.activePanel = panels.recoveryPreview;
+    void this.checkRecovery();
   }
 
   async checkRecovery() {
@@ -397,12 +429,8 @@ export class ConfigureWalletComponent implements OnInit {
         0,
         this.recoveryScanEnd,
       );
-      if (this.recoveryVerificationResult.activeInterpretations.length === 1) {
-        this.recoveryInterpretation = this.recoveryVerificationResult.activeInterpretations[0];
-        this.recoveryInterpretationTouched = true;
-      } else {
-        this.recoveryInterpretationTouched = false;
-      }
+      this.recoveryInterpretation = this.recoveryVerificationResult.recommendedInterpretation;
+      this.recoveryInterpretationTouched = false;
     } catch {
       this.recoveryVerificationResult = null;
       this.notifications.sendError('Unable to check this recovery material against the configured Nano node.');
@@ -413,6 +441,10 @@ export class ConfigureWalletComponent implements OnInit {
 
   invalidateRecoveryPreview() {
     if (!this.recoveryChecking) this.recoveryVerificationResult = null;
+  }
+
+  formatRecoveryAmount(raw: string): string {
+    return this.util.nano.rawToMnano(raw).toFixed(6);
   }
 
   async lookupKnownRecoveryAddress() {

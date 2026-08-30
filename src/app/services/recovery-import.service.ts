@@ -14,6 +14,11 @@ export interface RecoveryCandidate {
   passphrase?: string;
 }
 
+export interface RecoveryMnemonicWordStatus {
+  word: string;
+  recognized: boolean;
+}
+
 /** Local-only recovery intake and classification. It does not probe nodes or persist wallet material. */
 @Injectable({ providedIn: 'root' })
 export class RecoveryImportService {
@@ -58,6 +63,12 @@ export class RecoveryImportService {
     }
 
     return this.unknown(material);
+  }
+
+  inspectMnemonicWords(rawMaterial: string): ReadonlyArray<RecoveryMnemonicWordStatus> {
+    const words = this.normalizeMnemonic(String(rawMaterial || ''))?.split(' ') || [];
+    const englishWords = new Set(bip39.wordlists.english);
+    return words.map(word => ({ word, recognized: englishWords.has(word.toLowerCase()) }));
   }
 
   private normalizeMnemonic(material: string): string {

@@ -20,6 +20,13 @@
     <div class="uk-card-body">
       <div class="landing-container" uk-grid>
         <div>
+          <button class="wallet-option" (click)="setPasswordInit()" [attr.data-testid]="testIds.configureWallet.newWalletButton">
+            <div class="icon">
+              <div class="seed">{{ exampleSeed }}</div>
+            </div>
+            <h2>New<br>Wallet</h2>
+            <p>Generate seed<br>and mnemonic</p>
+          </button>
           <button class="wallet-option" (click)="startRecoveryImport()" [attr.data-testid]="testIds.configureWallet.recoveryImportButton">
             <div class="icon">
               <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
@@ -42,6 +49,15 @@
             <h2>Restore<br>Wallet</h2>
             <p>Seed, keys, or<br>recovery words</p>
           </button>
+          <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'file';" [attr.data-testid]="testIds.configureWallet.importFileButton">
+            <div class="icon">
+              <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <path d="m111.24 21.503c6.0699 1.9309 10.664 6.5178 13.516 14.24m-88.044-14.24h74.527l0.32099 14.165 13.195 0.07558v99.871c0 1.5009-1.2083 2.7092-2.7092 2.7092h-85.334c-1.5009 0-2.7092-1.2083-2.7092-2.7092v-111.4c0-1.5009 1.2083-2.7092 2.7092-2.7092z" fill="none" stroke="#000" stroke-width="2"/>
+              </svg>
+            </div>
+            <h2>Restore<br>Wallet File</h2>
+            <p>Exported {{ branding.applicationName }} wallet</p>
+          </button>
           <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'ledger';" [attr.data-testid]="testIds.configureWallet.useLedgerButton">
             <div class="icon">
               <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
@@ -56,22 +72,6 @@
             </div>
             <h2>Use<br>Ledger</h2>
             <p>Nano S / Nano X</p>
-          </button>
-          <button class="wallet-option" (click)="setPasswordInit()" [attr.data-testid]="testIds.configureWallet.newWalletButton">
-            <div class="icon">
-              <div class="seed">{{ exampleSeed }}</div>
-            </div>
-            <h2>New<br>Wallet</h2>
-            <p>Generate seed<br>and mnemonic</p>
-          </button>
-          <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'file';" [attr.data-testid]="testIds.configureWallet.importFileButton">
-            <div class="icon">
-              <svg width="120" height="120" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-                <path d="m111.24 21.503c6.0699 1.9309 10.664 6.5178 13.516 14.24m-88.044-14.24h74.527l0.32099 14.165 13.195 0.07558v99.871c0 1.5009-1.2083 2.7092-2.7092 2.7092h-85.334c-1.5009 0-2.7092-1.2083-2.7092-2.7092v-111.4c0-1.5009 1.2083-2.7092 2.7092-2.7092z" fill="none" stroke="#000" stroke-width="2"/>
-              </svg>
-            </div>
-            <h2>Restore<br>Wallet File</h2>
-            <p>Exported {{ branding.applicationName }} wallet</p>
           </button>
         </div>
       </div>
@@ -209,16 +209,22 @@
     <span uk-icon="icon: arrow-left; ratio: 1.5;"></span><span class="label">Back</span>
   </div>
   <div class="uk-card uk-card-default" data-testid="configure-wallet-recovery-intake">
-    <div class="uk-card-header"><h3 class="uk-card-title">Import from pasted recovery material</h3></div>
+    <div class="uk-card-header"><h3 class="uk-card-title">Import from recovery material</h3></div>
     <div class="uk-card-body">
-      <p>Paste the backup material you have. {{ branding.applicationName }} identifies compatible formats and shows the results before anything is saved.</p>
+      <p>Enter the backup material you have. You can type, dictate, or paste it. {{ branding.applicationName }} identifies compatible formats and shows the results before anything is saved.</p>
       <label for="recovery-material">Recovery material</label>
-      <textarea id="recovery-material" class="uk-textarea uk-margin-small-top" rows="5" autocomplete="off" spellcheck="false" [(ngModel)]="recoveryMaterial" [attr.data-testid]="testIds.configureWallet.recoveryMaterialInput"></textarea>
-      <label class="uk-display-block uk-margin-top" for="recovery-passphrase-toggle">
-        <input id="recovery-passphrase-toggle" type="checkbox" class="uk-checkbox" [(ngModel)]="recoveryPassphraseEnabled" [attr.data-testid]="testIds.configureWallet.recoveryPassphraseToggle">
+      <textarea id="recovery-material" class="uk-textarea uk-margin-small-top" [class.recovery-material-invalid]="recoveryMaterialInvalid" rows="5" autocomplete="off" spellcheck="false" [(ngModel)]="recoveryMaterial" (ngModelChange)="updateRecoveryMaterialValidity()" [attr.aria-invalid]="recoveryMaterialInvalid || null" [attr.aria-describedby]="recoveryMaterialInvalid ? 'recovery-material-hint' : null" [attr.data-testid]="testIds.configureWallet.recoveryMaterialInput"></textarea>
+      @if (recoveryMaterialInvalid) {
+        <p id="recovery-material-hint" class="recovery-material-hint" aria-live="polite">{{ recoveryMaterialHint }}</p>
+        @if (recoveryMnemonicWordStatuses.length > 1) {
+          <p class="recovery-word-statuses uk-text-muted"><span>Word check:</span> @for (status of recoveryMnemonicWordStatuses; track $index) { <span [class.recovery-word-recognized]="status.recognized" [class.recovery-word-unrecognized]="!status.recognized">{{ status.word }}</span> }</p>
+        }
+      }
+      <label class="uk-display-block uk-margin-top" [class.recovery-passphrase-disabled]="!recoveryMaterialIsBip39" [attr.aria-disabled]="!recoveryMaterialIsBip39" for="recovery-passphrase-toggle">
+        <input id="recovery-passphrase-toggle" type="checkbox" class="uk-checkbox" [(ngModel)]="recoveryPassphraseEnabled" [disabled]="!recoveryMaterialIsBip39" [attr.data-testid]="testIds.configureWallet.recoveryPassphraseToggle">
         This phrase uses a BIP-39 passphrase
       </label>
-      @if (recoveryPassphraseEnabled) {
+      @if (recoveryPassphraseEnabled && recoveryMaterialIsBip39) {
         <div class="uk-margin-small-top">
           <label for="recovery-passphrase">BIP-39 passphrase</label>
           <input id="recovery-passphrase" type="password" class="uk-input" autocomplete="off" [(ngModel)]="recoveryPassphrase" [attr.data-testid]="testIds.configureWallet.recoveryPassphraseInput">
@@ -226,7 +232,7 @@
       }
     </div>
     <div class="uk-card-footer uk-text-right">
-      <button class="uk-button uk-button-primary" type="button" (click)="previewRecoveryImport()">Preview detected recovery</button>
+      <button class="uk-button uk-button-primary" type="button" (click)="previewRecoveryImport()">Check recovery material</button>
     </div>
   </div>
 }
@@ -238,7 +244,7 @@
   <div class="uk-card uk-card-default" [attr.data-testid]="testIds.configureWallet.recoveryPreview">
     <div class="uk-card-header"><h3 class="uk-card-title">Review detected recovery</h3></div>
     <div class="uk-card-body">
-      <p>Nothing has been saved. Choose the compatible interpretation to continue.</p>
+      <p>Nothing has been saved. Compatible recovery interpretations are checked before you choose one.</p>
       <p><strong>Detected:</strong> {{ recoveryCandidate.kind === 'mnemonic' ? 'mnemonic phrase' : recoveryCandidate.kind === 'hex-secret' ? '64-character hexadecimal secret' : '128-character expanded private key' }}</p>
       @if (recoveryCandidate.wordCount) {
         <p><strong>Words:</strong> {{ recoveryCandidate.wordCount }}</p>
@@ -255,35 +261,28 @@
           </div>
         }
       }
-      <fieldset>
-        <legend>Use this material as</legend>
-        @for (interpretation of recoveryCandidate.interpretations; track interpretation) {
-          <label class="uk-display-block uk-margin-small-top">
-            <input type="radio" class="uk-radio" name="recovery-interpretation" [value]="interpretation" [(ngModel)]="recoveryInterpretation" (ngModelChange)="recoveryInterpretationTouched = true; invalidateRecoveryPreview()">
-            {{ interpretation === 'nano-seed' ? 'Nano secret recovery seed' : interpretation === 'bip39-mnemonic' ? 'BIP-39 mnemonic (one account)' : interpretation === 'private-key' ? 'Nano private key (one account)' : 'Expanded private key (one account)' }}
-          </label>
-        }
-      </fieldset>
-      @if (recoveryInterpretation === 'bip39-mnemonic') {
-        <div class="uk-margin-top">
-          <label for="recovery-bip39-index">Account index</label>
-          <input id="recovery-bip39-index" type="text" class="uk-input" [(ngModel)]="recoveryBip39Index" (ngModelChange)="accountIndexChange(recoveryBip39Index); invalidateRecoveryPreview()" autocomplete="off">
+      @if (recoveryChecking) {
+        <div class="uk-margin-top" role="status" aria-live="polite">
+          <p><strong>Checking compatible recoveries...</strong></p>
+          @for (interpretation of recoveryCandidate.interpretations; track interpretation) {
+            <p><span uk-spinner="ratio: 0.65"></span> {{ interpretation === 'nano-seed' ? 'Checking Nano secret recovery seed, accounts 0 through ' + recoveryScanEnd : interpretation === 'bip39-mnemonic' ? 'Checking BIP-39 mnemonic, accounts 0 through ' + recoveryScanEnd : interpretation === 'private-key' ? 'Checking Nano private key' : 'Checking expanded private key' }}</p>
+          }
         </div>
-      }
-      @if (recoveryVerificationResult) {
+      } @else if (recoveryVerificationResult) {
         <div class="uk-alert uk-margin-top" [class.uk-alert-success]="recoveryVerificationResult.hasActivity" [class.uk-alert-warning]="!recoveryVerificationResult.hasActivity">
           @if (recoveryVerificationResult.hasActivity) {
-            <p><strong>Recovery evidence found.</strong> The accounts below were checked for balances, receivables, and history.</p>
+            <p><strong>Recovery evidence found.</strong> The compatible interpretations below were checked for balances, receivables, and history.</p>
           } @else {
             <p><strong>No activity found in the current scan.</strong> This does not prove the material is empty or wrong.</p>
           }
           <ul>
-            @for (evidence of recoveryVerificationResult.accounts; track evidence.interpretation + evidence.index) {
-              @if (evidence.hasActivity) {
-                <li>{{ evidence.interpretation }} · account {{ evidence.index }} · {{ evidence.account }} ({{ evidence.pendingCount }} receivables, {{ evidence.historyCount }} history entries)</li>
-              }
+            @for (interpretation of recoveryVerificationResult.interpretations; track interpretation.interpretation) {
+              <li><strong>{{ interpretation.interpretation === 'nano-seed' ? 'Nano secret recovery seed' : interpretation.interpretation === 'bip39-mnemonic' ? 'BIP-39 mnemonic' : interpretation.interpretation === 'private-key' ? 'Nano private key' : 'Expanded private key' }}</strong> <span class="uk-text-muted">{{ interpretation.interpretation === 'nano-seed' ? '(does not use the BIP-39 passphrase)' : interpretation.interpretation === 'bip39-mnemonic' ? '(uses the entered BIP-39 passphrase)' : '' }}</span> · {{ interpretation.checkedAccounts }} account{{ interpretation.checkedAccounts === 1 ? '' : 's' }} checked · spendable Ӿ{{ formatRecoveryAmount(interpretation.spendableRaw) }} · receivable Ӿ{{ formatRecoveryAmount(interpretation.receivableRaw) }} · combined Ӿ{{ formatRecoveryAmount(interpretation.combinedRaw) }}</li>
             }
           </ul>
+          @if (recoveryCandidate.interpretations.includes('bip39-mnemonic')) {
+            <p class="uk-text-muted">A BIP-39 passphrase only affects the BIP-39 mnemonic interpretation. It never changes the Nano secret recovery seed interpretation.</p>
+          }
           @if (!recoveryVerificationResult.hasActivity) {
             <label for="recovery-known-address">Check a known Nano address</label>
             <div class="uk-flex uk-margin-small-top">
@@ -295,20 +294,35 @@
             }
           }
         </div>
+        <fieldset>
+          <legend>Use this material as</legend>
+          @for (interpretation of recoveryCandidate.interpretations; track interpretation) {
+            <label class="uk-display-block uk-margin-small-top">
+              <input type="radio" class="uk-radio" name="recovery-interpretation" [value]="interpretation" [(ngModel)]="recoveryInterpretation" (ngModelChange)="recoveryInterpretationTouched = true">
+              {{ interpretation === 'nano-seed' ? 'Nano secret recovery seed' : interpretation === 'bip39-mnemonic' ? 'BIP-39 mnemonic' : interpretation === 'private-key' ? 'Nano private key (one account)' : 'Expanded private key (one account)' }}
+            </label>
+          }
+        </fieldset>
+        @if (recoveryInterpretation === 'bip39-mnemonic') {
+          <div class="uk-margin-top">
+            <label for="recovery-bip39-index">Account index</label>
+            <input id="recovery-bip39-index" type="text" class="uk-input" [(ngModel)]="recoveryBip39Index" (ngModelChange)="accountIndexChange(recoveryBip39Index); invalidateRecoveryPreview()" autocomplete="off">
+          </div>
+        }
       }
       <p class="uk-text-muted uk-margin-top">Checking is read-only. The next step asks for a wallet password, and the wallet is not persisted until that import is explicitly completed.</p>
     </div>
     <div class="uk-card-footer uk-text-right">
-      @if (!recoveryVerificationResult) {
-        <button class="uk-button uk-button-primary" type="button" (click)="checkRecovery()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">{{ recoveryChecking ? 'Checking recovery…' : 'Check recovery' }}</button>
-      } @else {
+      @if (recoveryVerificationResult && !recoveryChecking) {
         @if (!recoveryVerificationResult.hasActivity) {
           <button class="uk-button uk-button-default" type="button" (click)="recoveryScanEnd = 100; checkRecovery()">Scan deeper</button>
           <button class="uk-button uk-button-secondary" type="button" (click)="checkRecovery()">Re-check</button>
-          <button class="uk-button uk-button-default" type="button" (click)="continueWithRecoveryPreview()">Restore anyway</button>
+          <button class="uk-button uk-button-default" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex">Restore anyway</button>
         } @else {
-          <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="(recoveryInterpretation === 'bip39-mnemonic' && !validIndex) || (recoveryVerificationResult.activeInterpretations.length > 1 && !recoveryInterpretationTouched)" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Restore selected recovery</button>
+          <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Restore selected recovery</button>
         }
+      } @else if (!recoveryChecking) {
+        <button class="uk-button uk-button-primary" type="button" (click)="checkRecovery()">Check revised recovery</button>
       }
     </div>
   </div>
@@ -549,14 +563,15 @@
   @if (activePanel === panels.backup) {
     <div class="uk-card uk-card-default">
       <div class="uk-card-header">
+        <p class="backup-stage-label">{{ 'configure-wallet.new-wallet.backup-final-step' | transloco }}</p>
         <h3 class="uk-card-title">{{ 'configure-wallet.new-wallet.recovery-phrases-for-new-wallet' | transloco }}</h3>
       </div>
       <div class="uk-card-body">
         <p>{{ 'configure-wallet.new-wallet.please-take-some-time-to-write-down-recovery-phrases' | transloco }}</p>
         <div>
-          <div class="uk-alert uk-alert-danger nlt-inline-alert">
-            <div class="icon-column">
-              <div uk-icon="icon: warning; ratio: 2;"></div>
+          <div class="backup-warning-sticker" role="alert">
+            <div class="backup-warning-symbol" aria-hidden="true">
+              <span>!</span>
             </div>
             <p>
               {{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.1' | transloco }}<strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.2-strong' | transloco }}</strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.3' | transloco }}<br>
@@ -564,49 +579,48 @@
             </p>
           </div>
         </div>
-        <br>
-          <div uk-grid>
-            <div class="uk-width-1-4@m">{{ 'configure-wallet.new-wallet.secret-recovery-seed' | transloco }}</div>
-            <div class="uk-width-3-4@m">
-              <div class="new-wallet-seed uk-margin-small-bottom">{{ newWalletSeed }}</div>
-              <button
-                class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
-                type="button"
-                ngxClipboard
-                [cbContent]="newWalletSeed"
-                (cbOnSuccess)="copiedNewWalletSeed()"
-                [attr.data-testid]="testIds.configureWallet.copySeedButton"
-                >
-                <span class="nlt-icon" uk-icon="icon: copy;"></span>
-                {{ 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco }}
-              </button>
-            </div>
-          </div>
-          <hr class="uk-divider-icon">
-          <div uk-grid>
-            <div class="uk-width-1-4@m">{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</div>
-            <div class="uk-width-3-4@m">
-              <pre class="mne-box">@for (line of newWalletMnemonicLines; track line; let l = $index) {
-                <span class="mne-cont">@for (word of line; track word; let i = $index) {
-                  <span class="mne-word"><span class="mne-num">{{ (l * 4) + i + 1 }}</span> {{ word }}</span>
-                }</span>
-              }</pre>
-              <button
-                class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
-                type="button"
-                ngxClipboard
-                [cbContent]="newWalletMnemonic"
-                (cbOnSuccess)="copiedNewWalletMnemonic()"
-                [attr.data-testid]="testIds.configureWallet.copyMnemonicButton"
-                >
-                <span class="nlt-icon" uk-icon="icon: copy;"></span>
-                {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
-              </button>
-            </div>
-          </div>
+        <section class="backup-mnemonic" aria-labelledby="backup-mnemonic-heading">
+          <h4 id="backup-mnemonic-heading">{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</h4>
+          <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
+          <ol class="mnemonic-card-grid">
+            @for (line of newWalletMnemonicLines; track line; let l = $index) {
+              @for (word of line; track word; let i = $index) {
+                <li><span class="mne-num">{{ (l * 4) + i + 1 }}</span><span>{{ word }}</span></li>
+              }
+            }
+          </ol>
+          <button
+            class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
+            type="button"
+            ngxClipboard
+            [cbContent]="newWalletMnemonic"
+            (cbOnSuccess)="copiedNewWalletMnemonic()"
+            [attr.data-testid]="testIds.configureWallet.copyMnemonicButton"
+            >
+            <span class="nlt-icon" uk-icon="icon: copy;"></span>
+            {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
+          </button>
+          <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
+        </section>
+        <details class="backup-seed-disclosure">
+          <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>
+          <p>{{ 'configure-wallet.new-wallet.seed-backup-guidance' | transloco }}</p>
+          <div class="new-wallet-seed uk-margin-small-bottom">{{ newWalletSeed }}</div>
+          <button
+            class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
+            type="button"
+            ngxClipboard
+            [cbContent]="newWalletSeed"
+            (cbOnSuccess)="copiedNewWalletSeed()"
+            [attr.data-testid]="testIds.configureWallet.copySeedButton"
+            >
+            <span class="nlt-icon" uk-icon="icon: copy;"></span>
+            {{ 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco }}
+          </button>
+        </details>
           <hr/>
           <div class="uk-width-1-1">
-            <label style="cursor: pointer;"><input type="checkbox" class="uk-checkbox" [(ngModel)]="hasConfirmedBackup"> &nbsp; {{ 'configure-wallet.new-wallet.i-have-securely-stored-recovery-phrases' | transloco }}</label>
+            <label class="backup-confirmation"><input type="checkbox" class="uk-checkbox" [(ngModel)]="hasConfirmedBackup"> <span>{{ 'configure-wallet.new-wallet.i-have-securely-stored-recovery-phrases' | transloco }}</span></label>
           </div>
         </div>
         <div class="uk-card-footer uk-text-right nlt-button-group">

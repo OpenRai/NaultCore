@@ -299,8 +299,12 @@
     "new-wallet": {
       "copy-secret-recovery-mnemonic": "Copy Secret Recovery Mnemonic",
       "copy-secret-recovery-seed": "Copy Secret Recovery Seed",
+      "advanced-secret-recovery-seed": "Advanced: Secret Recovery Seed",
+      "backup-final-step": "Final step",
+      "clipboard-is-not-a-backup": "Your clipboard is not a secure backup.",
       "create-wallet": "Create Wallet",
-      "i-have-securely-stored-recovery-phrases": "I have securely stored the secret recovery seed and/or mnemonic",
+      "i-have-securely-stored-recovery-phrases": "I have safely stored my recovery information",
+      "mnemonic-backup-guidance": "Either form restores this wallet. The 24-word mnemonic is usually easier to write down.",
       "please-take-some-time-to-write-down-recovery-phrases": "Please take some time to backup the secret recovery seed and/or mnemonic, to be able to access this wallet in the future.",
       "recovery-phrases-alert": {
         "1": {
@@ -310,7 +314,8 @@
         },
         "2": "It is the master key to all of your accounts, and the only way to recover your funds in an emergency."
       },
-      "recovery-phrases-for-new-wallet": "Recovery Phrases for New Wallet",
+      "recovery-phrases-for-new-wallet": "Save your recovery information",
+      "seed-backup-guidance": "Use this hexadecimal seed if you prefer the advanced recovery format.",
       "secret-recovery-mnemonic": "Secret Recovery Mnemonic",
       "secret-recovery-seed": "Secret Recovery Seed",
       "successfully-copied-secret-recovery-mnemonic": "Successfully copied Secret Recovery Mnemonic to clipboard!",

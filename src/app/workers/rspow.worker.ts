@@ -5,7 +5,7 @@ let initialized: Promise<void> | null = null;
 function ensureInitialized(): Promise<void> {
   // Keep the WASM URL relative to the deployed worker. The app can be hosted
   // below a path prefix, so a source-relative import.meta URL would escape it.
-  initialized ??= init(new URL('./assets/lib/nano_rspow_web_bg.wasm', self.location.href));
+  initialized ??= init({ module_or_path: new URL('./assets/lib/nano_rspow_web_bg.wasm', self.location.href) });
   return initialized;
 }
 

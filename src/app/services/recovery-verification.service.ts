@@ -14,6 +14,7 @@ export interface RecoveryAccountEvidence {
   receivableRaw: string;
   pendingCount: number;
   historyCount: number;
+  isOpened: boolean;
   hasActivity: boolean;
 }
 
@@ -21,6 +22,7 @@ export interface RecoveryInterpretationEvidence {
   interpretation: RecoveryInterpretation;
   checkedAccounts: number;
   activeAccounts: number;
+  openedAccounts: number;
   spendableRaw: string;
   receivableRaw: string;
   combinedRaw: string;
@@ -77,7 +79,8 @@ export class RecoveryVerificationService {
       const receivableRaw = this.receivableRaw(pendingBlocks);
       const pendingCount = this.pendingCount(pendingBlocks);
       const historyCount = Array.isArray(history[index]?.history) ? history[index].history.length : 0;
-      const hasActivity = new BigNumber(balance).gt(0) || new BigNumber(receivableRaw).gt(0) || historyCount > 0;
+      const isOpened = historyCount > 0;
+      const hasActivity = new BigNumber(balance).gt(0) || new BigNumber(receivableRaw).gt(0) || isOpened;
       return {
         interpretation: derivedAccount.interpretation,
         index: derivedAccount.index,
@@ -86,6 +89,7 @@ export class RecoveryVerificationService {
         receivableRaw,
         pendingCount,
         historyCount,
+        isOpened,
         hasActivity,
       };
     });
@@ -95,10 +99,12 @@ export class RecoveryVerificationService {
       const receivable = accounts.reduce((sum, account) => sum.plus(account.receivableRaw), new BigNumber(0));
       const combined = spendable.plus(receivable);
       const activeAccounts = accounts.filter(account => account.hasActivity).length;
+      const openedAccounts = accounts.filter(account => account.isOpened).length;
       return {
         interpretation,
         checkedAccounts: accounts.length,
         activeAccounts,
+        openedAccounts,
         spendableRaw: spendable.toFixed(0),
         receivableRaw: receivable.toFixed(0),
         combinedRaw: combined.toFixed(0),

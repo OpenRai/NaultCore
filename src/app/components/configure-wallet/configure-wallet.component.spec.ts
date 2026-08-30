@@ -37,6 +37,7 @@ describe('ConfigureWalletComponent recovery material validation', () => {
     validationComponent.recoveryMaterial = material;
     validationComponent.recoveryMaterialInvalid = false;
     validationComponent.recoveryMaterialIsBip39 = false;
+    validationComponent.recoveryWordCheckVisible = false;
     validationComponent.recoveryPassphraseEnabled = passphraseEnabled;
     validationComponent.recoveryPassphrase = passphrase;
     (validationComponent as any).recoveryImport = classifier;
@@ -71,6 +72,14 @@ describe('ConfigureWalletComponent recovery material validation', () => {
     expect(component.recoveryPassphrase).toBe('');
   });
 
+  it('shows the word check only after a complete supported phrase length is entered', () => {
+    const incomplete = validate(Array(11).fill('abandon').join(' '));
+    const complete = validate(Array(12).fill('abandon').join(' '));
+
+    expect(incomplete.recoveryWordCheckVisible).toBeFalse();
+    expect(complete.recoveryWordCheckVisible).toBeTrue();
+  });
+
   it('starts read-only probing immediately after accepting detected material', () => {
     const component = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
     component.recoveryMaterial = 'a'.repeat(64);
@@ -87,5 +96,15 @@ describe('ConfigureWalletComponent recovery material validation', () => {
     expect(component.recoveryVerificationResult).toBeNull();
     expect(component.recoveryInterpretationTouched).toBeFalse();
     expect(component.checkRecovery).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates existing evidence when a passphrase is revised before re-checking', () => {
+    const component = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
+    component.recoveryChecking = false;
+    component.recoveryVerificationResult = {} as any;
+
+    component.invalidateRecoveryPreview();
+
+    expect(component.recoveryVerificationResult).toBeNull();
   });
 });

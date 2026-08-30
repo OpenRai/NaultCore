@@ -1,3 +1,25 @@
 .narrow-div {
   margin-top: 0px;
 }
+
+.unlock-wallet-link {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-transform: none;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.unlock-wallet-link:hover,
+.unlock-wallet-link:focus {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.unlock-wallet-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

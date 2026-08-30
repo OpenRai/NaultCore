@@ -22,6 +22,8 @@ export interface RecoveryMnemonicWordStatus {
 /** Local-only recovery intake and classification. It does not probe nodes or persist wallet material. */
 @Injectable({ providedIn: 'root' })
 export class RecoveryImportService {
+  private readonly supportedMnemonicWordCounts = new Set([12, 15, 18, 21, 24]);
+
   classify(rawMaterial: string, passphraseEnabled = false, passphrase = ''): RecoveryCandidate {
     const material = String(rawMaterial || '').trim();
     if (!material) return this.unknown(material);
@@ -69,6 +71,10 @@ export class RecoveryImportService {
     const words = this.normalizeMnemonic(String(rawMaterial || ''))?.split(' ') || [];
     const englishWords = new Set(bip39.wordlists.english);
     return words.map(word => ({ word, recognized: englishWords.has(word.toLowerCase()) }));
+  }
+
+  hasSupportedMnemonicWordCount(rawMaterial: string): boolean {
+    return this.supportedMnemonicWordCounts.has(this.inspectMnemonicWords(rawMaterial).length);
   }
 
   private normalizeMnemonic(material: string): string {

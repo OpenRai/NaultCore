@@ -54,6 +54,7 @@ const routes: Routes = [
     // On the desktop apps, use hashes so it works properly using only index.html
     RouterModule.forRoot(routes, {
       useHash: environment.desktop,
+      anchorScrolling: 'enabled',
     }),
   ],
   declarations: [],

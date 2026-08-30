@@ -77,6 +77,7 @@ export class ConfigureWalletComponent implements OnInit {
   recoveryMaterialInvalid = false;
   recoveryMaterialHint = '';
   recoveryMnemonicWordStatuses: ReadonlyArray<RecoveryMnemonicWordStatus> = [];
+  recoveryWordCheckVisible = false;
   recoveryMaterialIsBip39 = false;
   recoveryPassphraseEnabled = false;
   recoveryPassphrase = '';
@@ -375,6 +376,7 @@ export class ConfigureWalletComponent implements OnInit {
     const candidate = this.recoveryImport.classify(material);
     this.recoveryMaterialInvalid = material.length > 0 && candidate.kind === 'unknown';
     this.recoveryMnemonicWordStatuses = this.recoveryImport.inspectMnemonicWords(material);
+    this.recoveryWordCheckVisible = this.recoveryImport.hasSupportedMnemonicWordCount(material);
     this.recoveryMaterialHint = this.recoveryMaterialInvalid ? this.recoveryMaterialInvalidReason(material) : '';
     this.recoveryMaterialIsBip39 = candidate.kind === 'mnemonic';
     if (!this.recoveryMaterialIsBip39) {

@@ -11,7 +11,7 @@
         <div class="uk-card-body">
           <div uk-grid>
             <div class="uk-width-1-2@s">
-              <input class="uk-input" [(ngModel)]="newPassword" placeholder="New Password" type="password">
+              <input class="uk-input" name="naultcore-wallet-password" autocomplete="off" [(ngModel)]="newPassword" placeholder="New Password" type="password">
               <!-- <password-strength-meter *ngIf="newPassword.length > 0" [password]="newPassword" [enableFeedback]="true" [minPasswordLength]="6"></password-strength-meter> -->
               @if (newPassword.length > 0 && newPassword.length < 6) {
                 <span class="password-helper">Password must be at least 6 characters long</span>
@@ -21,7 +21,7 @@
               }
             </div>
             <div class="uk-width-1-2@s">
-              <input class="uk-input" [(ngModel)]="confirmPassword" placeholder="Confirm New Password" type="password">
+              <input class="uk-input" name="naultcore-wallet-password-confirmation" autocomplete="off" [(ngModel)]="confirmPassword" placeholder="Confirm New Password" type="password">
             </div>
           </div>
         </div>
@@ -33,18 +33,18 @@
 
     @if (!walletService.isLedgerWallet()) {
       <div class="uk-card uk-card-default uk-margin">
-        <div class="uk-card-header">
+        <div id="backup-wallet" class="uk-card-header">
           <h3 class="uk-card-title">Backup Wallet</h3>
         </div>
         <div class="uk-card-body">
           @if (walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
-              <span uk-icon="icon: lock;"></span> Unlock wallet to access the secret recovery seed/mnemonic.
+              <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> to access the secret recovery seed/mnemonic.
             </p>
           }
           @if (walletService.lifecycle.locked && (walletService.lifecycle.type === 'privateKey' || walletService.lifecycle.type === 'expandedKey')) {
             <p>
-              <span uk-icon="icon: lock;"></span> Unlock wallet to access the private key.
+              <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> to access the private key.
             </p>
           }
           @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
@@ -73,7 +73,7 @@
         </div>
         @if (walletService.lifecycle.locked) {
           <div class="uk-card-body">
-            <span uk-icon="icon: lock;"></span> Unlock wallet to access the export tool.
+            <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> to access the export tool.
           </div>
         } @else {
           @if (walletService.hasPassword()) {

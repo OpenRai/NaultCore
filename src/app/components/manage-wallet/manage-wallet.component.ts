@@ -98,6 +98,10 @@ export class ManageWalletComponent implements OnInit {
     this.showQRExport = false;
   }
 
+  async unlockWallet() {
+    await this.walletService.requestWalletUnlock();
+  }
+
   async exportWallet() {
     if (this.walletService.isLocked()) {
       const wasUnlocked = await this.walletService.requestWalletUnlock();

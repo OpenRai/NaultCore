@@ -299,7 +299,7 @@
     "new-wallet": {
       "copy-secret-recovery-mnemonic": "Copy Secret Recovery Mnemonic",
       "copy-secret-recovery-seed": "Copy Secret Recovery Seed",
-      "advanced-secret-recovery-seed": "Advanced: Secret Recovery Seed",
+      "advanced-secret-recovery-seed": "Secret Recovery Seed (hexadecimal)",
       "backup-final-step": "Final step",
       "clipboard-is-not-a-backup": "Your clipboard is not a secure backup.",
       "create-wallet": "Create Wallet",
@@ -315,7 +315,7 @@
         "2": "It is the master key to all of your accounts, and the only way to recover your funds in an emergency."
       },
       "recovery-phrases-for-new-wallet": "Save your recovery information",
-      "seed-backup-guidance": "Use this hexadecimal seed if you prefer the advanced recovery format.",
+      "seed-backup-guidance": "This hexadecimal seed is an equivalent alternative recovery format. It restores the same wallet as the recovery mnemonic above.",
       "secret-recovery-mnemonic": "Secret Recovery Mnemonic",
       "secret-recovery-seed": "Secret Recovery Seed",
       "successfully-copied-secret-recovery-mnemonic": "Successfully copied Secret Recovery Mnemonic to clipboard!",

@@ -51,6 +51,8 @@ describe('RecoveryVerificationService', () => {
     expect(result.accounts[0].pendingCount).toBe(1);
     expect(result.accounts[0].receivableRaw).toBe('1');
     expect(result.accounts[0].historyCount).toBe(1);
+    expect(result.accounts[0].isOpened).toBeTrue();
+    expect(result.interpretations[0].openedAccounts).toBe(1);
     expect(result.interpretations[0].spendableRaw).toBe('0');
     expect(result.interpretations[0].receivableRaw).toBe('1');
     expect(result.interpretations[0].combinedRaw).toBe('1');
@@ -100,6 +102,23 @@ describe('RecoveryVerificationService', () => {
       jasmine.objectContaining({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
     ]);
     expect(result.recommendedInterpretation).toBe('private-key');
+  });
+
+  it('does not treat a receivable-only account as opened', async () => {
+    const candidate: RecoveryCandidate = {
+      kind: 'hex-secret',
+      normalizedMaterial: 'C'.repeat(64),
+      wordCount: null,
+      likely: 'private-key',
+      interpretations: ['private-key'],
+    };
+    api.accountsPending.and.callFake(async accounts => ({ blocks: { [accounts[0]]: { HASH: { amount: '1' } } } }));
+
+    const result = await service.verify(candidate, 0, 0);
+
+    expect(result.accounts[0].hasActivity).toBeTrue();
+    expect(result.accounts[0].isOpened).toBeFalse();
+    expect(result.interpretations[0]).toEqual(jasmine.objectContaining({ activeAccounts: 1, openedAccounts: 0, combinedRaw: '1' }));
   });
 
   it('keeps the canonical Nano seed selected when compatible interpretations have equal totals', async () => {

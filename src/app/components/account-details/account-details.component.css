@@ -209,6 +209,11 @@
     margin-left: 4px;
 }
 
+/* Keep the compact account card readable while the logo remains decorative. */
+.account-details-compact-card > .logo {
+    filter: blur(18px) grayscale(80%) hue-rotate(180deg);
+}
+
 .chevron-up {
     transform: scaleY(-1);
 }

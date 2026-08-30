@@ -6,7 +6,7 @@ It is for people who want a maintained web wallet for Nano. Contributors can imp
 
 ## What NaultCore includes
 
-- Standard Nano wallet workflows: create or import a wallet, manage accounts, send, receive, and recover from a seed.
+- Standard Nano wallet workflows: create or import a wallet, manage accounts, send, receive, and recover from a seed. See [Restore Wallet Strategy](docs/restore-wallet-strategy.md) for recovery-path identifiers and behavior.
 - Browser and desktop build targets from the Nault codebase.
 - Angular 22 modernization of the web app, with aligned build, test, and browser-automation tooling.
 - Node 22 and pnpm tooling for ongoing maintenance.

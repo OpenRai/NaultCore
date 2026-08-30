@@ -37,7 +37,9 @@ export class RecoveryImportService {
         normalizedMaterial: mnemonic.toLowerCase(),
         wordCount: words.length,
         likely: 'bip39-mnemonic',
-        interpretations: ['nano-seed', 'bip39-mnemonic'],
+        // A BIP-39 passphrase cannot participate in Nano's native mnemonic
+        // derivation, so opting in to one makes BIP-39 the only compatible path.
+        interpretations: passphraseEnabled ? ['bip39-mnemonic'] : ['nano-seed', 'bip39-mnemonic'],
         // Passphrases are intentionally copied byte-for-byte. Do not trim,
         // case-fold, normalize, or otherwise reinterpret this value.
         ...(passphraseEnabled ? { passphrase } : {}),

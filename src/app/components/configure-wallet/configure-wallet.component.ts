@@ -11,7 +11,7 @@ import { TestIds } from '../../testing/test-ids';
 import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 import { branding } from 'environments/branding';
 import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation, RecoveryMnemonicWordStatus } from '../../services/recovery-import.service';
-import { KnownAddressEvidence, RecoveryVerificationResult, RecoveryVerificationService } from '../../services/recovery-verification.service';
+import { RecoveryVerificationResult, RecoveryVerificationService } from '../../services/recovery-verification.service';
 
 enum panels {
   'landing',
@@ -88,8 +88,6 @@ export class ConfigureWalletComponent implements OnInit {
   recoveryChecking = false;
   recoveryScanEnd = 9;
   recoveryInterpretationTouched = false;
-  recoveryKnownAddress = '';
-  recoveryKnownAddressEvidence: KnownAddressEvidence|null = null;
 
   ledgerStatus = LedgerStatus;
   ledger = this.ledgerService.ledger;
@@ -449,13 +447,10 @@ export class ConfigureWalletComponent implements OnInit {
     return this.util.nano.rawToMnano(raw).toFixed(6);
   }
 
-  async lookupKnownRecoveryAddress() {
-    try {
-      this.recoveryKnownAddressEvidence = await this.recoveryVerification.lookupKnownAddress(this.recoveryKnownAddress);
-    } catch (error) {
-      this.recoveryKnownAddressEvidence = null;
-      this.notifications.sendError(error instanceof Error ? error.message : 'Unable to check that Nano address.');
-    }
+  recoveryCandidateDescription(candidate: RecoveryCandidate): string {
+    if (candidate.kind === 'mnemonic') return `${candidate.wordCount}-word secret recovery mnemonic`;
+    if (candidate.kind === 'hex-secret') return '64-character hexadecimal secret';
+    return '128-character expanded private key';
   }
 
   continueWithRecoveryPreview() {

@@ -18,4 +18,8 @@ describe('AppSettingsService', () => {
 
     expect(service.getServerApiBaseUrl()).toBe('https://node.somenano.com/');
   }));
+
+  it('defaults to the local Nanoidenticons renderer', inject([AppSettingsService], (service: AppSettingsService) => {
+    expect(service.settings.identiconsStyle).toBe('nanoidenticons');
+  }));
 });

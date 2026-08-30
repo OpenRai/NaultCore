@@ -62,7 +62,7 @@ export class AppSettingsService {
     minimumReceive: '0.000001',
     walletVersion: 1,
     lightModeEnabled: false,
-    identiconsStyle: 'none',
+    identiconsStyle: 'nanoidenticons',
     useNostr: true,
     useOrbitDb: false,
   };
@@ -259,7 +259,7 @@ export class AppSettingsService {
       minimumReceive: '0.000001',
       walletVersion: 1,
       lightModeEnabled: false,
-      identiconsStyle: 'none',
+      identiconsStyle: 'nanoidenticons',
       useNostr: true,
       useOrbitDb: false,
     };

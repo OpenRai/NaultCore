@@ -19,6 +19,7 @@ describe('RecoveryImportService', () => {
     const candidate = service.classify('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', true, passphrase);
 
     expect(candidate.passphrase).toBe(passphrase);
+    expect(candidate.interpretations).toEqual(['bip39-mnemonic']);
   });
 
   it('classifies hex recovery material without choosing a semantic interpretation', () => {

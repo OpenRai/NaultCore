@@ -107,4 +107,15 @@ describe('ConfigureWalletComponent recovery material validation', () => {
 
     expect(component.recoveryVerificationResult).toBeNull();
   });
+
+  it('uses one distinct name for each detected recovery material shape', () => {
+    const component = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
+
+    expect(component.recoveryCandidateDescription(classifier.classify('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about')))
+      .toBe('12-word secret recovery mnemonic');
+    expect(component.recoveryCandidateDescription(classifier.classify('a'.repeat(64))))
+      .toBe('64-character hexadecimal secret');
+    expect(component.recoveryCandidateDescription(classifier.classify('a'.repeat(128))))
+      .toBe('128-character expanded private key');
+  });
 });

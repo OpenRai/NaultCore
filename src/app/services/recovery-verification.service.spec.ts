@@ -135,24 +135,43 @@ describe('RecoveryVerificationService', () => {
     expect(result.recommendedInterpretation).toBe('nano-seed');
   });
 
-  it('does not apply a BIP-39 passphrase to the Nano seed interpretation', async () => {
+  it('ranks interpretations by recovered amount before observed transaction count', () => {
+    const recommended = (service as any).selectRecommendedInterpretation([
+      { interpretation: 'nano-seed', combinedRaw: '50', transactionCount: 1 },
+      { interpretation: 'bip39-mnemonic', combinedRaw: '49', transactionCount: 20 },
+    ]);
+
+    expect(recommended).toBe('nano-seed');
+  });
+
+  it('uses observed transaction count when compatible interpretations recover the same amount', () => {
+    const recommended = (service as any).selectRecommendedInterpretation([
+      { interpretation: 'nano-seed', combinedRaw: '0', transactionCount: 5 },
+      { interpretation: 'bip39-mnemonic', combinedRaw: '0', transactionCount: 2 },
+    ]);
+
+    expect(recommended).toBe('nano-seed');
+  });
+
+  it('probes only the BIP-39 interpretation when a passphrase is present', async () => {
     const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-    const withoutPassphrase: RecoveryCandidate = {
+    const passphrase = 'this is a BIP-39 passphrase';
+    const candidate: RecoveryCandidate = {
       kind: 'mnemonic',
       normalizedMaterial: mnemonic,
       wordCount: 12,
-      likely: 'nano-seed',
-      interpretations: ['nano-seed'],
+      likely: 'bip39-mnemonic',
+      // Verification must remain safe even if an upstream caller supplied an
+      // ambiguous interpretation list with an explicit BIP-39 passphrase.
+      interpretations: ['nano-seed', 'bip39-mnemonic'],
+      passphrase,
     };
-    const withBogusPassphrase: RecoveryCandidate = {
-      ...withoutPassphrase,
-      passphrase: 'this does not belong to the Nano seed path',
-    };
+    const mnemonicToSeedSync = spyOn(util.string, 'mnemonicToSeedSync').and.returnValue(Buffer.alloc(64));
 
-    const withoutPassphraseResult = await service.verify(withoutPassphrase, 0, 0);
-    const withBogusPassphraseResult = await service.verify(withBogusPassphrase, 0, 0);
+    const result = await service.verify(candidate, 0, 0);
 
-    expect(withBogusPassphraseResult.accounts).toEqual(withoutPassphraseResult.accounts);
-    expect(withBogusPassphraseResult.interpretations).toEqual(withoutPassphraseResult.interpretations);
+    expect((mnemonicToSeedSync as jasmine.Spy).calls.mostRecent().args).toEqual([mnemonic, passphrase]);
+    expect(result.interpretations.map(interpretation => interpretation.interpretation)).toEqual(['bip39-mnemonic']);
+    expect(result.accounts.every(account => account.interpretation === 'bip39-mnemonic')).toBeTrue();
   });
 });

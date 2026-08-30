@@ -24,8 +24,8 @@
             <div class="icon">
               <div class="seed">{{ exampleSeed }}</div>
             </div>
-            <h2>New<br class="uk-visible@s">Wallet</h2>
-            <p>Generate seed<br class="uk-visible@s">and mnemonic</p>
+            <h2>New<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Wallet</h2>
+            <p>Generate seed<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">and mnemonic</p>
           </button>
           <hr class="uk-width-1-1 uk-divider-icon">
           <button class="wallet-option" (click)="startRecoveryImport()" [attr.data-testid]="testIds.configureWallet.recoveryImportButton">
@@ -47,8 +47,8 @@
                 </g>
               </svg>
             </div>
-            <h2>Restore<br class="uk-visible@s">Wallet</h2>
-            <p>Seed, keys, or<br class="uk-visible@s">recovery words</p>
+            <h2>Restore<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Wallet</h2>
+            <p>Seed, keys, or<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">recovery words</p>
           </button>
           <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'file';" [attr.data-testid]="testIds.configureWallet.importFileButton">
             <div class="icon">
@@ -56,7 +56,7 @@
                 <path d="m111.24 21.503c6.0699 1.9309 10.664 6.5178 13.516 14.24m-88.044-14.24h74.527l0.32099 14.165 13.195 0.07558v99.871c0 1.5009-1.2083 2.7092-2.7092 2.7092h-85.334c-1.5009 0-2.7092-1.2083-2.7092-2.7092v-111.4c0-1.5009 1.2083-2.7092 2.7092-2.7092z" fill="none" stroke="#000" stroke-width="2"/>
               </svg>
             </div>
-            <h2>Restore<br class="uk-visible@s">Wallet File</h2>
+            <h2>Restore<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Wallet File</h2>
             <p>Exported {{ branding.applicationName }} wallet</p>
           </button>
           <button class="wallet-option" (click)="setPanel(panels.import); selectedImportOption = 'ledger';" [attr.data-testid]="testIds.configureWallet.useLedgerButton">
@@ -71,7 +71,7 @@
                 </g>
               </svg>
             </div>
-            <h2>Use<br class="uk-visible@s">Ledger</h2>
+            <h2>Use<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Ledger</h2>
             <p>Nano S / Nano X</p>
           </button>
         </div>
@@ -125,7 +125,7 @@
                 </div>
               </div>
             </div>
-            <h2>Nano<br class="uk-visible@s">Mnemonic</h2>
+            <h2>Nano<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Mnemonic</h2>
             <p>24 words</p>
           </button>
         </div>
@@ -151,8 +151,8 @@
                 </div>
               </div>
             </div>
-            <h2>BIP39<br class="uk-visible@s">Mnemonic</h2>
-            <p>12, 15, 18, 21<br class="uk-visible@s">or 24 words</p>
+            <h2>BIP39<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">Mnemonic</h2>
+            <p>12, 15, 18, 21<span class="uk-hidden@s">&nbsp;</span><br class="uk-visible@s">or 24 words</p>
           </button>
         </div>
       </div>
@@ -243,12 +243,9 @@
     <span uk-icon="icon: arrow-left; ratio: 1.5;"></span><span class="label">Back</span>
   </div>
   <div class="uk-card uk-card-default" [attr.data-testid]="testIds.configureWallet.recoveryPreview">
-    <div class="uk-card-header"><h3 class="uk-card-title">Review detected recovery</h3></div>
+    <div class="uk-card-header"><h3 class="uk-card-title">Review detected recovery material</h3></div>
     <div class="uk-card-body">
-      <p class="uk-text-small uk-text-muted"><strong>Detected recovery material</strong><br>{{ recoveryCandidate.kind === 'mnemonic' ? 'Mnemonic phrase' : recoveryCandidate.kind === 'hex-secret' ? '64-character hexadecimal secret' : '128-character expanded private key' }}</p>
-      @if (recoveryCandidate.wordCount) {
-        <p><strong>Words:</strong> {{ recoveryCandidate.wordCount }}</p>
-      }
+      <p class="uk-text-small uk-text-muted"><strong>Detected recovery material</strong><br>{{ recoveryCandidateDescription(recoveryCandidate) }}</p>
       @if (recoveryCandidate.interpretations.includes('bip39-mnemonic')) {
         <label class="uk-display-block uk-margin-top" for="recovery-preview-passphrase-toggle">
           <input id="recovery-preview-passphrase-toggle" type="checkbox" class="uk-checkbox" [(ngModel)]="recoveryPassphraseEnabled" (ngModelChange)="invalidateRecoveryPreview()">
@@ -274,14 +271,6 @@
         } @else {
           <div class="uk-alert uk-alert-warning uk-margin-top">
             <p><strong>No activity found in the current scan.</strong> This does not prove the material is empty or wrong.</p>
-            <label for="recovery-known-address">Check a known Nano address</label>
-            <div class="uk-flex uk-margin-small-top">
-              <input id="recovery-known-address" type="text" class="uk-input" [(ngModel)]="recoveryKnownAddress" autocomplete="off">
-              <button class="uk-button uk-button-default uk-margin-small-left" type="button" (click)="lookupKnownRecoveryAddress()">Check address</button>
-            </div>
-            @if (recoveryKnownAddressEvidence) {
-              <p>{{ recoveryKnownAddressEvidence.account }} · {{ recoveryKnownAddressEvidence.pendingCount }} receivables · {{ recoveryKnownAddressEvidence.historyCount }} history entries · {{ recoveryKnownAddressEvidence.hasActivity ? 'activity found' : 'no activity found' }}</p>
-            }
           </div>
         }
         <fieldset class="uk-margin-top">
@@ -289,7 +278,7 @@
           @for (interpretation of recoveryVerificationResult.interpretations; track interpretation.interpretation) {
             <label class="uk-display-block uk-margin-small-top uk-padding-small" [class.uk-alert-success]="interpretation.activeAccounts > 0">
               <input type="radio" class="uk-radio uk-margin-small-right" name="recovery-interpretation" [value]="interpretation.interpretation" [(ngModel)]="recoveryInterpretation" (ngModelChange)="recoveryInterpretationTouched = true">
-              <span>{{ interpretation.interpretation === 'nano-seed' ? 'Import Nano secret recovery seed (HD, multiple accounts)' : interpretation.interpretation === 'bip39-mnemonic' ? 'Import BIP-39 mnemonic (HD, multiple accounts)' : interpretation.interpretation === 'private-key' ? 'Import as Nano private key (single account)' : 'Import as expanded private key (single account)' }}</span>
+              <span>{{ interpretation.interpretation === 'nano-seed' ? 'Import as Nano secret recovery seed (HD, multiple accounts)' : interpretation.interpretation === 'bip39-mnemonic' ? 'Import as BIP-39 mnemonic (HD, multiple accounts)' : interpretation.interpretation === 'private-key' ? 'Import as Nano private key (single account)' : 'Import as expanded private key (single account)' }}</span>
               @if (interpretation.activeAccounts > 0) {
                 <span class="uk-display-block uk-text-small">
                   @if (interpretation.combinedRaw !== '0' || interpretation.openedAccounts > 0) {
@@ -322,7 +311,7 @@
           <button class="uk-button uk-button-secondary" type="button" (click)="checkRecovery()">Re-check</button>
           <button class="uk-button uk-button-default" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex">Restore anyway</button>
         } @else {
-          <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Restore selected recovery</button>
+          <button class="uk-button uk-button-primary" type="button" (click)="continueWithRecoveryPreview()" [disabled]="recoveryInterpretation === 'bip39-mnemonic' && !validIndex" [attr.data-testid]="testIds.configureWallet.recoveryContinueButton">Restore with selected method</button>
         }
       } @else if (!recoveryChecking) {
         <button class="uk-button uk-button-primary" type="button" (click)="checkRecovery()">Re-check recovery</button>

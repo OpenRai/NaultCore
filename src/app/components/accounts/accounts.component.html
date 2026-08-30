@@ -84,7 +84,7 @@
                     <a
                       (click)="navigateToAccount(account); $event.stopPropagation()"
                       [routerLink]="( '/account/' + account.id )" [queryParams]="{ compact: '1' }"
-                      [class]="[ 'uk-width-auto', 'uk-text-truncate', 'account-container', !isLedgerWallet ? 'narrow' : 'wide' ]"
+                      [class]="[ 'uk-width-expand', 'uk-text-truncate', 'account-container', !isLedgerWallet ? 'narrow' : 'wide' ]"
                       [attr.data-testid]="testIds.accounts.accountRowDetailsButton"
                       >
                       <div class="uk-flex">

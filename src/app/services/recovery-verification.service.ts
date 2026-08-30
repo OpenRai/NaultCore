@@ -22,6 +22,7 @@ export interface RecoveryInterpretationEvidence {
   interpretation: RecoveryInterpretation;
   checkedAccounts: number;
   activeAccounts: number;
+  transactionCount: number;
   openedAccounts: number;
   spendableRaw: string;
   receivableRaw: string;
@@ -40,14 +41,6 @@ export interface RecoveryVerificationResult {
   hasActivity: boolean;
 }
 
-export interface KnownAddressEvidence {
-  account: string;
-  balanceRaw: string;
-  pendingCount: number;
-  historyCount: number;
-  hasActivity: boolean;
-}
-
 interface DerivedAccount {
   interpretation: RecoveryInterpretation;
   index: number;
@@ -63,14 +56,15 @@ export class RecoveryVerificationService {
   async verify(candidate: RecoveryCandidate, scanStart = 0, scanEnd = 19): Promise<RecoveryVerificationResult> {
     const start = Math.max(0, Math.floor(scanStart));
     const end = Math.min(100, Math.max(start, Math.floor(scanEnd)));
-    const derived = candidate.interpretations.flatMap(interpretation => this.deriveAccounts(candidate, interpretation, start, end));
+    const compatibleInterpretations = this.compatibleInterpretations(candidate);
+    const derived = compatibleInterpretations.flatMap(interpretation => this.deriveAccounts(candidate, interpretation, start, end));
     if (!derived.length) throw new Error('No compatible recovery interpretation is available.');
 
     const accountIds = derived.map(account => account.account);
     const [balances, pending, history] = await Promise.all([
       this.api.accountsBalances(accountIds),
       this.api.accountsPending(accountIds, 50),
-      Promise.all(derived.map(account => this.api.accountHistory(account.account, 1, false))),
+      Promise.all(derived.map(account => this.api.accountHistory(account.account, 50, false))),
     ]);
 
     const evidence = derived.map((derivedAccount, index) => {
@@ -93,17 +87,19 @@ export class RecoveryVerificationService {
         hasActivity,
       };
     });
-    const interpretations = candidate.interpretations.map(interpretation => {
+    const interpretations = compatibleInterpretations.map(interpretation => {
       const accounts = evidence.filter(account => account.interpretation === interpretation);
       const spendable = accounts.reduce((sum, account) => sum.plus(account.balanceRaw), new BigNumber(0));
       const receivable = accounts.reduce((sum, account) => sum.plus(account.receivableRaw), new BigNumber(0));
       const combined = spendable.plus(receivable);
       const activeAccounts = accounts.filter(account => account.hasActivity).length;
+      const transactionCount = accounts.reduce((count, account) => count + account.historyCount + account.pendingCount, 0);
       const openedAccounts = accounts.filter(account => account.isOpened).length;
       return {
         interpretation,
         checkedAccounts: accounts.length,
         activeAccounts,
+        transactionCount,
         openedAccounts,
         spendableRaw: spendable.toFixed(0),
         receivableRaw: receivable.toFixed(0),
@@ -112,9 +108,7 @@ export class RecoveryVerificationService {
       };
     });
     const activeInterpretations = [...new Set(evidence.filter(item => item.hasActivity).map(item => item.interpretation))];
-    const recommendedInterpretation = interpretations.reduce((recommended, interpretation) => {
-      return new BigNumber(interpretation.combinedRaw).gt(recommended.combinedRaw) ? interpretation : recommended;
-    }).interpretation;
+    const recommendedInterpretation = this.selectRecommendedInterpretation(interpretations);
     return {
       checkedAt: Date.now(),
       scanStart: start,
@@ -124,26 +118,6 @@ export class RecoveryVerificationService {
       recommendedInterpretation,
       activeInterpretations,
       hasActivity: activeInterpretations.length > 0,
-    };
-  }
-
-  async lookupKnownAddress(account: string): Promise<KnownAddressEvidence> {
-    const normalized = account.trim().replace(/^xrb_/, 'nano_');
-    if (!this.util.account.isValidAccount(normalized)) throw new Error('Enter a valid Nano account address.');
-    const [info, pending, history] = await Promise.all([
-      this.api.accountInfo(normalized),
-      this.api.pending(normalized, 50),
-      this.api.accountHistory(normalized, 1, false),
-    ]);
-    const balanceRaw = info?.balance || '0';
-    const pendingCount = this.pendingCount(pending?.blocks);
-    const historyCount = Array.isArray(history?.history) ? history.history.length : 0;
-    return {
-      account: normalized,
-      balanceRaw,
-      pendingCount,
-      historyCount,
-      hasActivity: new BigNumber(balanceRaw).gt(0) || pendingCount > 0 || historyCount > 0,
     };
   }
 
@@ -173,6 +147,27 @@ export class RecoveryVerificationService {
       const keyPair = this.util.account.generateAccountKeyPair(secret);
       return { interpretation, index, account: this.util.account.getPublicAccountID(keyPair.publicKey) };
     });
+  }
+
+  private compatibleInterpretations(candidate: RecoveryCandidate): ReadonlyArray<RecoveryInterpretation> {
+    // Treat the presence of the passphrase field as an explicit BIP-39 choice,
+    // including the valid empty passphrase. Never probe a native Nano mnemonic
+    // interpretation that cannot consume it.
+    return candidate.passphrase === undefined
+      ? candidate.interpretations
+      : candidate.interpretations.filter(interpretation => interpretation === 'bip39-mnemonic');
+  }
+
+  private selectRecommendedInterpretation(interpretations: ReadonlyArray<RecoveryInterpretationEvidence>): RecoveryInterpretation {
+    return interpretations.reduce((recommended, interpretation) => {
+      const amountComparison = new BigNumber(interpretation.combinedRaw).comparedTo(recommended.combinedRaw);
+      if (amountComparison !== 0) return amountComparison > 0 ? interpretation : recommended;
+
+      // A bounded history probe gives a stable, useful second signal when
+      // compatible interpretations have the same recovered amount. Keep the
+      // canonical first option only for a complete tie.
+      return interpretation.transactionCount > recommended.transactionCount ? interpretation : recommended;
+    }).interpretation;
   }
 
   private pendingCount(value: unknown): number {

@@ -19,6 +19,26 @@ th.hidden-column, td.hidden-column {
 	max-width: calc(100% - 100px);
 }
 
+/* The account suffix is the stable visual anchor; let the middle truncate first. */
+.account-container,
+.account-container .uk-flex,
+.account-container .uk-width-expand,
+.account-container app-nano-account-id {
+	min-width: 0;
+}
+
+@media (max-width: 599px) {
+	.account-container.narrow,
+	.account-container.wide {
+		max-width: none;
+	}
+
+	.account-container .nano-address-middle {
+		width: auto;
+		min-width: 1.4em;
+	}
+}
+
 .copy-container {
 	padding-left: 10px;
 	padding-bottom: 3px;

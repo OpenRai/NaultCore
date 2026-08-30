@@ -69,16 +69,17 @@ test('the unlock modal rejects an incorrect password and accepts the wallet pass
   await expect(page.getByTestId('accounts-page-root')).toBeVisible({ timeout: 30000 });
 });
 
-test('a locked wallet with a receivable shows an unlockable incoming balance card', async ({ page }) => {
+test('a locked wallet with a receivable shows an unlockable receivable card', async ({ page }) => {
   await mockWalletReceivable(page);
   await page.goto('/accounts');
 
   const lockedWallet = page.locator('.nav-status-row:has-text("Wallet Locked")');
-  const incomingBalanceCard = page.getByTestId('incoming-balance-card');
+  const receivableCard = page.getByTestId('incoming-balance-card');
   await expect(lockedWallet).toBeVisible({ timeout: 15000 });
-  await expect(incomingBalanceCard).toBeVisible({ timeout: 15000 });
-  await expect(incomingBalanceCard).toContainText('Incoming Balance');
+  await expect(receivableCard).toBeVisible({ timeout: 15000 });
+  await expect(receivableCard).toContainText('Receivable');
+  await expect(receivableCard).toContainText('Confirmed');
 
-  await incomingBalanceCard.click();
+  await receivableCard.click();
   await expect(page.locator('#unlock-wallet-modal input[type="password"]')).toBeVisible();
 });

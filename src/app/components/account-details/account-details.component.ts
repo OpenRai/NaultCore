@@ -545,6 +545,11 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       }
 
       this.account.pending = pendingBalance;
+      if (this.walletAccount && this.pendingBlocks.length) {
+        // Account Details performs a direct authoritative receivable query.
+        // Converge the shell's wallet-wide radiator with the same node state.
+        void this.wallet.refreshWalletState('account-details').catch(() => undefined);
+      }
     } else {
       // Unset variable that may still be set to true from old request
       this.loadingIncomingTxList = false;

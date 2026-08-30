@@ -427,7 +427,7 @@
                     </span>
                   }
                 </ng-template>
-                <td class="amount-column uk-text-middle uk-text-muted" [title]="('Incoming Transaction') + ( (pending.amountRaw && (pending.amountRaw > 0) ) ? ( ', +' + ( pending.amountRaw.toString(10) ) + ' raw' ) : '' )">
+                <td class="amount-column uk-text-middle uk-text-muted" [title]="('Confirmed receivable block') + ( (pending.amountRaw && (pending.amountRaw > 0) ) ? ( ', +' + ( pending.amountRaw.toString(10) ) + ' raw' ) : '' )">
                   <span class="uk-text-small">{{ 'general.blockactions.ready-to-receive' | transloco }}</span><br>
                   @if (showReceiveWorkStatus()) {
                     <span class="uk-text-warning uk-text-small"><span uk-icon="icon: bolt; ratio: 0.75"></span> Preparing receive work</span><br>

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.vitest.json",
+  "compilerOptions": {
+    "outDir": "../out-tsc/vitest-nanonyms"
+  },
+  "files": [
+    "app/services/nanonym-account-selection.service.spec.ts",
+    "app/services/nanonym-crypto.service.spec.ts",
+    "app/services/nanonym-account-selection.service.ts",
+    "app/services/nanonym-crypto.service.ts",
+    "app/services/util.service.ts",
+    "../packages/crypto/src/index.ts",
+    "../packages/crypto/src/nano-codec.ts",
+    "../packages/core/src/index.ts",
+    "test-setup-vitest.ts",
+    "globals.d.ts",
+    "../node_modules/vitest/globals.d.ts"
+  ]
+}

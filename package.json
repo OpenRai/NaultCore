@@ -15,6 +15,7 @@
     "build": "pnpm run version && ng build",
     "test": "pnpm run version && ng test --watch=false",
     "test:vitest": "pnpm run version && ng run nault:test-vitest --watch=false",
+    "test:vitest:nanonyms": "pnpm run version && ng run nault:test-vitest-nanonyms --watch=false",
     "test:watch": "pnpm run version && ng test",
     "test:naultcore": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng test --watch=false",
     "lint": "pnpm run version && ng lint",

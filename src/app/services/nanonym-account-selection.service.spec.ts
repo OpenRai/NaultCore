@@ -3,7 +3,9 @@ import BigNumber from 'bignumber.js';
 import { NanoNymAccountSelectionService } from './nanonym-account-selection.service';
 import { StealthAccount } from '../types/nanonym.types';
 
-(FEATURE_NANONYMS ? describe : xdescribe)('NanoNymAccountSelectionService', () => {
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+
+featureDescribe('NanoNymAccountSelectionService', () => {
   let service: NanoNymAccountSelectionService;
 
   beforeEach(() => {

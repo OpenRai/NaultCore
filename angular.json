@@ -194,6 +194,12 @@
                 "FEATURE_NANONYMS": "false"
               }
             },
+            "vitest-nanonyms": {
+              "polyfills": [],
+              "define": {
+                "FEATURE_NANONYMS": "true"
+              }
+            },
             "nanonyms": {
               "define": {
                 "FEATURE_NANONYMS": "true"
@@ -292,6 +298,20 @@
               "src/app/services/work-pool.service.spec.ts",
               "src/app/services/util.service.spec.ts",
               "src/app/services/websocket.service.spec.ts"
+            ],
+            "setupFiles": ["src/test-setup-vitest.ts"]
+          }
+        },
+        "test-vitest-nanonyms": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runner": "vitest",
+            "runnerConfig": "vitest.config.ts",
+            "buildTarget": "nault:build:vitest-nanonyms",
+            "tsConfig": "src/tsconfig.vitest.nanonyms.json",
+            "include": [
+              "src/app/services/nanonym-account-selection.service.spec.ts",
+              "src/app/services/nanonym-crypto.service.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

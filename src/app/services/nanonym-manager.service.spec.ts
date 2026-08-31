@@ -1,4 +1,4 @@
-import { TestBed, inject } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { NanoNymManagerService } from './nanonym-manager.service';
 import { NanoNymStorageService } from './nanonym-storage.service';
 import { NanoNymCryptoService } from './nanonym-crypto.service';
@@ -15,11 +15,38 @@ import { NoPaddingZerosPipe } from 'app/pipes/no-padding-zeros.pipe';
 import { NanoNymAccountSelectionService } from './nanonym-account-selection.service';
 import { AppSettingsService } from './app-settings.service';
 import { OrbitdbNotificationService } from './orbitdb-notification.service';
+import { WorkPoolService } from './work-pool.service';
+
+function createSpy(name?: string): any {
+  const spy = vi.fn();
+  (spy as any).and = {
+    returnValue(value: unknown) {
+      spy.mockReturnValue(value);
+      return spy;
+    },
+    callFake(implementation: (...args: any[]) => any) {
+      spy.mockImplementation(implementation);
+      return spy;
+    },
+  };
+  if (name) (spy as any).and.identity = name;
+  return spy;
+}
+
+const jasmineApi = {
+  createSpy,
+  objectContaining(value: unknown): unknown {
+    const expectApi = (globalThis as any).expect;
+    return expectApi.objectContaining
+      ? expectApi.objectContaining(value)
+      : (globalThis as any).jasmine.objectContaining(value);
+  },
+};
 
 class MockNanoNymStorageService {
-  getNextIndex = jasmine.createSpy('getNextIndex').and.returnValue(0);
-  addNanoNym = jasmine.createSpy('addNanoNym');
-  getNanoNym = jasmine.createSpy('getNanoNym').and.returnValue({
+  getNextIndex = jasmineApi.createSpy('getNextIndex').and.returnValue(0);
+  addNanoNym = jasmineApi.createSpy('addNanoNym');
+  getNanoNym = jasmineApi.createSpy('getNanoNym').and.returnValue({
     index: 0,
     label: 'TestNym',
     nnymAddress: 'nnym_testaddress',
@@ -37,27 +64,27 @@ class MockNanoNymStorageService {
     paymentCount: 0,
     stealthAccounts: [],
   });
-  updateNanoNym = jasmine.createSpy('updateNanoNym');
-  addStealthAccount = jasmine.createSpy('addStealthAccount');
-  updateStealthAccountBalance = jasmine.createSpy('updateStealthAccountBalance');
-  getAllNanoNyms = jasmine.createSpy('getAllNanoNyms').and.returnValue([]);
-  getActiveNanoNyms = jasmine.createSpy('getActiveNanoNyms').and.returnValue([]);
-  whenLoaded = jasmine.createSpy('whenLoaded').and.returnValue(Promise.resolve());
+  updateNanoNym = jasmineApi.createSpy('updateNanoNym');
+  addStealthAccount = jasmineApi.createSpy('addStealthAccount');
+  updateStealthAccountBalance = jasmineApi.createSpy('updateStealthAccountBalance');
+  getAllNanoNyms = jasmineApi.createSpy('getAllNanoNyms').and.returnValue([]);
+  getActiveNanoNyms = jasmineApi.createSpy('getActiveNanoNyms').and.returnValue([]);
+  whenLoaded = jasmineApi.createSpy('whenLoaded').and.returnValue(Promise.resolve());
 }
 
 class MockNanoNymCryptoService {
-  deriveNanoNymKeys = jasmine.createSpy('deriveNanoNymKeys').and.returnValue({
+  deriveNanoNymKeys = jasmineApi.createSpy('deriveNanoNymKeys').and.returnValue({
     spend: { public: new Uint8Array(32), private: new Uint8Array(32) },
     view: { public: new Uint8Array(32), private: new Uint8Array(32) },
     nostr: { public: new Uint8Array(32), private: new Uint8Array(32) },
   });
-  encodeNanoNymAddress = jasmine.createSpy('encodeNanoNymAddress').and.returnValue('nnym_testaddress');
-  getFallbackAddress = jasmine.createSpy('getFallbackAddress').and.returnValue('nano_testfallback');
-  generateSharedSecret = jasmine.createSpy('generateSharedSecret').and.returnValue(new Uint8Array(32));
-  deriveStealthAddress = jasmine.createSpy('deriveStealthAddress').and.returnValue({ address: 'nano_stealth', publicKey: new Uint8Array(32) });
-  deriveStealthPrivateKey = jasmine.createSpy('deriveStealthPrivateKey').and.returnValue(new Uint8Array(32));
-  hexToUint8Array = jasmine.createSpy('hexToUint8Array').and.callFake((hex: string) => new Uint8Array(hex.length / 2));
-  getKeyPairFromPrivateKey = jasmine.createSpy('getKeyPairFromPrivateKey').and.callFake((privKey: Uint8Array) => ({
+  encodeNanoNymAddress = jasmineApi.createSpy('encodeNanoNymAddress').and.returnValue('nnym_testaddress');
+  getFallbackAddress = jasmineApi.createSpy('getFallbackAddress').and.returnValue('nano_testfallback');
+  generateSharedSecret = jasmineApi.createSpy('generateSharedSecret').and.returnValue(new Uint8Array(32));
+  deriveStealthAddress = jasmineApi.createSpy('deriveStealthAddress').and.returnValue({ address: 'nano_stealth', publicKey: new Uint8Array(32) });
+  deriveStealthPrivateKey = jasmineApi.createSpy('deriveStealthPrivateKey').and.returnValue(new Uint8Array(32));
+  hexToUint8Array = jasmineApi.createSpy('hexToUint8Array').and.callFake((hex: string) => new Uint8Array(hex.length / 2));
+  getKeyPairFromPrivateKey = jasmineApi.createSpy('getKeyPairFromPrivateKey').and.callFake((privKey: Uint8Array) => ({
     secretKey: privKey,
     publicKey: new Uint8Array(32)
   }));
@@ -75,12 +102,12 @@ class MockNostrNotificationService {
       memo: 'test memo'
     }
   });
-  subscribeToNotifications = jasmine.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
-  unsubscribeFromNotifications = jasmine.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
+  subscribeToNotifications = jasmineApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
+  unsubscribeFromNotifications = jasmineApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
 }
 
 class MockApiService {
-  accountInfo = jasmine.createSpy('accountInfo').and.returnValue(of({ balance: '0', error: 'Account not found' }).toPromise());
+  accountInfo = jasmineApi.createSpy('accountInfo').and.returnValue(of({ balance: '0', error: 'Account not found' }).toPromise());
 }
 
 class MockWalletService {
@@ -93,39 +120,40 @@ class MockWalletService {
   }
   isLocked = () => this.locked;
   getRecoverySecret = () => this.locked ? null : 'testseed';
-  getWalletAccount = jasmine.createSpy('getWalletAccount');
+  getWalletAccount = jasmineApi.createSpy('getWalletAccount');
 }
 
 class MockNanoBlockService {
-  generateReceive = jasmine.createSpy('generateReceive').and.returnValue(Promise.resolve('tx_hash_receive'));
-  generateSend = jasmine.createSpy('generateSend').and.returnValue(Promise.resolve('tx_hash_send'));
+  generateReceive = jasmineApi.createSpy('generateReceive').and.returnValue(Promise.resolve('tx_hash_receive'));
+  generateSend = jasmineApi.createSpy('generateSend').and.returnValue(Promise.resolve('tx_hash_send'));
 }
 
 class MockUtilService {
   hex = {
-    toUint8: jasmine.createSpy('toUint8').and.callFake((hex: string) => new Uint8Array(hex.length / 2)),
-    fromUint8: jasmine.createSpy('fromUint8').and.callFake((arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(''))
+    toUint8: jasmineApi.createSpy('toUint8').and.callFake((hex: string) => new Uint8Array(hex.length / 2)),
+    fromUint8: jasmineApi.createSpy('fromUint8').and.callFake((arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(''))
   };
   account = {
-    getPublicAccountID: jasmine.createSpy('getPublicAccountID').and.returnValue('nano_accountid')
+    getPublicAccountID: jasmineApi.createSpy('getPublicAccountID').and.returnValue('nano_accountid'),
+    getAccountPublicKey: jasmineApi.createSpy('getAccountPublicKey').and.returnValue('account_public_key'),
   };
   nano = {
-    rawToMnano: jasmine.createSpy('rawToMnano').and.callFake((raw: BigNumber) => raw.dividedBy('1000000000000000000000000000000'))
+    rawToMnano: jasmineApi.createSpy('rawToMnano').and.callFake((raw: BigNumber) => raw.dividedBy('1000000000000000000000000000000'))
   }
 }
 
 class MockNotificationService {
-  sendSuccess = jasmine.createSpy('sendSuccess');
-  sendInfo = jasmine.createSpy('sendInfo');
-  removeNotification = jasmine.createSpy('removeNotification');
+  sendSuccess = jasmineApi.createSpy('sendSuccess');
+  sendInfo = jasmineApi.createSpy('sendInfo');
+  removeNotification = jasmineApi.createSpy('removeNotification');
 }
 
 class MockNoPaddingZerosPipe {
-  transform = jasmine.createSpy('transform').and.callFake(value => value);
+  transform = jasmineApi.createSpy('transform').and.callFake(value => value);
 }
 
 class MockNanoNymAccountSelectionService {
-  selectAccountsForSend = jasmine.createSpy('selectAccountsForSend').and.returnValue(Promise.resolve({
+  selectAccountsForSend = jasmineApi.createSpy('selectAccountsForSend').and.returnValue(Promise.resolve({
     selectedAccounts: [],
     totalSelectedAmount: new BigNumber(0),
     privacyImpact: { numberOfSources: 0, warningLevel: 'none' }
@@ -133,8 +161,8 @@ class MockNanoNymAccountSelectionService {
 }
 
 class MockWebsocketService {
-  subscribeAccounts = jasmine.createSpy('subscribeAccounts');
-  unsubscribeAccounts = jasmine.createSpy('unsubscribeAccounts');
+  subscribeAccounts = jasmineApi.createSpy('subscribeAccounts');
+  unsubscribeAccounts = jasmineApi.createSpy('unsubscribeAccounts');
   newTransactions$ = new BehaviorSubject(null);
 }
 
@@ -146,11 +174,17 @@ class MockAppSettingsService {
 
 class MockOrbitdbNotificationService {
   incomingNotifications$ = new BehaviorSubject(null);
-  subscribeToNotifications = jasmine.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
-  unsubscribeFromNotifications = jasmine.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
+  subscribeToNotifications = jasmineApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
+  unsubscribeFromNotifications = jasmineApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
 }
 
-(FEATURE_NANONYMS ? describe : xdescribe)('NanoNymManagerService', () => {
+class MockWorkPoolService {
+  addWorkToCache = jasmineApi.createSpy('addWorkToCache');
+}
+
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+
+featureDescribe('NanoNymManagerService', () => {
 
   let service: NanoNymManagerService;
   let nanoNymStorageService: MockNanoNymStorageService;
@@ -166,7 +200,7 @@ class MockOrbitdbNotificationService {
     (window as any).nacl = {
       sign: {
         keyPair: {
-          fromSecretKey: jasmine.createSpy('fromSecretKey').and.returnValue({
+          fromSecretKey: jasmineApi.createSpy('fromSecretKey').and.returnValue({
             secretKey: new Uint8Array(32),
             publicKey: new Uint8Array(32),
           }),
@@ -190,6 +224,7 @@ class MockOrbitdbNotificationService {
         { provide: NanoNymAccountSelectionService, useClass: MockNanoNymAccountSelectionService },
         { provide: AppSettingsService, useClass: MockAppSettingsService },
         { provide: OrbitdbNotificationService, useClass: MockOrbitdbNotificationService },
+        { provide: WorkPoolService, useClass: MockWorkPoolService },
       ],
     });
 
@@ -215,7 +250,7 @@ class MockOrbitdbNotificationService {
       (service as any).pendingStealthBlocks = [];
 
       // Spy on the protected wrapper so real crypto isn't needed
-      spyOn(service as any, 'recoverStealthPayment').and.returnValue({
+      vi.spyOn(service as any, 'recoverStealthPayment').mockReturnValue({
         stealth: { address: 'nano_stealth', publicKey: new Uint8Array(32) },
         privateKeyScalar: new Uint8Array(Array(32).fill(1)),
       });
@@ -224,7 +259,7 @@ class MockOrbitdbNotificationService {
       (window as any).nacl = {
         sign: {
           keyPair: {
-            fromSecretKey: jasmine.createSpy('fromSecretKey').and.returnValue({
+            fromSecretKey: jasmineApi.createSpy('fromSecretKey').and.returnValue({
               secretKey: new Uint8Array(32),
               publicKey: new Uint8Array(32),
             }),
@@ -274,7 +309,7 @@ class MockOrbitdbNotificationService {
       expect(apiService.accountInfo).toHaveBeenCalledWith('nano_stealth');
       expect(nanoNymStorageService.addStealthAccount).toHaveBeenCalled();
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmine.objectContaining({
+        jasmineApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -385,7 +420,7 @@ class MockOrbitdbNotificationService {
       // Expect generateReceive to have been called for both pending blocks
       expect(nanoBlockService.generateReceive).toHaveBeenCalledTimes(2);
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmine.objectContaining({
+        jasmineApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -393,7 +428,7 @@ class MockOrbitdbNotificationService {
         false
       );
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmine.objectContaining({
+        jasmineApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -556,8 +591,6 @@ class MockOrbitdbNotificationService {
       walletService.setLocked(false);
       (service as any).pendingStealthBlocks = [];
 
-      const logSpy = spyOn(console, 'debug');
-
       await (service as any).attemptBackgroundOpening();
 
       // Should have returned early without processing
@@ -648,13 +681,13 @@ class MockOrbitdbNotificationService {
       // Assert generateSend was called for each selected account
       expect(nanoBlockService.generateSend).toHaveBeenCalledTimes(2);
       expect(nanoBlockService.generateSend).toHaveBeenCalledWith(
-        jasmine.objectContaining({ id: 'nano_stealth1' }),
+        jasmineApi.objectContaining({ id: 'nano_stealth1' }),
         destinationAddress,
         selectedStealthAccounts[0].amountRaw.toString(),
         false
       );
       expect(nanoBlockService.generateSend).toHaveBeenCalledWith(
-        jasmine.objectContaining({ id: 'nano_stealth2' }),
+        jasmineApi.objectContaining({ id: 'nano_stealth2' }),
         destinationAddress,
         selectedStealthAccounts[1].amountRaw.toString(),
         false

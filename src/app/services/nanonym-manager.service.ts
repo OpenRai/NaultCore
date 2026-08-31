@@ -39,7 +39,9 @@ if (FEATURE_NANONYMS) {
   truncateNanoNymAddress = require("../types/spendable-account.types").truncateNanoNymAddress;
 }
 
-const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
+// Resolve the browser crypto shim lazily so startup ordering and test adapters
+// can install it before a receive/send operation needs it.
+const getNacl = () => typeof window !== 'undefined' ? window["nacl"] : null;
 
 @Injectable({
   providedIn: "root",
@@ -164,7 +166,7 @@ export class NanoNymManagerService implements OnDestroy {
           id: stealthAccount.address,
           frontier: null,
           secret: stealthAccount.privateKey,
-          keyPair: nacl.sign.keyPair.fromSecretKey(stealthAccount.privateKey),
+          keyPair: getNacl().sign.keyPair.fromSecretKey(stealthAccount.privateKey),
           index: -1,
           balance: new BigNumber(0),
           pending: new BigNumber(0),

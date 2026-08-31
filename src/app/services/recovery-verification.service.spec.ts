@@ -3,10 +3,15 @@ import { ApiService } from './api.service';
 import { RecoveryCandidate } from './recovery-import.service';
 import { RecoveryVerificationService } from './recovery-verification.service';
 import { UtilService } from './util.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('RecoveryVerificationService', () => {
   let service: RecoveryVerificationService;
-  let api: jasmine.SpyObj<ApiService>;
+  let api: {
+    accountsBalances: ReturnType<typeof vi.fn>;
+    accountsPending: ReturnType<typeof vi.fn>;
+    accountHistory: ReturnType<typeof vi.fn>;
+  };
   const util = {
     hex: { toUint8: (value: string) => new Uint8Array([parseInt(value.slice(0, 2), 16) || 0]) },
     account: {
@@ -18,10 +23,11 @@ describe('RecoveryVerificationService', () => {
   };
 
   beforeEach(() => {
-    api = jasmine.createSpyObj<ApiService>('ApiService', ['accountsBalances', 'accountsPending', 'accountHistory']);
-    api.accountsBalances.and.resolveTo({ balances: {} });
-    api.accountsPending.and.resolveTo({ blocks: {} });
-    api.accountHistory.and.resolveTo({ history: [] });
+    api = {
+      accountsBalances: vi.fn().mockResolvedValue({ balances: {} }),
+      accountsPending: vi.fn().mockResolvedValue({ blocks: {} }),
+      accountHistory: vi.fn().mockResolvedValue({ history: [] }),
+    };
     TestBed.configureTestingModule({
       providers: [
         RecoveryVerificationService,
@@ -40,8 +46,8 @@ describe('RecoveryVerificationService', () => {
       likely: 'private-key',
       interpretations: ['private-key'],
     };
-    api.accountsPending.and.callFake(async accounts => ({ blocks: { [accounts[0]]: { HASH: { amount: '1' } } } }));
-    api.accountHistory.and.resolveTo({ history: [{ type: 'state' }] });
+    api.accountsPending.mockImplementation(async accounts => ({ blocks: { [accounts[0]]: { HASH: { amount: '1' } } } }));
+    api.accountHistory.mockResolvedValue({ history: [{ type: 'state' }] });
 
     const result = await service.verify(candidate, 0, 0);
 
@@ -51,14 +57,14 @@ describe('RecoveryVerificationService', () => {
     expect(result.accounts[0].pendingCount).toBe(1);
     expect(result.accounts[0].receivableRaw).toBe('1');
     expect(result.accounts[0].historyCount).toBe(1);
-    expect(result.accounts[0].isOpened).toBeTrue();
+    expect(result.accounts[0].isOpened).toBe(true);
     expect(result.interpretations[0].openedAccounts).toBe(1);
     expect(result.interpretations[0].spendableRaw).toBe('0');
     expect(result.interpretations[0].receivableRaw).toBe('1');
     expect(result.interpretations[0].combinedRaw).toBe('1');
     expect(result.recommendedInterpretation).toBe('private-key');
     expect(result.activeInterpretations).toEqual(['private-key']);
-    expect(result.hasActivity).toBeTrue();
+    expect(result.hasActivity).toBe(true);
   });
 
   it('keeps a no-activity result editable and does not write any wallet state', async () => {
@@ -72,7 +78,7 @@ describe('RecoveryVerificationService', () => {
 
     const result = await service.verify(candidate, 0, 0);
 
-    expect(result.hasActivity).toBeFalse();
+    expect(result.hasActivity).toBe(false);
     expect(result.activeInterpretations).toEqual([]);
     expect((service as any).wallet).toBeUndefined();
   });
@@ -85,21 +91,21 @@ describe('RecoveryVerificationService', () => {
       likely: 'nano-seed',
       interpretations: ['nano-seed', 'private-key'],
     };
-    api.accountsBalances.and.callFake(async accounts => ({
+    api.accountsBalances.mockImplementation(async accounts => ({
       balances: {
         [accounts[10]]: { balance: '200' },
         [accounts[0]]: { balance: '100' },
       },
     }));
-    api.accountsPending.and.callFake(async accounts => ({
+    api.accountsPending.mockImplementation(async accounts => ({
       blocks: { [accounts[0]]: { HASH: { amount: '25' } } },
     }));
 
     const result = await service.verify(candidate, 0, 9);
 
     expect(result.interpretations).toEqual([
-      jasmine.objectContaining({ interpretation: 'nano-seed', checkedAccounts: 10, spendableRaw: '100', receivableRaw: '25', combinedRaw: '125' }),
-      jasmine.objectContaining({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
+      expect.objectContaining({ interpretation: 'nano-seed', checkedAccounts: 10, spendableRaw: '100', receivableRaw: '25', combinedRaw: '125' }),
+      expect.objectContaining({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
     ]);
     expect(result.recommendedInterpretation).toBe('private-key');
   });
@@ -112,13 +118,13 @@ describe('RecoveryVerificationService', () => {
       likely: 'private-key',
       interpretations: ['private-key'],
     };
-    api.accountsPending.and.callFake(async accounts => ({ blocks: { [accounts[0]]: { HASH: { amount: '1' } } } }));
+    api.accountsPending.mockImplementation(async accounts => ({ blocks: { [accounts[0]]: { HASH: { amount: '1' } } } }));
 
     const result = await service.verify(candidate, 0, 0);
 
-    expect(result.accounts[0].hasActivity).toBeTrue();
-    expect(result.accounts[0].isOpened).toBeFalse();
-    expect(result.interpretations[0]).toEqual(jasmine.objectContaining({ activeAccounts: 1, openedAccounts: 0, combinedRaw: '1' }));
+    expect(result.accounts[0].hasActivity).toBe(true);
+    expect(result.accounts[0].isOpened).toBe(false);
+    expect(result.interpretations[0]).toEqual(expect.objectContaining({ activeAccounts: 1, openedAccounts: 0, combinedRaw: '1' }));
   });
 
   it('keeps the canonical Nano seed selected when compatible interpretations have equal totals', async () => {
@@ -166,12 +172,12 @@ describe('RecoveryVerificationService', () => {
       interpretations: ['nano-seed', 'bip39-mnemonic'],
       passphrase,
     };
-    const mnemonicToSeedSync = spyOn(util.string, 'mnemonicToSeedSync').and.returnValue(Buffer.alloc(64));
+    const mnemonicToSeedSync = vi.spyOn(util.string, 'mnemonicToSeedSync').mockReturnValue(Buffer.alloc(64));
 
     const result = await service.verify(candidate, 0, 0);
 
-    expect((mnemonicToSeedSync as jasmine.Spy).calls.mostRecent().args).toEqual([mnemonic, passphrase]);
+    expect(mnemonicToSeedSync.mock.calls.at(-1)).toEqual([mnemonic, passphrase]);
     expect(result.interpretations.map(interpretation => interpretation.interpretation)).toEqual(['bip39-mnemonic']);
-    expect(result.accounts.every(account => account.interpretation === 'bip39-mnemonic')).toBeTrue();
+    expect(result.accounts.every(account => account.interpretation === 'bip39-mnemonic')).toBe(true);
   });
 });

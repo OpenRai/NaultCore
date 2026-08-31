@@ -22,6 +22,7 @@
     "app/services/pow-routing.service.spec.ts",
     "app/services/notification.service.spec.ts",
     "app/services/app-settings.service.spec.ts",
+    "app/services/recovery-verification.service.spec.ts",
     "test-setup-vitest.ts",
     "globals.d.ts"
   ],

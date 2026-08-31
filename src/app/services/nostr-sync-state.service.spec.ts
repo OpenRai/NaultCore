@@ -1,15 +1,26 @@
-import { TestBed, fakeAsync, tick } from "@angular/core/testing";
 import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.service";
 
-(FEATURE_NANONYMS ? describe : xdescribe)("NostrSyncStateService", () => {
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+
+function fakeTimers<T extends (...args: any[]) => any>(work: T): (...args: Parameters<T>) => ReturnType<T> {
+  return (...args: Parameters<T>) => {
+    vi.useFakeTimers();
+    try {
+      return work(...args);
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+}
+
+featureDescribe("NostrSyncStateService", () => {
   let service: NostrSyncStateService;
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({
-      providers: [NostrSyncStateService],
-    });
-    service = TestBed.inject(NostrSyncStateService);
+    // This service has no injected dependencies, so direct construction keeps
+    // each test's in-memory cache isolated across runners.
+    service = new NostrSyncStateService();
   });
 
   afterEach(() => {
@@ -48,7 +59,7 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       };
       localStorage.setItem("nostr_sync_0", JSON.stringify(storedState));
 
-      const getItemSpy = spyOn(localStorage, "getItem").and.callThrough();
+      const getItemSpy = vi.spyOn(Storage.prototype, "getItem");
 
       service.getState(0);
       service.getState(0);
@@ -58,9 +69,9 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
   });
 
   describe("updateState", () => {
-    it("should create new state for fresh NanoNym", fakeAsync(() => {
+    it("should create new state for fresh NanoNym", fakeTimers(() => {
       service.updateState(0, "event123", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const savedState = JSON.parse(localStorage.getItem("nostr_sync_0")!);
       expect(savedState.lastSeenTimestamp).toBe(1700000000);
@@ -68,53 +79,53 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       expect(savedState.processedEventIds).toContain("event123");
     }));
 
-    it("should update lastSeen only for newer events", fakeAsync(() => {
+    it("should update lastSeen only for newer events", fakeTimers(() => {
       service.updateState(0, "older", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
       service.updateState(0, "newer", 1700000100);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = service.getState(0);
       expect(state!.lastSeenTimestamp).toBe(1700000100);
       expect(state!.lastSeenEventId).toBe("newer");
     }));
 
-    it("should not update lastSeen for older events", fakeAsync(() => {
+    it("should not update lastSeen for older events", fakeTimers(() => {
       service.updateState(0, "newer", 1700000100);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
       service.updateState(0, "older", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = service.getState(0);
       expect(state!.lastSeenTimestamp).toBe(1700000100);
       expect(state!.lastSeenEventId).toBe("newer");
     }));
 
-    it("should add event to processedEventIds", fakeAsync(() => {
+    it("should add event to processedEventIds", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
       service.updateState(0, "event2", 1700000001);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = service.getState(0);
       expect(state!.processedEventIds).toContain("event1");
       expect(state!.processedEventIds).toContain("event2");
     }));
 
-    it("should not duplicate event IDs", fakeAsync(() => {
+    it("should not duplicate event IDs", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = service.getState(0);
       const count = state!.processedEventIds.filter((id) => id === "event1").length;
       expect(count).toBe(1);
     }));
 
-    it("should enforce rolling window of 1000 event IDs", fakeAsync(() => {
+    it("should enforce rolling window of 1000 event IDs", fakeTimers(() => {
       for (let i = 0; i < 1005; i++) {
         service.updateState(0, `event${i}`, 1700000000 + i);
       }
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = service.getState(0);
       expect(state!.processedEventIds.length).toBe(1000);
@@ -124,8 +135,8 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       expect(state!.processedEventIds).toContain("event1004");
     }));
 
-    it("should debounce persistence", fakeAsync(() => {
-      const setItemSpy = spyOn(localStorage, "setItem").and.callThrough();
+    it("should debounce persistence", fakeTimers(() => {
+      const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
 
       service.updateState(0, "event1", 1700000000);
       service.updateState(0, "event2", 1700000001);
@@ -133,7 +144,7 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
 
       expect(setItemSpy).not.toHaveBeenCalled();
 
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       expect(setItemSpy).toHaveBeenCalledTimes(1);
     }));
@@ -141,21 +152,21 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
 
   describe("isEventProcessed", () => {
     it("should return false for non-existent state", () => {
-      expect(service.isEventProcessed(0, "event123")).toBeFalse();
+      expect(service.isEventProcessed(0, "event123")).toBe(false);
     });
 
-    it("should return false for unprocessed event", fakeAsync(() => {
+    it("should return false for unprocessed event", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      expect(service.isEventProcessed(0, "event2")).toBeFalse();
+      expect(service.isEventProcessed(0, "event2")).toBe(false);
     }));
 
-    it("should return true for processed event", fakeAsync(() => {
+    it("should return true for processed event", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      expect(service.isEventProcessed(0, "event1")).toBeTrue();
+      expect(service.isEventProcessed(0, "event1")).toBe(true);
     }));
   });
 
@@ -164,20 +175,20 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       expect(service.getLastSeenTimestamp(0)).toBeNull();
     });
 
-    it("should return timestamp for existing state", fakeAsync(() => {
+    it("should return timestamp for existing state", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       expect(service.getLastSeenTimestamp(0)).toBe(1700000000);
     }));
   });
 
   describe("clearState", () => {
-    it("should remove state from cache and localStorage", fakeAsync(() => {
+    it("should remove state from cache and localStorage", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      const removeItemSpy = spyOn(localStorage, "removeItem").and.callThrough();
+      const removeItemSpy = vi.spyOn(Storage.prototype, "removeItem");
       service.clearState(0);
 
       expect(service.getState(0)).toBeNull();
@@ -186,10 +197,10 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
   });
 
   describe("clearAll", () => {
-    it("should clear all states", fakeAsync(() => {
+    it("should clear all states", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
       service.updateState(1, "event2", 1700000001);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       service.clearAll();
 
@@ -200,35 +211,39 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
 
   describe("persistNow", () => {
     it("should persist immediately without debounce", () => {
-      const setItemSpy = spyOn(localStorage, "setItem").and.callThrough();
+      const setItemSpy = vi.spyOn(Storage.prototype, "setItem");
 
       service.updateState(0, "event1", 1700000000);
       service.persistNow(0);
 
-      expect(setItemSpy).toHaveBeenCalledWith("nostr_sync_0", jasmine.any(String));
+      const persistedCall = setItemSpy.mock.calls.find(
+        ([key, value]) => key === "nostr_sync_0" && typeof value === "string",
+      );
+      expect(persistedCall).toBeDefined();
+      expect(localStorage.getItem("nostr_sync_0")).toBeTruthy();
     });
   });
 
   describe("per-NanoNym isolation", () => {
-    it("should maintain separate state per NanoNym", fakeAsync(() => {
+    it("should maintain separate state per NanoNym", fakeTimers(() => {
       service.updateState(0, "event0", 1700000000);
       service.updateState(1, "event1", 1700000100);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       expect(service.getLastSeenTimestamp(0)).toBe(1700000000);
       expect(service.getLastSeenTimestamp(1)).toBe(1700000100);
-      expect(service.isEventProcessed(0, "event0")).toBeTrue();
-      expect(service.isEventProcessed(0, "event1")).toBeFalse();
-      expect(service.isEventProcessed(1, "event0")).toBeFalse();
-      expect(service.isEventProcessed(1, "event1")).toBeTrue();
+      expect(service.isEventProcessed(0, "event0")).toBe(true);
+      expect(service.isEventProcessed(0, "event1")).toBe(false);
+      expect(service.isEventProcessed(1, "event0")).toBe(false);
+      expect(service.isEventProcessed(1, "event1")).toBe(true);
     }));
   });
 
   describe("Integration: Cross-Session Persistence", () => {
-    it("should persist state to localStorage and survive service recreation", fakeAsync(() => {
+    it("should persist state to localStorage and survive service recreation", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
       service.updateState(0, "event2", 1700000100);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const storedJson = localStorage.getItem("nostr_sync_0");
       expect(storedJson).toBeTruthy();
@@ -243,22 +258,22 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       expect(restoredState!.processedEventIds).toContain("event2");
     }));
 
-    it("should maintain dedup across service restarts", fakeAsync(() => {
+    it("should maintain dedup across service restarts", fakeTimers(() => {
       service.updateState(0, "event_abc", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const newService = new NostrSyncStateService();
 
-      expect(newService.isEventProcessed(0, "event_abc")).toBeTrue();
-      expect(newService.isEventProcessed(0, "event_xyz")).toBeFalse();
+      expect(newService.isEventProcessed(0, "event_abc")).toBe(true);
+      expect(newService.isEventProcessed(0, "event_xyz")).toBe(false);
     }));
 
-    it("should correctly restore lastSeenTimestamp for cold recovery calculations", fakeAsync(() => {
+    it("should correctly restore lastSeenTimestamp for cold recovery calculations", fakeTimers(() => {
       const baseTimestamp = 1700000000;
       service.updateState(0, "first", baseTimestamp);
       service.updateState(0, "second", baseTimestamp + 100);
       service.updateState(0, "third", baseTimestamp + 200);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const newService = new NostrSyncStateService();
 
@@ -266,26 +281,26 @@ import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.servic
       expect(lastSeen).toBe(baseTimestamp + 200);
     }));
 
-    it("should handle cache invalidation correctly", fakeAsync(() => {
+    it("should handle cache invalidation correctly", fakeTimers(() => {
       service.updateState(0, "event1", 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      expect(service.isEventProcessed(0, "event1")).toBeTrue();
+      expect(service.isEventProcessed(0, "event1")).toBe(true);
 
       service.clearState(0);
 
       expect(service.getState(0)).toBeNull();
-      expect(service.isEventProcessed(0, "event1")).toBeFalse();
+      expect(service.isEventProcessed(0, "event1")).toBe(false);
 
       const newService = new NostrSyncStateService();
       expect(newService.getState(0)).toBeNull();
     }));
 
-    it("should preserve rolling window state across restarts", fakeAsync(() => {
+    it("should preserve rolling window state across restarts", fakeTimers(() => {
       for (let i = 0; i < 50; i++) {
         service.updateState(0, `event_${i}`, 1700000000 + i);
       }
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const newService = new NostrSyncStateService();
       const restoredState = newService.getState(0);

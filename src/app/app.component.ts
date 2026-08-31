@@ -187,9 +187,21 @@ export class AppComponent implements OnInit {
         else this.startup.reportNetwork('unavailable', state);
       });
       this.startup.reportNetwork('connecting');
-      if (this.startupAdapters.httpReady) await this.startupAdapters.httpReady();
-      if (this.startupAdapters.websocketConnect) this.startupAdapters.websocketConnect();
-      else this.websocket.connect();
+      if (this.startupAdapters.httpReady) {
+        try {
+          await this.startupAdapters.httpReady();
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : String(error);
+          this.startup.reportNetwork('failed', `HTTP adapter: ${reason}`);
+        }
+      }
+      try {
+        if (this.startupAdapters.websocketConnect) this.startupAdapters.websocketConnect();
+        else this.websocket.connect();
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.startup.reportNetwork('failed', `WebSocket adapter: ${reason}`);
+      }
     });
 
     await this.startup.runPhase('readiness', async () => {

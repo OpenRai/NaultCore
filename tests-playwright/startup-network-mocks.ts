@@ -181,19 +181,34 @@ async function handleHttpRoute(
 function handleWebSocketRoute(websocket: WebSocketRoute): void {
   websocket.onMessage(message => {
     if (typeof message !== 'string') return;
-    let request: { action?: unknown; id?: unknown };
+    let request: unknown;
     try {
-      request = JSON.parse(message) as { action?: unknown; id?: unknown };
+      request = JSON.parse(message);
     } catch {
       return;
     }
 
-    if (request.action === 'ping') {
+    // Nostr relays use array-framed messages rather than Nano's object RPC
+    // messages. Keep the mock protocol-valid without fabricating events.
+    if (Array.isArray(request) && typeof request[0] === 'string') {
+      const [action, id, event] = request;
+      if (action === 'REQ' && typeof id === 'string') {
+        websocket.send(JSON.stringify(['EOSE', id]));
+      } else if (action === 'EVENT' && event && typeof event === 'object' && 'id' in event && typeof event.id === 'string') {
+        websocket.send(JSON.stringify(['OK', event.id, true, '']));
+      }
+      return;
+    }
+
+    if (!request || typeof request !== 'object') return;
+    const objectRequest = request as { action?: unknown; id?: unknown };
+
+    if (objectRequest.action === 'ping') {
       websocket.send(JSON.stringify({ ack: 'pong', time: '1700000000' }));
       return;
     }
-    if (request.action === 'subscribe' || request.action === 'unsubscribe') {
-      websocket.send(JSON.stringify({ ack: request.action, id: request.id, time: '1700000000' }));
+    if (objectRequest.action === 'subscribe' || objectRequest.action === 'unsubscribe') {
+      websocket.send(JSON.stringify({ ack: objectRequest.action, id: objectRequest.id, time: '1700000000' }));
     }
   });
 }

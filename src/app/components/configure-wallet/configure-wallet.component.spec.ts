@@ -1,7 +1,19 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 import { ConfigureWalletComponent } from './configure-wallet.component';
 import { RecoveryImportService } from '../../services/recovery-import.service';
+import { TranslocoRootModule } from '../../transloco/transloco-root.module';
+
+@NgModule({
+  declarations: [ConfigureWalletComponent],
+  imports: [FormsModule, RouterModule, TranslocoRootModule],
+})
+class ConfigureWalletTestModule {}
+
+const skippedIt = (globalThis as any).xit ?? (it as any).skip;
 
 describe('ConfigureWalletComponent', () => {
   let component: ConfigureWalletComponent;
@@ -9,7 +21,7 @@ describe('ConfigureWalletComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ ConfigureWalletComponent ]
+      imports: [ConfigureWalletTestModule]
     })
     .compileComponents();
   }));
@@ -23,7 +35,7 @@ describe('ConfigureWalletComponent', () => {
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
   // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should create', () => {
+  skippedIt('should create', () => {
     expect(component).toBeTruthy();
   });
 
@@ -62,13 +74,13 @@ describe('ConfigureWalletComponent recovery material validation', () => {
 
   it('clears a BIP-39 passphrase when material changes to another recovery shape', () => {
     const component = validate('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', true, 'keep this only for BIP-39');
-    expect(component.recoveryMaterialIsBip39).toBeTrue();
-    expect(component.recoveryPassphraseEnabled).toBeTrue();
+    expect(component.recoveryMaterialIsBip39).toBe(true);
+    expect(component.recoveryPassphraseEnabled).toBe(true);
 
     component.recoveryMaterial = 'a'.repeat(64);
     component.updateRecoveryMaterialValidity();
 
-    expect(component.recoveryPassphraseEnabled).toBeFalse();
+    expect(component.recoveryPassphraseEnabled).toBe(false);
     expect(component.recoveryPassphrase).toBe('');
   });
 
@@ -76,8 +88,8 @@ describe('ConfigureWalletComponent recovery material validation', () => {
     const incomplete = validate(Array(11).fill('abandon').join(' '));
     const complete = validate(Array(12).fill('abandon').join(' '));
 
-    expect(incomplete.recoveryWordCheckVisible).toBeFalse();
-    expect(complete.recoveryWordCheckVisible).toBeTrue();
+    expect(incomplete.recoveryWordCheckVisible).toBe(false);
+    expect(complete.recoveryWordCheckVisible).toBe(true);
   });
 
   it('starts read-only probing immediately after accepting detected material', () => {
@@ -88,13 +100,13 @@ describe('ConfigureWalletComponent recovery material validation', () => {
     component.recoveryVerificationResult = null;
     component.recoveryInterpretationTouched = true;
     (component as any).recoveryImport = classifier;
-    spyOn(component, 'checkRecovery').and.resolveTo();
+    vi.spyOn(component, 'checkRecovery').mockImplementation(() => Promise.resolve());
 
     component.previewRecoveryImport();
 
     expect(component.recoveryCandidate?.interpretations).toEqual(['nano-seed', 'private-key']);
     expect(component.recoveryVerificationResult).toBeNull();
-    expect(component.recoveryInterpretationTouched).toBeFalse();
+    expect(component.recoveryInterpretationTouched).toBe(false);
     expect(component.checkRecovery).toHaveBeenCalledTimes(1);
   });
 

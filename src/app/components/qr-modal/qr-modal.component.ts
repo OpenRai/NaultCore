@@ -6,8 +6,7 @@ import { BehaviorSubject } from 'rxjs';
 import { UtilService } from '../../services/util.service';
 import * as bip39 from 'bip39';
 import { TestIds } from '../../testing/test-ids';
-
-export type QRType = 'account' | 'hash' | 'mnemonic' | 'generic';
+import type { QRType } from '../../services/qr-modal.service';
 
 @Component({
   standalone: false,

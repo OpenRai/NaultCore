@@ -54,7 +54,7 @@ import {RemoteSigningComponent} from './components/remote-signing/remote-signing
 import {RemoteSignService} from './services/remote-sign.service';
 import { InstallWidgetComponent } from './components/install-widget/install-widget.component';
 import { QrModalComponent } from './components/qr-modal/qr-modal.component';
-import { QrModalService } from './services/qr-modal.service';
+import { QrModalService, QR_MODAL_COMPONENT } from './services/qr-modal.service';
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import {MusigService} from './services/musig.service';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
@@ -148,6 +148,7 @@ import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
     NinjaService,
     NgbActiveModal,
     QrModalService,
+    { provide: QR_MODAL_COMPONENT, useValue: QrModalComponent },
     DeeplinkService,
     MusigService,
     E2eUnlockBridgeService,

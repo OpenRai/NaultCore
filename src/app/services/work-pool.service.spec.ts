@@ -8,6 +8,39 @@ import { PowRoutingService } from './pow-routing.service';
 const sendThreshold = 'SEND-THRESHOLD';
 const receiveThreshold = 'RECEIVE-THRESHOLD';
 
+function partial<T extends object>(value: T): any {
+  const jasmineApi = (globalThis as any).jasmine;
+  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+}
+
+function installTestClock(): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().install();
+  else vi.useFakeTimers();
+}
+
+function advanceTestClock(milliseconds: number): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().tick(milliseconds);
+  else vi.advanceTimersByTime(milliseconds);
+}
+
+function uninstallTestClock(): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().uninstall();
+  else vi.useRealTimers();
+}
+
+async function expectRejectedWithError(promise: Promise<unknown>, message: string): Promise<void> {
+  let error: unknown;
+  try {
+    await promise;
+  } catch (caught) {
+    error = caught;
+  }
+  expect(error instanceof Error ? error.message : error).toBe(message);
+}
+
 class ControlledWorker {
   static instances: ControlledWorker[] = [];
   onmessage: ((event: MessageEvent<{id: number; ok: boolean; work?: string; error?: string}>) => void) | null = null;
@@ -25,7 +58,7 @@ class ControlledWorker {
 
 describe('WorkPoolService', () => {
   let originalWorker: typeof Worker;
-  let api: jasmine.SpyObj<ApiService>;
+  let api: { workGenerateOnce: any };
   const util = {
     nano: {
       difficultyFromMultiplier: (multiplier: number) => multiplier < 1 ? receiveThreshold : sendThreshold,
@@ -37,11 +70,11 @@ describe('WorkPoolService', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    jasmine.clock().install();
+    installTestClock();
     ControlledWorker.instances = [];
     originalWorker = window.Worker;
     (window as unknown as { Worker: typeof Worker }).Worker = ControlledWorker as unknown as typeof Worker;
-    api = jasmine.createSpyObj<ApiService>('ApiService', ['workGenerateOnce']);
+    api = { workGenerateOnce: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
         WorkPoolService,
@@ -55,7 +88,7 @@ describe('WorkPoolService', () => {
 
   afterEach(() => {
     (window as unknown as { Worker: typeof Worker }).Worker = originalWorker;
-    jasmine.clock().uninstall();
+    uninstallTestClock();
   });
 
   it('persists locally generated work and restores it only for its matching account and root', async () => {
@@ -64,21 +97,21 @@ describe('WorkPoolService', () => {
     service.loadWorkCache();
     const generated = service.getWork(accountRoot, 1, 'nano_1');
     worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
-    await expectAsync(generated).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await generated).toBe(`${sendThreshold}-WORK`);
     expect(JSON.parse(localStorage.getItem(service.storeKey)!).version).toBe(2);
 
     const restored = TestBed.runInInjectionContext(() => new WorkPoolService());
     restored.loadWorkCache();
-    expect(restored.workExists(accountRoot, 1, 'nano_1')).toBeTrue();
-    expect(restored.workExists(accountRoot, 1, 'nano_other')).toBeFalse();
-    expect(restored.workExists(root('B'), 1, 'nano_1')).toBeFalse();
+    expect(restored.workExists(accountRoot, 1, 'nano_1')).toBe(true);
+    expect(restored.workExists(accountRoot, 1, 'nano_other')).toBe(false);
+    expect(restored.workExists(root('B'), 1, 'nano_1')).toBe(false);
   });
 
   it('rejects a local worker failure without calling a remote provider', async () => {
     const service = TestBed.inject(WorkPoolService);
     const pending = service.getWork(root('A'), 1, 'nano_1');
     worker().respond({ id: worker().posted[0].id, ok: false, error: 'local worker failed' });
-    await expectAsync(pending).toBeRejectedWithError('local worker failed');
+    await expectRejectedWithError(pending, 'local worker failed');
     expect(api.workGenerateOnce).not.toHaveBeenCalled();
   });
 
@@ -86,37 +119,37 @@ describe('WorkPoolService', () => {
     const service = TestBed.inject(WorkPoolService);
     const routing = TestBed.inject(PowRoutingService) as any;
     routing.state = { policy: 'remote', route: 'remote' };
-    api.workGenerateOnce.and.resolveTo({ work: `${sendThreshold}-WORK` });
+    api.workGenerateOnce.mockResolvedValue({ work: `${sendThreshold}-WORK` });
     const pending = service.getWork(root('A'), 1, 'nano_1');
     await Promise.resolve();
     expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold, '');
-    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
-    expect(ControlledWorker.instances).toHaveSize(0);
+    expect(await pending).toBe(`${sendThreshold}-WORK`);
+    expect(ControlledWorker.instances.length).toBe(0);
   });
 
   it('rejects invalid remote work, retries deterministically, and accepts the next valid response', async () => {
     const service = TestBed.inject(WorkPoolService);
     const routing = TestBed.inject(PowRoutingService) as any;
     routing.state = { policy: 'remote', route: 'remote' };
-    api.workGenerateOnce.and.returnValues(Promise.resolve({ work: '0000000000000000' }), Promise.resolve({ work: `${sendThreshold}-WORK` }));
+    api.workGenerateOnce.mockReturnValueOnce(Promise.resolve({ work: '0000000000000000' })).mockReturnValueOnce(Promise.resolve({ work: `${sendThreshold}-WORK` }));
     const pending = service.getWork(root('A'), 1, 'nano_1');
     await Promise.resolve();
     expect(service.state$.value.lastError).toBe('Remote PoW response failed validation');
-    jasmine.clock().tick(1_000);
+    advanceTestClock(1_000);
     await Promise.resolve();
     expect(api.workGenerateOnce).toHaveBeenCalledTimes(2);
-    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await pending).toBe(`${sendThreshold}-WORK`);
   });
 
   it('cancels pending remote work when its cache is cleared', async () => {
     const service = TestBed.inject(WorkPoolService);
     const routing = TestBed.inject(PowRoutingService) as any;
     routing.state = { policy: 'remote', route: 'remote' };
-    api.workGenerateOnce.and.returnValue(new Promise(() => undefined));
+    api.workGenerateOnce.mockReturnValue(new Promise(() => undefined));
     const pending = service.getWork(root('A'), 1, 'nano_1');
     await Promise.resolve();
     service.clearCache();
-    await expectAsync(pending).toBeRejectedWithError('PoW cache cleared');
+    await expectRejectedWithError(pending, 'PoW cache cleared');
   });
 
   it('cancels active and queued work through the user control seam', async () => {
@@ -124,11 +157,11 @@ describe('WorkPoolService', () => {
     const pending = service.getWork(root('A'), 1, 'nano_1');
     await Promise.resolve();
 
-    expect(service.cancelAllWork()).toBeTrue();
-    await expectAsync(pending).toBeRejectedWithError('Proof of Work generation cancelled by the user');
+    expect(service.cancelAllWork()).toBe(true);
+    await expectRejectedWithError(pending, 'Proof of Work generation cancelled by the user');
     expect(service.state$.value.activeRoot).toBeNull();
     expect(service.state$.value.queued).toBe(0);
-    expect(service.cancelAllWork()).toBeFalse();
+    expect(service.cancelAllWork()).toBe(false);
   });
 
   it('orders queued background work by priority', () => {
@@ -149,12 +182,12 @@ describe('WorkPoolService', () => {
     const interactive = service.getWork(root('B'), 1, 'nano_1', true);
     const initialWorker = ControlledWorker.instances[0];
     const interactiveWorker = worker();
-    expect(initialWorker.terminated).toBeTrue();
-    expect(interactiveWorker.posted[0]).toEqual(jasmine.objectContaining({ root: root('B'), threshold: sendThreshold }));
+    expect(initialWorker.terminated).toBe(true);
+    expect(interactiveWorker.posted[0]).toEqual(partial({ root: root('B'), threshold: sendThreshold }));
     interactiveWorker.respond({ id: interactiveWorker.posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
-    await expectAsync(interactive).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await interactive).toBe(`${sendThreshold}-WORK`);
     interactiveWorker.respond({ id: interactiveWorker.posted[1].id, ok: true, work: `${receiveThreshold}-WORK` });
-    await expectAsync(receive).toBeResolvedTo(`${receiveThreshold}-WORK`);
+    expect(await receive).toBe(`${receiveThreshold}-WORK`);
   });
 
   it('keeps receive/open and send-tier cache validity isolated', async () => {
@@ -162,13 +195,13 @@ describe('WorkPoolService', () => {
     const accountRoot = root('A');
     const receive = service.getWork(accountRoot, 1 / 64, 'nano_1');
     worker().respond({ id: worker().posted[0].id, ok: true, work: `${receiveThreshold}-WORK` });
-    await expectAsync(receive).toBeResolvedTo(`${receiveThreshold}-WORK`);
-    expect(service.workExists(accountRoot, 1 / 64, 'nano_1')).toBeTrue();
-    expect(service.workExists(accountRoot, 1, 'nano_1')).toBeFalse();
+    expect(await receive).toBe(`${receiveThreshold}-WORK`);
+    expect(service.workExists(accountRoot, 1 / 64, 'nano_1')).toBe(true);
+    expect(service.workExists(accountRoot, 1, 'nano_1')).toBe(false);
     const send = service.getWork(accountRoot, 1, 'nano_1');
     expect(worker().posted[1].threshold).toBe(sendThreshold);
     worker().respond({ id: worker().posted[1].id, ok: true, work: `${sendThreshold}-WORK` });
-    await expectAsync(send).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await send).toBe(`${sendThreshold}-WORK`);
   });
 
   it('prunes stale, malformed, and frontier-invalid cache entries', () => {
@@ -180,11 +213,11 @@ describe('WorkPoolService', () => {
     ] }));
     service.loadWorkCache();
     service.syncAccountRoots([{ account: 'nano_current', root: root('A'), multiplier: 1 }]);
-    expect(service.workExists(root('A'), 1, 'nano_current')).toBeTrue();
-    expect(service.workCache.some(entry => entry.account === 'nano_stale')).toBeFalse();
-    expect(service.workExists(root('C'), 1, 'nano_current')).toBeFalse();
+    expect(service.workExists(root('A'), 1, 'nano_current')).toBe(true);
+    expect(service.workCache.some(entry => entry.account === 'nano_stale')).toBe(false);
+    expect(service.workExists(root('C'), 1, 'nano_current')).toBe(false);
     service.syncAccountRoots([{ account: 'nano_current', root: root('D'), multiplier: 1 }]);
-    expect(service.workCache.some(entry => entry.root === root('A'))).toBeFalse();
+    expect(service.workCache.some(entry => entry.root === root('A'))).toBe(false);
   });
 
   it('does not precompute a frontier deliberately drained by a sweep', () => {
@@ -196,30 +229,31 @@ describe('WorkPoolService', () => {
     service.syncAccountRoots([{ account: 'nano_current', root: root('B'), multiplier: 1 }]);
     expect(firstWorker.posted[1].root).toBe(root('B'));
     service.suppressPrecomputation('nano_current', root('B'));
-    expect(firstWorker.terminated).toBeTrue();
+    expect(firstWorker.terminated).toBe(true);
 
     service.syncAccountRoots([{ account: 'nano_current', root: root('B'), multiplier: 1 }]);
-    expect(ControlledWorker.instances).toHaveSize(1);
+    expect(ControlledWorker.instances.length).toBe(1);
 
     service.syncAccountRoots([{ account: 'nano_current', root: root('C'), multiplier: 1 }]);
-    expect(ControlledWorker.instances).toHaveSize(2);
+    expect(ControlledWorker.instances.length).toBe(2);
     expect(worker().posted[0].root).toBe(root('C'));
   });
 
   it('logs cache events with correlation metadata but never work values', async () => {
     const service = TestBed.inject(WorkPoolService);
-    const debug = spyOn(console, 'debug');
+    const debug = vi.spyOn(console, 'debug');
     const pending = service.getWork(root('A'), 1, 'nano_1');
     worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
-    await expectAsync(pending).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await pending).toBe(`${sendThreshold}-WORK`);
 
-    await expectAsync(service.getWork(root('A'), 1, 'nano_1')).toBeResolvedTo(`${sendThreshold}-WORK`);
+    expect(await service.getWork(root('A'), 1, 'nano_1')).toBe(`${sendThreshold}-WORK`);
 
-    const cacheHit = debug.calls.allArgs().find(args => args[1] === 'cache-hit')!;
+    const debugCalls = (debug as any).mock?.calls ?? (debug as any).calls.allArgs();
+    const cacheHit = debugCalls.find((args: any[]) => args[1] === 'cache-hit')!;
     expect(cacheHit).toEqual([
       '[WorkPool]',
       'cache-hit',
-      jasmine.objectContaining({
+      partial({
         requestId: null,
         account: 'nano_1',
         root: root('A'),
@@ -239,7 +273,7 @@ describe('WorkPoolService', () => {
     subscription.unsubscribe();
     const status = snapshots.at(-1)!.get('nano_1')!;
     expect(status.activity).toBe('success');
-    expect(status.cached).toBeTrue();
-    expect(Object.prototype.hasOwnProperty.call(status, 'work')).toBeFalse();
+    expect(status.cached).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(status, 'work')).toBe(false);
   });
 });

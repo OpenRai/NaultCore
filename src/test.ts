@@ -25,6 +25,17 @@ const jasmineVi = {
       spy.and.returnValue(Promise.resolve(value));
       return compat;
     };
+    compat.mockReturnValue = (value: any) => {
+      spy.and.returnValue(value);
+      return compat;
+    };
+    compat.mockReturnValueOnce = (value: any) => {
+      const values = compat.__returnValues ?? [];
+      values.push(value);
+      compat.__returnValues = values;
+      spy.and.returnValues(...values);
+      return compat;
+    };
     compat.mockImplementation = (value: (...args: any[]) => any) => {
       spy.and.callFake(value);
       return compat;

@@ -287,7 +287,8 @@
               "src/app/services/notification.service.spec.ts",
               "src/app/services/app-settings.service.spec.ts",
               "src/app/services/recovery-verification.service.spec.ts",
-              "src/app/services/wallet.service.spec.ts"
+              "src/app/services/wallet.service.spec.ts",
+              "src/app/services/work-pool.service.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

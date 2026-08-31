@@ -25,6 +25,8 @@
     "app/services/recovery-verification.service.spec.ts",
     "app/services/wallet.service.spec.ts",
     "app/services/wallet.service.ts",
+    "app/services/work-pool.service.spec.ts",
+    "app/services/work-pool.service.ts",
     "test-setup-vitest.ts",
     "globals.d.ts",
     "../node_modules/vitest/globals.d.ts"

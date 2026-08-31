@@ -3,10 +3,11 @@ import { E2ETestWallet, e2eWalletPassword, getE2ETestWallet } from './test-walle
 import { installStartupNetworkMocks } from './startup-network-mocks';
 
 /**
- * Playwright fixtures for NanoNymNault E2E tests.
+ * Playwright fixtures for NaultCore E2E tests.
  *
- * All fixtures use real on-chain Nano transactions (feeless!) — no mocks.
- * The setup project injects a two-account encrypted wallet snapshot first.
+ * UI fixtures use deterministic startup mocks by default. Funded transaction
+ * suites opt into the live adapters explicitly. The setup project injects a
+ * three-account encrypted wallet snapshot first.
  */
 
 export type WalletFixtures = {
@@ -36,7 +37,11 @@ export const test = base.extend<WalletFixtures & StartupFixtures>({
     await use();
   }, { auto: true }],
 
-  testWallet: [async ({}, use) => {
+  testWallet: [async ({}, use, testInfo) => {
+    if (!process.env.NANO_TEST_SEED?.trim()) {
+      testInfo.skip(true, 'NANO_TEST_SEED is required for seeded or funded E2E tests.');
+      return;
+    }
     await use(getE2ETestWallet());
   }, { scope: 'test' }],
 

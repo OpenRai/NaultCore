@@ -6,7 +6,7 @@
  * Verifies that the ⚠️ emoji appears on the overflow account label and that
  * the account-details page shows a warning banner.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import CryptoJS from 'crypto-js';
 
 const TEST_SEED = '0000000000000000000000000000000000000000000000000000000000000001';

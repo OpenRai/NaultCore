@@ -43,7 +43,10 @@ test('keeps the current account PoW status visible in the full Account Details c
 
 test('keeps the current account PoW status visible in the compact Account Details card', async ({ seededPage, testWallet }) => {
   await seededPage.setViewportSize({ width: 800, height: 900 });
-  await seededPage.goto(`/account/${testWallet.accounts[0]}?compact=1`);
+  await seededPage.locator(
+    `[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`,
+  ).getByTestId('accounts-row-details-button').click();
+  await expect(seededPage).toHaveURL(new RegExp(`/account/${testWallet.accounts[0]}\\?compact=1`));
 
   const workStatus = seededPage.getByTestId('account-details-work-status-compact');
   await expect(workStatus).toBeVisible();

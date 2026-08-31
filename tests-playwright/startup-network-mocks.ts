@@ -141,7 +141,12 @@ async function handleHttpRoute(
     await route.fulfill({
       contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*' },
-      body: JSON.stringify({ market_data: { current_price: { usd: 1, btc: 0.00001 } } }),
+      body: JSON.stringify({ market_data: { current_price: {
+        usd: 1, btc: 0.00001, aud: 1, brl: 1, cad: 1, chf: 1, clp: 1, cny: 1,
+        czk: 1, dkk: 1, eur: 1, gbp: 1, hkd: 1, huf: 1, idr: 1, ils: 1,
+        inr: 1, jpy: 1, krw: 1, mxn: 1, myr: 1, nok: 1, nzd: 1, php: 1,
+        pkr: 1, pln: 1, rub: 1, sek: 1, sgd: 1, thb: 1, try: 1, twd: 1, zar: 1,
+      } } }),
     });
     return;
   }

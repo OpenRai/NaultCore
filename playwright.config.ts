@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
-import { e2eStorageStatePath, getE2ETestWallet } from './tests-playwright/test-wallet';
+import { e2eStorageStatePath } from './tests-playwright/test-wallet';
 
 // Load .env.test (gitignored) — contains NANO_TEST_SEED and optional CHROME_BIN.
 // Falls back gracefully if the file doesn't exist (CI uses secrets instead).
@@ -8,7 +8,7 @@ dotenv.config({ path: '.env.test', quiet: true });
 dotenv.config({ path: '.env', quiet: true });
 const featureNanonyms = process.env.FEATURE_NANONYMS === 'true';
 process.env.FEATURE_NANONYMS = featureNanonyms ? 'true' : 'false';
-getE2ETestWallet();
+const hasFundedSeed = Boolean(process.env.NANO_TEST_SEED?.trim());
 
 const isCI = !!process.env.CI;
 const browserBin = process.env.CHROME_BIN || undefined;
@@ -37,7 +37,7 @@ export default defineConfig({
     headless: isCI,
   },
   projects: [
-    {
+    ...(hasFundedSeed ? [{
       name: 'wallet setup',
       testMatch: /.*\.setup\.ts/,
       use: {
@@ -45,14 +45,14 @@ export default defineConfig({
         headless: true,
         ...(browserBin ? { launchOptions: { executablePath: browserBin } } : {}),
       },
-    },
+    }] : []),
     {
       name: 'Chromium',
-      dependencies: ['wallet setup'],
+      ...(hasFundedSeed ? { dependencies: ['wallet setup'] } : {}),
       testIgnore: /.*\.setup\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: e2eStorageStatePath,
+        ...(hasFundedSeed ? { storageState: e2eStorageStatePath } : {}),
         // In CI: no executablePath -> Playwright uses its bundled Chromium.
         // Locally: CHROME_BIN from .env.test or shell env (e.g. Brave Browser).
         ...(browserBin ? { launchOptions: { executablePath: browserBin } } : {}),

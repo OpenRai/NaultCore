@@ -140,6 +140,7 @@ async function handleHttpRoute(
     await delay(nextLatency(latencyState, options));
     await route.fulfill({
       contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
       body: JSON.stringify({ market_data: { current_price: { usd: 1, btc: 0.00001 } } }),
     });
     return;
@@ -165,7 +166,11 @@ async function handleHttpRoute(
   }
 
   await delay(nextLatency(latencyState, options));
-  await route.fulfill({ contentType: 'application/json', body: JSON.stringify(response) });
+  await route.fulfill({
+    contentType: 'application/json',
+    headers: { 'access-control-allow-origin': '*' },
+    body: JSON.stringify(response),
+  });
 }
 
 function handleWebSocketRoute(websocket: WebSocketRoute): void {

@@ -313,7 +313,8 @@
               "src/app/services/nanonym-account-selection.service.spec.ts",
               "src/app/services/nanonym-crypto.service.spec.ts",
               "src/app/services/nostr-send-queue.service.spec.ts",
-              "src/app/services/nostr-sync-state.service.spec.ts"
+              "src/app/services/nostr-sync-state.service.spec.ts",
+              "src/app/services/nostr-notification.service.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

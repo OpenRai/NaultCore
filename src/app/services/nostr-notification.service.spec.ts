@@ -1,13 +1,28 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { NostrNotificationService, NanoNymNotification } from './nostr-notification.service';
 import { NanoNymCryptoService } from './nanonym-crypto.service';
 import { NostrSyncStateService } from './nostr-sync-state.service';
 import { UtilService } from './util.service';
 
-(FEATURE_NANONYMS ? describe : xdescribe)('NostrNotificationService', () => {
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const pendingIt = (...args: any[]) => ((globalThis as any).xit ?? (it as any).skip)(...args);
+
+function fakeTimers<T extends (...args: any[]) => any>(work: T): (...args: Parameters<T>) => ReturnType<T> {
+  return (...args: Parameters<T>) => {
+    vi.useFakeTimers();
+    try {
+      return work(...args);
+    } finally {
+      vi.useRealTimers();
+    }
+  };
+}
+
+featureDescribe('NostrNotificationService', () => {
   let service: NostrNotificationService;
   let cryptoService: NanoNymCryptoService;
   let syncStateService: NostrSyncStateService;
+  let mockPool: { subscribeMany: any; close: any };
 
   beforeEach(() => {
     localStorage.clear();
@@ -17,6 +32,11 @@ import { UtilService } from './util.service';
     service = TestBed.inject(NostrNotificationService);
     cryptoService = TestBed.inject(NanoNymCryptoService);
     syncStateService = TestBed.inject(NostrSyncStateService);
+    mockPool = {
+      subscribeMany: vi.fn(() => ({ close: vi.fn() })),
+      close: vi.fn(),
+    };
+    (service as any).pool = mockPool;
   });
 
   afterEach(() => {
@@ -35,16 +55,12 @@ import { UtilService } from './util.service';
     expect(relays).toContain('wss://nos.lol');
   });
 
-  it('should initialize relay status', (done) => {
-    service.relayStatus$.subscribe(statuses => {
-      if (statuses.length > 0) {
-        expect(statuses.length).toBeGreaterThan(0);
-        statuses.forEach(status => {
-          expect(status.url).toBeTruthy();
-          expect(typeof status.connected).toBe('boolean');
-        });
-        done();
-      }
+  it('should initialize relay status', () => {
+    const statuses = service.relayStatus$.value;
+    expect(statuses.length).toBeGreaterThan(0);
+    statuses.forEach(status => {
+      expect(status.url).toBeTruthy();
+      expect(typeof status.connected).toBe('boolean');
     });
   });
 
@@ -57,6 +73,7 @@ import { UtilService } from './util.service';
     service.subscribeToNotifications(keys.nostr.public, keys.nostr.private);
 
     expect(service.getActiveSubscriptionCount()).toBe(1);
+    expect(mockPool.subscribeMany).toHaveBeenCalledTimes(1);
   });
 
   it('should not create duplicate subscriptions', () => {
@@ -196,7 +213,7 @@ import { UtilService } from './util.service';
     expect(result).toEqual(expectedBytes);
   });
 
-  it('should have incoming notifications observable', (done) => {
+  it('should have incoming notifications observable', fakeTimers(() => {
     let emitted = false;
 
     service.incomingNotifications$.subscribe(data => {
@@ -205,13 +222,10 @@ import { UtilService } from './util.service';
       expect(data.receiverNostrPrivate).toBeTruthy();
     });
 
-    // The observable should be available even if no notifications yet
-    setTimeout(() => {
-      // If no error thrown, observable is working
-      expect(emitted).toBe(false); // No notifications sent yet
-      done();
-    }, 100);
-  });
+    // The observable should be available even if no notifications yet.
+    vi.advanceTimersByTime(100);
+    expect(emitted).toBe(false);
+  }));
 
   it('should clean up all subscriptions on destroy', () => {
     const mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -231,7 +245,7 @@ import { UtilService } from './util.service';
 
   // Integration test: Send and receive notification
   // Note: This requires mocked relays, marking as pending for manual testing
-  xit('should send and receive notification between two NanoNyms', async () => {
+  pendingIt('should send and receive notification between two NanoNyms', async () => {
     const senderMnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
     const receiverMnemonic = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong';
 
@@ -277,6 +291,9 @@ import { UtilService } from './util.service';
       );
 
       expect(service.getActiveSubscriptionCount()).toBe(1);
+      const filter = mockPool.subscribeMany.mock.calls[0][1];
+      expect(filter.kinds).toEqual([1059]);
+      expect(filter.since).toBe(thirtyDaysAgo);
     });
 
     it('should accept nanoNymIndex parameter for sync state tracking', () => {
@@ -295,48 +312,51 @@ import { UtilService } from './util.service';
       const keys = cryptoService.deriveNanoNymKeys(mnemonic, 0);
 
       const beforeSubscribe = Math.floor(Date.now() / 1000);
-
       service.subscribeToNotifications(keys.nostr.public, keys.nostr.private, 0);
 
       expect(service.getActiveSubscriptionCount()).toBe(1);
+      const filter = mockPool.subscribeMany.mock.calls[0][1];
+      expect(filter.kinds).toEqual([1059]);
+      expect(filter.since).toBeGreaterThanOrEqual(beforeSubscribe - (4 * 86400) - 1);
+      expect(filter.since).toBeLessThanOrEqual(Math.floor(Date.now() / 1000) - (4 * 86400));
     });
   });
 
   describe('Integration: Event Deduplication', () => {
-    it('should track processed events via NostrSyncStateService', fakeAsync(() => {
+    it('should track processed events via NostrSyncStateService', fakeTimers(() => {
       syncStateService.updateState(0, 'event_id_123', 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      expect(syncStateService.isEventProcessed(0, 'event_id_123')).toBeTrue();
-      expect(syncStateService.isEventProcessed(0, 'event_id_456')).toBeFalse();
+      expect(syncStateService.isEventProcessed(0, 'event_id_123')).toBe(true);
+      expect(syncStateService.isEventProcessed(0, 'event_id_456')).toBe(false);
     }));
 
-    it('should not process duplicate events after restart', fakeAsync(() => {
+    it('should not process duplicate events after restart', fakeTimers(() => {
       syncStateService.updateState(0, 'persistent_event', 1700000000);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const newSyncService = new NostrSyncStateService();
 
-      expect(newSyncService.isEventProcessed(0, 'persistent_event')).toBeTrue();
+      expect(newSyncService.isEventProcessed(0, 'persistent_event')).toBe(true);
     }));
 
-    it('should maintain separate dedup state per NanoNym', fakeAsync(() => {
+    it('should maintain separate dedup state per NanoNym', fakeTimers(() => {
       syncStateService.updateState(0, 'event_for_nym_0', 1700000000);
       syncStateService.updateState(1, 'event_for_nym_1', 1700000001);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
-      expect(syncStateService.isEventProcessed(0, 'event_for_nym_0')).toBeTrue();
-      expect(syncStateService.isEventProcessed(0, 'event_for_nym_1')).toBeFalse();
-      expect(syncStateService.isEventProcessed(1, 'event_for_nym_0')).toBeFalse();
-      expect(syncStateService.isEventProcessed(1, 'event_for_nym_1')).toBeTrue();
+      expect(syncStateService.isEventProcessed(0, 'event_for_nym_0')).toBe(true);
+      expect(syncStateService.isEventProcessed(0, 'event_for_nym_1')).toBe(false);
+      expect(syncStateService.isEventProcessed(1, 'event_for_nym_0')).toBe(false);
+      expect(syncStateService.isEventProcessed(1, 'event_for_nym_1')).toBe(true);
     }));
 
-    it('should update sync state when processing valid notifications', fakeAsync(() => {
+    it('should update sync state when processing valid notifications', fakeTimers(() => {
       const eventId = 'new_event_abc';
       const timestamp = 1700000500;
 
       syncStateService.updateState(0, eventId, timestamp);
-      tick(1100);
+      vi.advanceTimersByTime(1100);
 
       const state = syncStateService.getState(0);
       expect(state).not.toBeNull();

@@ -1,50 +1,36 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { TestBed, waitForAsync } from '@angular/core/testing';
 import BigNumber from 'bignumber.js';
 import { SendComponent } from './send.component';
+import { LegacyComponentTestModule } from '../../testing/legacy-component-test.module';
 
 // Mock services for Phase 3 (Just-in-Time Opening) tests
 class MockNotificationService {
-  sendInfo = jasmine.createSpy('sendInfo');
-  sendSuccess = jasmine.createSpy('sendSuccess');
-  sendError = jasmine.createSpy('sendError');
-  sendWarning = jasmine.createSpy('sendWarning');
-  removeNotification = jasmine.createSpy('removeNotification');
+  sendInfo = vi.fn();
+  sendSuccess = vi.fn();
+  sendError = vi.fn();
+  sendWarning = vi.fn();
+  removeNotification = vi.fn();
 }
 
 class MockNodeApiService {
-  accountInfo = jasmine.createSpy('accountInfo').and.callFake(() =>
-    Promise.reject(new Error('Account not found'))
-  );
+  accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
 }
 
 class MockNanoBlockService {
-  generateReceive = jasmine.createSpy('generateReceive').and.callFake(() =>
-    Promise.resolve('tx_hash_received')
-  );
+  generateReceive = vi.fn(() => Promise.resolve('tx_hash_received'));
 }
 
 describe('SendComponent', () => {
-  let component: SendComponent;
-  let fixture: ComponentFixture<SendComponent>;
-
   beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ SendComponent ]
-    })
-    .compileComponents();
+    TestBed.configureTestingModule({ imports: [LegacyComponentTestModule] }).compileComponents();
   }));
-
-  beforeEach(() => {
-    fixture = TestBed.createComponent(SendComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
 
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
   // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should create', () => {
-    expect(component).toBeTruthy();
+  const skippedIt = (globalThis as any).xit ?? (it as any).skip;
+  skippedIt('should create', () => {
+    expect(SendComponent).toBeTruthy();
   });
 });
 
@@ -62,7 +48,7 @@ describe('SendComponent - regular wallet balance refresh', () => {
         refreshWalletState,
       },
       nanoBlock: {
-        generateSend: jasmine.createSpy('generateSend').and.resolveTo('confirmed-send-hash'),
+        generateSend: vi.fn(() => Promise.resolve('confirmed-send-hash')),
       },
       notificationService: new MockNotificationService(),
       fromAccountID: walletAccount.id,
@@ -72,12 +58,12 @@ describe('SendComponent - regular wallet balance refresh', () => {
       selectedAmount: { shortName: 'XNO' },
       confirmingTransaction: false,
       getDestinationID: () => 'nano_destination',
-      resetForm: jasmine.createSpy('resetForm'),
+      resetForm: vi.fn(),
     };
   }
 
   it('refreshes all account balances after a confirmed regular send', async () => {
-    const refreshWalletState = jasmine.createSpy('refreshWalletState').and.resolveTo();
+    const refreshWalletState = vi.fn(() => Promise.resolve());
     const component = createRegularSendContext(refreshWalletState);
 
     await SendComponent.prototype.confirmTransaction.call(component);
@@ -88,7 +74,7 @@ describe('SendComponent - regular wallet balance refresh', () => {
   });
 
   it('keeps a confirmed send successful when the balance refresh fails', async () => {
-    const refreshWalletState = jasmine.createSpy('refreshWalletState').and.rejectWith(new Error('node unavailable'));
+    const refreshWalletState = vi.fn(() => Promise.reject(new Error('node unavailable')));
     const component = createRegularSendContext(refreshWalletState);
 
     await SendComponent.prototype.confirmTransaction.call(component);
@@ -203,7 +189,7 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
 
   describe('ensureStealthAccountsOpened', () => {
     it('should return true if all stealth accounts are already opened', async () => {
-      nodeApiService.accountInfo.and.returnValue(Promise.resolve({ frontier: 'hash123' }));
+      nodeApiService.accountInfo = vi.fn(() => Promise.resolve({ frontier: 'hash123' }));
 
       const stealthAccounts = [
         {
@@ -222,8 +208,8 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
     });
 
     it('should detect unopened accounts and attempt to open them', async () => {
-      nodeApiService.accountInfo.and.returnValue(Promise.reject(new Error('Account not found')));
-      nanoBlockService.generateReceive.and.returnValue(Promise.resolve('tx_hash_opened'));
+      nodeApiService.accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
+      nanoBlockService.generateReceive = vi.fn(() => Promise.resolve('tx_hash_opened'));
 
       const stealthAccounts = [
         {
@@ -240,7 +226,7 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
       // Should show progress notification
       expect(notificationService.sendInfo).toHaveBeenCalledWith(
         'Opening stealth account 1/1...',
-        jasmine.objectContaining({ identifier: 'stealth-opening-progress' })
+        { identifier: 'stealth-opening-progress', timeout: 10000 }
       );
 
       // Should attempt to open the account
@@ -252,8 +238,8 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
     });
 
     it('should remove progress notification after opening attempts', async () => {
-      nodeApiService.accountInfo.and.returnValue(Promise.reject(new Error('Account not found')));
-      nanoBlockService.generateReceive.and.returnValue(Promise.resolve('tx_hash_opened'));
+      nodeApiService.accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
+      nanoBlockService.generateReceive = vi.fn(() => Promise.resolve('tx_hash_opened'));
 
       const stealthAccounts = [
         {
@@ -272,8 +258,8 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
     });
 
     it('should handle multiple unopened accounts', async () => {
-      nodeApiService.accountInfo.and.returnValue(Promise.reject(new Error('Account not found')));
-      nanoBlockService.generateReceive.and.returnValue(Promise.resolve('tx_hash_opened'));
+      nodeApiService.accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
+      nanoBlockService.generateReceive = vi.fn(() => Promise.resolve('tx_hash_opened'));
 
       const stealthAccounts = [
         {
@@ -304,8 +290,8 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
     });
 
     it('should return false if all opening attempts fail', async () => {
-      nodeApiService.accountInfo.and.returnValue(Promise.reject(new Error('Account not found')));
-      nanoBlockService.generateReceive.and.returnValue(Promise.reject(new Error('Node unavailable')));
+      nodeApiService.accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
+      nanoBlockService.generateReceive = vi.fn(() => Promise.reject(new Error('Node unavailable')));
 
       const stealthAccounts = [
         {
@@ -322,19 +308,19 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
       expect(result).toBe(false);
       expect(notificationService.sendError).toHaveBeenCalledWith(
         'Could not open stealth accounts. Please wait a moment and try again.',
-        jasmine.objectContaining({ identifier: 'stealth-opening-failed' })
+        { identifier: 'stealth-opening-failed' }
       );
     });
 
     it('should return true and show warning on partial success', async () => {
       // First account succeeds, second fails
       let callCount = 0;
-      nanoBlockService.generateReceive.and.callFake(() => {
+      nanoBlockService.generateReceive = vi.fn(() => {
         callCount++;
         return callCount === 1 ? Promise.resolve('tx_hash') : Promise.reject(new Error('Failed'));
       });
 
-      nodeApiService.accountInfo.and.returnValue(Promise.reject(new Error('Account not found')));
+      nodeApiService.accountInfo = vi.fn(() => Promise.reject(new Error('Account not found')));
 
       const stealthAccounts = [
         {
@@ -358,19 +344,19 @@ describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
       expect(result).toBe(true); // Proceed with partial success
       expect(notificationService.sendWarning).toHaveBeenCalledWith(
         '1/2 stealth accounts opened. Sending from available accounts...',
-        jasmine.objectContaining({ identifier: 'stealth-opening-partial' })
+        { identifier: 'stealth-opening-partial' }
       );
     });
 
     it('should handle accounts with existing frontier', async () => {
-      nodeApiService.accountInfo.and.callFake((address: string) => {
+      nodeApiService.accountInfo = vi.fn((address: string) => {
         if (address === 'nano_stealth_opened') {
           return Promise.resolve({ frontier: 'existing_hash' });
         }
         return Promise.reject(new Error('Account not found'));
       });
 
-      nanoBlockService.generateReceive.and.returnValue(Promise.resolve('tx_hash_opened'));
+      nanoBlockService.generateReceive = vi.fn(() => Promise.resolve('tx_hash_opened'));
 
       const stealthAccounts = [
         {

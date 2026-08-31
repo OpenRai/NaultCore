@@ -1,6 +1,4 @@
 import { ElementRef } from '@angular/core';
-import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import * as nanocurrency from 'nanocurrency';
@@ -15,15 +13,7 @@ import { AppSettingsService } from '../../services/app-settings.service';
 import { NanoBlockService } from '../../services/nano-block.service';
 import { UtilService } from '../../services/util.service';
 import { Router } from '@angular/router';
-import { RaiPipe } from '../../pipes/rai.pipe';
-import { SqueezePipe } from '../../pipes/squeeze.pipe';
-import { AmountSplitPipe } from '../../pipes/amount-split.pipe';
-
-@NgModule({
-  declarations: [SweeperComponent, RaiPipe, SqueezePipe, AmountSplitPipe],
-  imports: [FormsModule],
-})
-class SweeperTestModule {}
+import { LegacyComponentTestModule } from '../../testing/legacy-component-test.module';
 
 describe('SweeperComponent', () => {
   let notification: { sendInfo: ReturnType<typeof vi.fn> };
@@ -33,7 +23,7 @@ describe('SweeperComponent', () => {
     notification = { sendInfo: vi.fn() };
     api = { accountInfo: vi.fn() };
     TestBed.configureTestingModule({
-      imports: [SweeperTestModule],
+      imports: [LegacyComponentTestModule],
       providers: [
         { provide: WalletService, useValue: {
           walletState: { accounts: [], selectedAccount: null },

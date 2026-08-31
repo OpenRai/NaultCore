@@ -1,4 +1,5 @@
 import { StartupService } from './startup.service';
+import { describe, expect, it } from 'vitest';
 
 describe('StartupService', () => {
   it('runs phases in order and publishes completion state', async () => {
@@ -17,8 +18,8 @@ describe('StartupService', () => {
   it('rejects out-of-order phases without advancing the pipeline', async () => {
     const service = new StartupService();
 
-    await expectAsync(service.runPhase('wallet', () => undefined))
-      .toBeRejectedWithError('Startup phase out of order: expected runtime, got wallet');
+    await expect(service.runPhase('wallet', () => undefined))
+      .rejects.toThrow('Startup phase out of order: expected runtime, got wallet');
     expect(service.state$.value.phases.runtime.status).toBe('pending');
   });
 
@@ -26,8 +27,8 @@ describe('StartupService', () => {
     const service = new StartupService();
     const failure = new Error('node unavailable');
 
-    await expectAsync(service.runPhase('runtime', () => { throw failure; }))
-      .toBeRejectedWithError('node unavailable');
+    await expect(service.runPhase('runtime', () => { throw failure; }))
+      .rejects.toThrow('node unavailable');
     service.reportNetwork('failed', failure.message);
 
     expect(service.state$.value.phases.runtime.status).toBe('failed');

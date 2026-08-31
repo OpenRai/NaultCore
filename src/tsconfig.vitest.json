@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../out-tsc/vitest",
+    "baseUrl": "./",
+    "paths": {
+      "@nanonyms/protocol": ["../packages/protocol/src/index.ts"],
+      "@nanonyms/crypto": ["../packages/crypto/src/index.ts"],
+      "@nanonyms/core": ["../packages/core/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "files": ["app/services/startup.service.spec.ts", "test-setup-vitest.ts"],
+  "angularCompilerOptions": {
+    "strictTemplates": false
+  }
+}

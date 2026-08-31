@@ -188,6 +188,9 @@
               ],
               "serviceWorker": false
             },
+            "vitest": {
+              "polyfills": []
+            },
             "nanonyms": {
               "define": {
                 "FEATURE_NANONYMS": "true"
@@ -259,6 +262,16 @@
                 "FEATURE_NANONYMS": "true"
               }
             }
+          }
+        },
+        "test-vitest": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runner": "vitest",
+            "buildTarget": "nault:build:vitest",
+            "tsConfig": "src/tsconfig.vitest.json",
+            "include": ["src/app/services/startup.service.spec.ts"],
+            "setupFiles": ["src/test-setup-vitest.ts"]
           }
         },
         "lint": {

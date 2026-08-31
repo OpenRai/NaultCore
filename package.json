@@ -14,6 +14,7 @@
     "start": "pnpm run version && ng serve",
     "build": "pnpm run version && ng build",
     "test": "pnpm run version && ng test --watch=false",
+    "test:vitest": "pnpm run version && ng run nault:test-vitest --watch=false",
     "test:watch": "pnpm run version && ng test",
     "test:naultcore": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng test --watch=false",
     "lint": "pnpm run version && ng lint",
@@ -138,6 +139,7 @@
     "eslint": "^9.39.5",
     "jasmine-core": "~5.1.0",
     "jasmine-spec-reporter": "~5.0.0",
+    "jsdom": "^26.1.0",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.1.0",
     "karma-cli": "~2.0.0",
@@ -147,7 +149,8 @@
     "less": "4.9.0",
     "ts-node": "~3.2.0",
     "typescript": "~6.0.3",
-    "uikit": "3.9.4"
+    "uikit": "3.9.4",
+    "vitest": "^4.1.11"
   },
   "build": {
     "appId": "cc.nault",

@@ -1,11 +1,14 @@
-import { TestBed, fakeAsync, tick } from "@angular/core/testing";
+import { TestBed } from "@angular/core/testing";
 import {
   NostrSendQueueService,
   QueuedNotification,
+  QueueStatus,
 } from "./nostr-send-queue.service";
 import { NanoNymNotification } from "./nostr-notification.service";
 
-(FEATURE_NANONYMS ? describe : xdescribe)("NostrSendQueueService", () => {
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+
+featureDescribe("NostrSendQueueService", () => {
   let service: NostrSendQueueService;
 
   const mockNotification: NanoNymNotification = {
@@ -443,34 +446,26 @@ import { NanoNymNotification } from "./nostr-notification.service";
   });
 
   describe("observable streams", () => {
-    it("should emit queue updates", (done) => {
+    it("should emit queue updates", () => {
       const emissions: QueuedNotification[][] = [];
 
-      service.queue$.subscribe((queue) => {
-        emissions.push([...queue]);
-        if (emissions.length === 2) {
-          expect(emissions[0].length).toBe(0);
-          expect(emissions[1].length).toBe(1);
-          done();
-        }
-      });
+      const subscription = service.queue$.subscribe((queue) => emissions.push([...queue]));
 
       service.enqueue(mockNotification, "sender", "receiver", mockRelays);
+      expect(emissions[0].length).toBe(0);
+      expect(emissions[1].length).toBe(1);
+      subscription.unsubscribe();
     });
 
-    it("should emit status updates", (done) => {
-      let emissionCount = 0;
+    it("should emit status updates", () => {
+      const emissions: QueueStatus[] = [];
 
-      service.status$.subscribe((status) => {
-        emissionCount++;
-        if (emissionCount === 2) {
-          expect(status.pending).toBe(1);
-          expect(status.total).toBe(1);
-          done();
-        }
-      });
+      const subscription = service.status$.subscribe(status => emissions.push(status));
 
       service.enqueue(mockNotification, "sender", "receiver", mockRelays);
+      expect(emissions[1].pending).toBe(1);
+      expect(emissions[1].total).toBe(1);
+      subscription.unsubscribe();
     });
   });
 
@@ -505,7 +500,7 @@ import { NanoNymNotification } from "./nostr-notification.service";
       expect(restoredQueue[0].status).toBe("pending");
     });
 
-    it("should track retry attempts with exponential backoff through multiple failures", fakeAsync(() => {
+    it("should track retry attempts with exponential backoff through multiple failures", async () => {
       const item = service.enqueue(
         mockNotification,
         "sender",
@@ -514,8 +509,7 @@ import { NanoNymNotification } from "./nostr-notification.service";
       );
 
       // First attempt
-      service.processQueue();
-      tick(0);
+      await service.processQueue();
 
       let updated = service.getItem(item.id);
       expect(updated?.attempts).toBe(1);
@@ -534,8 +528,7 @@ import { NanoNymNotification } from "./nostr-notification.service";
       service.updateItem(item.id, { nextRetryAt: 0 });
 
       // Second attempt
-      service.processQueue();
-      tick(0);
+      await service.processQueue();
 
       updated = service.getItem(item.id);
       expect(updated?.attempts).toBe(2);
@@ -548,9 +541,9 @@ import { NanoNymNotification } from "./nostr-notification.service";
       // Status should still be pending (only 2 attempts, max is 10)
       updated = service.getItem(item.id);
       expect(updated?.status).toBe("pending");
-    }));
+    });
 
-    it("should mark item as failed after exhausting all retries", fakeAsync(() => {
+    it("should mark item as failed after exhausting all retries", () => {
       const item = service.enqueue(
         mockNotification,
         "sender",
@@ -568,9 +561,9 @@ import { NanoNymNotification } from "./nostr-notification.service";
 
       const updated = service.getItem(item.id);
       expect(updated?.status).toBe("failed");
-    }));
+    });
 
-    it("should mark item as complete when all relays succeed after initial failures", fakeAsync(() => {
+    it("should mark item as complete when all relays succeed after initial failures", () => {
       const item = service.enqueue(
         mockNotification,
         "sender",
@@ -591,9 +584,9 @@ import { NanoNymNotification } from "./nostr-notification.service";
 
       updated = service.getItem(item.id);
       expect(updated?.status).toBe("complete");
-    }));
+    });
 
-    it("should allow retryFailed to reset failed items for reprocessing", fakeAsync(() => {
+    it("should allow retryFailed to reset failed items for reprocessing", async () => {
       const item = service.enqueue(
         mockNotification,
         "sender",
@@ -621,11 +614,10 @@ import { NanoNymNotification } from "./nostr-notification.service";
       expect(updated?.relayResults[mockRelays[2]]).toBe("pending");
 
       // Now it can be processed again
-      service.processQueue();
-      tick(0);
+      await service.processQueue();
 
       updated = service.getItem(item.id);
       expect(updated?.attempts).toBe(1);
-    }));
+    });
   });
 });

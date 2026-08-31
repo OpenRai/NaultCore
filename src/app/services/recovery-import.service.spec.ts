@@ -1,4 +1,5 @@
 import { RecoveryImportService } from './recovery-import.service';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('RecoveryImportService', () => {
   let service: RecoveryImportService;
@@ -44,15 +45,15 @@ describe('RecoveryImportService', () => {
       { word: 'notaword', recognized: false },
       { word: 'about', recognized: true },
     ]);
-    expect(service.classify('abandon about abandon')).toEqual(jasmine.objectContaining({ kind: 'unknown' }));
+    expect(service.classify('abandon about abandon')).toEqual(expect.objectContaining({ kind: 'unknown' }));
   });
 
   it('shows word-level feedback only at supported Nano and BIP-39 phrase lengths', () => {
     for (const wordCount of [12, 15, 18, 21, 24]) {
-      expect(service.hasSupportedMnemonicWordCount(Array(wordCount).fill('abandon').join(' '))).withContext(`${wordCount} words`).toBeTrue();
+      expect(service.hasSupportedMnemonicWordCount(Array(wordCount).fill('abandon').join(' '))).toBe(true);
     }
     for (const wordCount of [0, 1, 11, 13, 17, 25]) {
-      expect(service.hasSupportedMnemonicWordCount(Array(wordCount).fill('abandon').join(' '))).withContext(`${wordCount} words`).toBeFalse();
+      expect(service.hasSupportedMnemonicWordCount(Array(wordCount).fill('abandon').join(' '))).toBe(false);
     }
   });
 });

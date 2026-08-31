@@ -18,7 +18,10 @@
     "app/pipes/fiat.pipe.spec.ts",
     "app/pipes/squeeze.pipe.spec.ts",
     "app/testing/test-ids.spec.ts",
-    "test-setup-vitest.ts"
+    "app/services/recovery-import.service.spec.ts",
+    "app/services/pow-routing.service.spec.ts",
+    "test-setup-vitest.ts",
+    "globals.d.ts"
   ],
   "angularCompilerOptions": {
     "strictTemplates": false

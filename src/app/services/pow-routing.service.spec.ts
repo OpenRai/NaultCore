@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 
 import { PowRoutingService } from './pow-routing.service';
+import { describe, expect, it, vi } from 'vitest';
 
 function createService(source: string = 'auto'): any {
   const service: any = Object.create(PowRoutingService.prototype);
@@ -19,9 +20,9 @@ function createService(source: string = 'auto'): any {
 describe('PowRoutingService', () => {
   it('uses a manual policy without probing', async () => {
     const service = createService('remote');
-    service.browserRecommendation = jasmine.createSpy('browserRecommendation');
+    service.browserRecommendation = vi.fn();
 
-    await expectAsync(service.resolveRoute()).toBeResolvedTo('remote');
+    await expect(service.resolveRoute()).resolves.toBe('remote');
 
     expect(service.browserRecommendation).not.toHaveBeenCalled();
     expect(service.state).toEqual({ policy: 'remote', route: 'remote', status: 'resolved', error: null });
@@ -35,8 +36,8 @@ describe('PowRoutingService', () => {
       return true;
     };
 
-    await expectAsync(service.resolveRoute()).toBeResolvedTo('local');
-    await expectAsync(service.resolveRoute()).toBeResolvedTo('local');
+    await expect(service.resolveRoute()).resolves.toBe('local');
+    await expect(service.resolveRoute()).resolves.toBe('local');
 
     expect(probes).toBe(1);
     expect(service.state.status).toBe('resolved');
@@ -53,7 +54,7 @@ describe('PowRoutingService', () => {
 
     await service.resolveRoute();
     recommendation = false;
-    await expectAsync(service.reprobe()).toBeResolvedTo('remote');
+    await expect(service.reprobe()).resolves.toBe('remote');
 
     expect(probeArguments).toEqual([false, true]);
     expect(service.state).toEqual({ policy: 'auto', route: 'remote', status: 'resolved', error: null });

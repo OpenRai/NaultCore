@@ -22,6 +22,7 @@ import { TestIds } from './testing/test-ids';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 import { branding } from 'environments/branding';
 import { PowRoutingService } from './services/pow-routing.service';
+import { STARTUP_RUNTIME_ADAPTERS, StartupService } from './services/startup.service';
 
 
 @Component({
@@ -43,6 +44,8 @@ export class AppComponent implements OnInit {
   updates = inject(SwUpdate);
   private workPool = inject(WorkPoolService);
   private powRouting = inject(PowRoutingService);
+  readonly startup = inject(StartupService);
+  private startupAdapters = inject(STARTUP_RUNTIME_ADAPTERS);
   price = inject(PriceService);
   private util = inject(UtilService);
   private desktop = inject(DesktopService);
@@ -108,154 +111,132 @@ export class AppComponent implements OnInit {
   }
 
   async ngOnInit() {
-    this.onWindowResize(window);
-    this.settings.loadAppSettings();
-    this.powRouting.syncFromSettings();
-    void this.powRouting.resolveRoute();
+    await this.startup.runPhase('runtime', () => this.onWindowResize(window));
 
-    // Check for testnet URL parameter
-    this.checkTestnetParameter();
-
-    this.updateAppTheme();
-
-    // New for v19: Patch saved xrb_ prefixes to nano_
-    await this.patchXrbToNanoPrefixData();
-
-    // set translation language
-    this.translate.setActiveLang(this.settings.settings.language);
-
-    this.addressBook.loadAddressBook();
-    this.workPool.loadWorkCache();
-
-    await this.walletService.loadStoredWallet();
-    // Subscribe to any transaction tracking
-    for (const entry of this.addressBook.addressBook) {
-      if (entry.trackTransactions) {
-        this.walletService.trackAddress(entry.account);
-      }
-    }
-
-    // Navigate to accounts page if there is wallet, but only if coming from home. On desktop app the path ends with index.html
-    if (this.walletService.isConfigured() && (window.location.pathname === '/' || window.location.pathname.endsWith('index.html'))) {
-      if (this.walletService.walletState.selectedAccountId) {
-        this.router.navigate([`account/${this.walletService.walletState.selectedAccountId}`], { queryParams: {'compact': 1}, replaceUrl: true });
-      } else {
-        this.router.navigate(['accounts'], { replaceUrl: true });
-      }
-    }
-
-    // update selected account object with the latest balance, pending, etc
-    if (this.walletService.walletState.selectedAccountId) {
-      this.walletService.selectAccount(this.walletService.walletState.selectedAccountId);
-    }
-
-    await this.walletService.refreshWalletState('startup');
-
-    // Start monitoring all NanoNyms on app start
-    if (FEATURE_NANONYMS) {
-      try {
-        const { NanoNymManagerService } = require('./services/nanonym-manager.service');
-        const manager = this.injector.get(NanoNymManagerService) as {
-          startMonitoringAll(): Promise<void>;
-        };
-        await manager.startMonitoringAll();
-      } catch (e) { /* NanoNym manager not available */ }
-    }
-
-    // Workaround fix for github pages when Nault is refreshed (or externally linked) and there is a subpath for example to the send screen.
-    // This data is saved from the 404.html page
-    const path = localStorage.getItem('path');
-
-    if (path) {
-      const search = localStorage.getItem('query'); // ?param=value
-      const fragment = localStorage.getItem('fragment'); // #value
-      localStorage.removeItem('path');
-      localStorage.removeItem('query');
-      localStorage.removeItem('fragment');
-
-      if (search && search.length) {
-        const queryParams = {};
-        const urlSearch = new URLSearchParams(search);
-        urlSearch.forEach(function(value, key) {
-          queryParams[key] = value;
-        });
-        this.router.navigate([path], { queryParams: queryParams, replaceUrl: true });
-      } else if (fragment && fragment.length) {
-        this.router.navigate([path], { fragment: fragment, replaceUrl: true });
-      } else {
-        this.router.navigate([path], { replaceUrl: true });
-      }
-    }
-
-    this.websocket.connect();
-
-    this.representative.loadRepresentativeList();
-
-    // If the wallet is locked and there is a pending balance, show a warning to unlock the wallet
-    // (if not receive priority is set to manual)
-    if (this.walletService.isLocked() && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
-      this.notifications.sendWarning(`New incoming transaction(s) - Unlock the wallet to receive`, { length: 10000, identifier: 'pending-locked' });
-    } else if (this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption === 'manual') {
-      this.notifications.sendWarning(`Incoming transaction(s) found - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
-    }
-
-    // When the page closes, determine if we should lock the wallet
-    window.addEventListener('beforeunload',  (e) => {
-      if (this.walletService.isLocked()) return; // Already locked, nothing to worry about
-      this.walletService.lockWallet();
-    });
-    window.addEventListener('unload',  (e) => {
-      if (this.walletService.isLocked()) return; // Already locked, nothing to worry about
-      this.walletService.lockWallet();
-    });
-
-    // handle deeplinks
-    this.desktop.on('deeplink', (e, deeplink) => {
-      if (!this.deeplinkService.navigate(deeplink)) this.notifications.sendWarning('This URI has an invalid address.', { length: 5000 });
-    });
-    this.desktop.send('deeplink-ready');
-
-    // Show persistent banner when a service worker update is ready
-    this.updates.versionUpdates.pipe(
-      filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
-    ).subscribe((event) => {
-      console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
-      this.updateAvailable = true;
-    });
-
-    // Check for service worker updates on startup
-    if (this.updates.isEnabled) {
-      this.updates.checkForUpdate().catch((err) => {
-        console.debug('SW update check failed:', err);
+    await this.startup.runPhase('settings', async () => {
+      this.settings.loadAppSettings();
+      this.powRouting.syncFromSettings();
+      await this.powRouting.resolveRoute().catch((error) => {
+        console.debug('PoW route resolution failed:', error);
       });
-    }
-
-    // Notify user if service worker update failed
-    this.updates.versionUpdates.pipe(
-      filter((evt): evt is VersionInstallationFailedEvent => evt.type === 'VERSION_INSTALLATION_FAILED')
-    ).subscribe((event) => {
-      console.error(`SW update failed: ${event.error}`);
+      this.checkTestnetParameter();
+      this.updateAppTheme();
+      await this.patchXrbToNanoPrefixData();
+      this.translate.setActiveLang(this.settings.settings.language);
     });
 
-    // Check how long the wallet has been inactive, and lock it if it's been too long
-    setInterval(() => {
-      this.inactiveSeconds += 1;
-      if (!this.settings.settings.lockInactivityMinutes) return; // Do not lock on inactivity
-      if (this.walletService.isLocked() || !this.walletService.hasPassword()) return;
+    await this.startup.runPhase('cache', () => {
+      this.addressBook.loadAddressBook();
+      this.workPool.loadWorkCache();
+    });
 
-      // Determine if we have been inactive for longer than our lock setting
-      if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {
-        this.walletService.lockWallet();
-        this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`);
+    await this.startup.runPhase('wallet', async () => {
+      await this.walletService.loadStoredWallet();
+      for (const entry of this.addressBook.addressBook) {
+        if (entry.trackTransactions) this.walletService.trackAddress(entry.account);
       }
-    }, 1000);
 
-    try {
-      if (!this.settings.settings.serverAPI) return;
-      await this.updateFiatPrices();
-    } catch (err) {
-      this.notifications.sendWarning(`There was an issue retrieving latest nano price.  Ensure your AdBlocker is disabled on this page then reload to see accurate FIAT values.`, { length: 0, identifier: `price-adblock` });
-    }
+      if (this.walletService.isConfigured() && (window.location.pathname === '/' || window.location.pathname.endsWith('index.html'))) {
+        if (this.walletService.walletState.selectedAccountId) {
+          this.router.navigate([`account/${this.walletService.walletState.selectedAccountId}`], { queryParams: {'compact': 1}, replaceUrl: true });
+        } else {
+          this.router.navigate(['accounts'], { replaceUrl: true });
+        }
+      }
+      if (this.walletService.walletState.selectedAccountId) {
+        this.walletService.selectAccount(this.walletService.walletState.selectedAccountId);
+      }
+      await this.walletService.refreshWalletState('startup');
+    });
+
+    await this.startup.runPhase('features', async () => {
+      if (FEATURE_NANONYMS) {
+        try {
+          const { NanoNymManagerService } = require('./services/nanonym-manager.service');
+          const manager = this.injector.get(NanoNymManagerService) as { startMonitoringAll(): Promise<void> };
+          if (this.startupAdapters.nostrStart) await this.startupAdapters.nostrStart();
+          await manager.startMonitoringAll();
+        } catch (e) { /* NanoNym manager not available */ }
+      }
+
+      const path = localStorage.getItem('path');
+      if (path) {
+        const search = localStorage.getItem('query');
+        const fragment = localStorage.getItem('fragment');
+        localStorage.removeItem('path');
+        localStorage.removeItem('query');
+        localStorage.removeItem('fragment');
+        if (search && search.length) {
+          const queryParams = {};
+          new URLSearchParams(search).forEach((value, key) => queryParams[key] = value);
+          this.router.navigate([path], { queryParams, replaceUrl: true });
+        } else if (fragment && fragment.length) {
+          this.router.navigate([path], { fragment, replaceUrl: true });
+        } else {
+          this.router.navigate([path], { replaceUrl: true });
+        }
+      }
+      this.representative.loadRepresentativeList();
+    });
+
+    await this.startup.runPhase('network', async () => {
+      this.websocket.connectionState$.subscribe((state) => {
+        if (state === 'open') this.startup.reportNetwork('ready');
+        else if (state === 'connecting' || state === 'reconnecting') this.startup.reportNetwork('connecting');
+        else if (state === 'error' || state === 'closed') this.startup.reportNetwork('failed', state);
+        else this.startup.reportNetwork('unavailable', state);
+      });
+      this.startup.reportNetwork('connecting');
+      if (this.startupAdapters.httpReady) await this.startupAdapters.httpReady();
+      if (this.startupAdapters.websocketConnect) this.startupAdapters.websocketConnect();
+      else this.websocket.connect();
+    });
+
+    await this.startup.runPhase('readiness', async () => {
+      if (this.walletService.isLocked() && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
+        this.notifications.sendWarning(`New incoming transaction(s) - Unlock the wallet to receive`, { length: 10000, identifier: 'pending-locked' });
+      } else if (this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption === 'manual') {
+        this.notifications.sendWarning(`Incoming transaction(s) found - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
+      }
+
+      window.addEventListener('beforeunload', () => {
+        if (!this.walletService.isLocked()) this.walletService.lockWallet();
+      });
+      window.addEventListener('unload', () => {
+        if (!this.walletService.isLocked()) this.walletService.lockWallet();
+      });
+
+      this.desktop.on('deeplink', (e, deeplink) => {
+        if (!this.deeplinkService.navigate(deeplink)) this.notifications.sendWarning('This URI has an invalid address.', { length: 5000 });
+      });
+      this.desktop.send('deeplink-ready');
+
+      this.updates.versionUpdates.pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')).subscribe((event) => {
+        console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
+        this.updateAvailable = true;
+      });
+      if (this.updates.isEnabled) this.updates.checkForUpdate().catch((err) => console.debug('SW update check failed:', err));
+      this.updates.versionUpdates.pipe(filter((evt): evt is VersionInstallationFailedEvent => evt.type === 'VERSION_INSTALLATION_FAILED')).subscribe((event) => {
+        console.error(`SW update failed: ${event.error}`);
+      });
+
+      setInterval(() => {
+        this.inactiveSeconds += 1;
+        if (!this.settings.settings.lockInactivityMinutes || this.walletService.isLocked() || !this.walletService.hasPassword()) return;
+        if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {
+          this.walletService.lockWallet();
+          this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`);
+        }
+      }, 1000);
+
+      if (this.settings.settings.serverAPI) {
+        try {
+          await this.updateFiatPrices();
+        } catch (err) {
+          this.notifications.sendWarning(`There was an issue retrieving latest nano price.  Ensure your AdBlocker is disabled on this page then reload to see accurate FIAT values.`, { length: 0, identifier: `price-adblock` });
+        }
+      }
+    });
   }
 
   onWindowResize(windowObject) {

@@ -10,6 +10,7 @@ export * from './notification.service';
 export * from './pow-routing.service';
 export * from './price.service';
 export * from './representative.service';
+export * from './startup.service';
 export * from './util.service';
 export * from './wallet.service';
 export * from './websocket.service';

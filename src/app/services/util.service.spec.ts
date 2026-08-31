@@ -2,7 +2,7 @@ import { TestBed, inject } from '@angular/core/testing';
 
 import { UtilService } from './util.service';
 
-const skipTest = (globalThis as any).jasmine ? xit : (it as any).skip;
+const skipTest = (globalThis as any).jasmine ? (globalThis as any).xit : (it as any).skip;
 
 describe('UtilService', () => {
   beforeEach(() => {

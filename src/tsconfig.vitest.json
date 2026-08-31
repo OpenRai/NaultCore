@@ -29,6 +29,8 @@
     "app/services/work-pool.service.ts",
     "app/services/util.service.spec.ts",
     "app/services/util.service.ts",
+    "app/services/websocket.service.spec.ts",
+    "app/services/websocket.service.ts",
     "test-setup-vitest.ts",
     "globals.d.ts",
     "../node_modules/vitest/globals.d.ts"

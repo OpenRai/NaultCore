@@ -1,6 +1,29 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { AppSettingsService } from './app-settings.service';
 import { WebsocketService } from './websocket.service';
+
+function partial<T extends object>(value: T): any {
+  const jasmineApi = (globalThis as any).jasmine;
+  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+}
+
+function installTestClock(): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().install();
+  else vi.useFakeTimers();
+}
+
+function advanceTestClock(milliseconds: number): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().tick(milliseconds);
+  else vi.advanceTimersByTime(milliseconds);
+}
+
+function uninstallTestClock(): void {
+  const jasmineApi = (globalThis as any).jasmine;
+  if (jasmineApi?.clock) jasmineApi.clock().uninstall();
+  else vi.useRealTimers();
+}
 
 class FakeWebSocket {
   static readonly CONNECTING = 0;
@@ -31,15 +54,17 @@ describe('WebsocketService', () => {
     originalWebSocket = (window as any).WebSocket;
     (window as any).WebSocket = FakeWebSocket;
     FakeWebSocket.instances = [];
+    installTestClock();
     TestBed.configureTestingModule({
       providers: [WebsocketService, { provide: AppSettingsService, useValue: settings }],
     });
     service = TestBed.inject(WebsocketService);
-    spyOn(Math, 'random').and.returnValue(0);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
   });
 
   afterEach(() => {
     service?.ngOnDestroy();
+    uninstallTestClock();
     (window as any).WebSocket = originalWebSocket;
   });
 
@@ -61,7 +86,7 @@ describe('WebsocketService', () => {
 
     expect(connectionStates).toContain('connecting');
     expect(connectionStates).toContain('open');
-    expect(current.sent[0]).toEqual(jasmine.objectContaining({
+    expect(current.sent[0]).toEqual(partial({
       action: 'subscribe', topic: 'confirmation', ack: true, options: { accounts: ['nano_one'] },
     }));
     expect(typeof current.sent[0].id).toBe('string');
@@ -77,7 +102,7 @@ describe('WebsocketService', () => {
     expect(current.sent.length).toBe(1);
     current.message({ ack: 'subscribe', id: subscribe.id });
     expect(current.sent.length).toBe(2);
-    expect(current.sent[1]).toEqual(jasmine.objectContaining({
+    expect(current.sent[1]).toEqual(partial({
       action: 'unsubscribe', options: { accounts: ['nano_two'] }, ack: true,
     }));
   });
@@ -92,7 +117,7 @@ describe('WebsocketService', () => {
     const second = socket();
     first.open();
     second.open();
-    expect(second.sent[0]).toEqual(jasmine.objectContaining({
+    expect(second.sent[0]).toEqual(partial({
       action: 'subscribe', options: { accounts: ['nano_one', 'nano_two'] }, ack: true,
     }));
   });
@@ -109,16 +134,16 @@ describe('WebsocketService', () => {
 
   });
 
-  it('turns a missing subscription acknowledgement into a recoverable failure', fakeAsync(() => {
+  it('turns a missing subscription acknowledgement into a recoverable failure', () => {
       const states: string[] = [];
       service.connectionState$.subscribe(state => states.push(state));
       const current = openSocket();
       service.subscribeAccounts(['nano_one']);
       expect(current.sent.length).toBe(1);
-      tick(10_001);
+      advanceTestClock(10_001);
       expect(states).toContain('error');
       expect(current.readyState).toBe(FakeWebSocket.CLOSED);
-  }));
+  });
 
   it('deduplicates confirmations by block hash and rejects malformed events', () => {
     const events: any[] = [];
@@ -137,17 +162,17 @@ describe('WebsocketService', () => {
     expect(errors).toEqual(['Received an invalid confirmation message.']);
   });
 
-  it('requires a pong after keepalive and tears down timers cleanly', fakeAsync(() => {
+  it('requires a pong after keepalive and tears down timers cleanly', () => {
       service.keepaliveTimeout = 100;
       service.pongTimeout = 100;
       const current = openSocket();
-      tick(100);
-      expect(current.sent.some(message => message.action === 'ping')).toBeTrue();
-      tick(101);
+      advanceTestClock(100);
+      expect(current.sent.some(message => message.action === 'ping')).toBe(true);
+      advanceTestClock(101);
       expect(current.readyState).toBe(FakeWebSocket.CLOSED);
       const instanceCountAfterFailure = FakeWebSocket.instances.length;
       service.ngOnDestroy();
-      tick(60_000);
+      advanceTestClock(60_000);
       expect(FakeWebSocket.instances.length).toBe(instanceCountAfterFailure);
-  }));
+  });
 });

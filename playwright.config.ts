@@ -19,9 +19,10 @@ const browserBin = process.env.CHROME_BIN || undefined;
 
 function getWebServerCommand(): string {
   const featureFlag = featureNanonyms ? 'true' : 'false';
+  const buildConfiguration = featureNanonyms ? 'nanonyms-e2e' : 'naultcore-e2e';
   return isCI
-    ? `FEATURE_NANONYMS=${featureFlag} pnpm exec ng serve --configuration naultcore-e2e`
-    : `unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=${featureFlag} nvm exec pnpm exec ng serve --configuration naultcore-e2e"`;
+    ? `FEATURE_NANONYMS=${featureFlag} pnpm exec ng serve --configuration ${buildConfiguration}`
+    : `unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=${featureFlag} nvm exec pnpm exec ng serve --configuration ${buildConfiguration}"`;
 }
 
 export default defineConfig({

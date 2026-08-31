@@ -33,7 +33,16 @@ test.skip(!featureNanonyms, 'NanoNym features are disabled in this build (NaultC
  * MUST be called at the end of any test that creates or credits stealth accounts.
  * This prevents XNO from being permanently lost in stealth addresses.
  */
-async function sweepStealthToAccount0(page: Page) {
+type SpendableOption = { value: string; label: string };
+
+async function readSpendableOptions(page: Page): Promise<SpendableOption[]> {
+  return page.locator('select.form-select-source option').evaluateAll(options => options.map(option => ({
+    value: (option as HTMLOptionElement).value,
+    label: option.textContent?.trim() || '',
+  })));
+}
+
+async function sweepStealthToAccount0(page: Page, account0Address: string) {
   // Navigate to Send page
   await page.locator('a[href="/send"]').click();
   await expect(page.locator('[data-testid="send-page-root"]')).toBeVisible();
@@ -41,37 +50,36 @@ async function sweepStealthToAccount0(page: Page) {
   const fromDropdown = page.locator('select.form-select-source');
   await expect(fromDropdown).toBeVisible();
 
-  // Find all stealth/NanoNym accounts in the "From" dropdown
-  const fromOptions = await fromDropdown.locator('option').allTextContents();
-  const stealthIndices: number[] = [];
-  fromOptions.forEach((opt, i) => {
-    if (opt.toLowerCase().includes('nnym_') || opt.toLowerCase().includes('stealth')) {
-      stealthIndices.push(i);
-    }
-  });
+  // Find all stealth/NanoNym accounts by their stable option values.
+  const fromOptions = await readSpendableOptions(page);
+  const stealthOptions = fromOptions.filter(option =>
+    option.value.startsWith('nnym_') || option.label.toLowerCase().includes('stealth')
+  );
 
-  if (stealthIndices.length === 0) {
+  if (stealthOptions.length === 0) {
     // Nothing to sweep
     return;
   }
 
-  // Get account #0 address (first non-stealth nano_ account)
-  const account0Address = fromOptions.find(
-    opt => opt.match(/nano_/) && !opt.toLowerCase().includes('nnym_') && !opt.toLowerCase().includes('stealth')
-  );
-  if (!account0Address) return;
-
   // Sweep each stealth account back to account #0
-  for (const stealthIdx of stealthIndices) {
+  for (const stealth of stealthOptions) {
     // Select the stealth account as source
-    await fromDropdown.selectOption({ index: stealthIdx });
+    await fromDropdown.selectOption(stealth.value);
+    await expect(fromDropdown).toHaveValue(stealth.value);
     await page.waitForTimeout(1000);
 
     // Enter destination address (account #0)
-    await page.locator('[data-testid="send-address-input"]').fill(account0Address.trim());
+    await page.locator('[data-testid="send-address-input"]').fill(account0Address);
 
-    // Click "Max" to send entire balance
+    // Click "Max" to send entire balance, skipping already-empty stealth accounts.
+    const amountInput = page.locator('[data-testid="send-amount-input"]');
     await page.locator('.max-amt-button').click();
+    const amount = Number(await amountInput.inputValue());
+    if (!Number.isFinite(amount) || amount <= 0) {
+      await page.locator('a[href="/send"]').click();
+      await expect(page.locator('[data-testid="send-page-root"]')).toBeVisible();
+      continue;
+    }
     await page.waitForTimeout(500);
 
     // Click Send
@@ -114,9 +122,10 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     await expect(seededPage.locator('text=/nnym_[a-z0-9]+/').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should send XNO to NanoNym, receive via stealth, then spend from stealth account', async ({ seededPage }) => {
+  test('should send XNO to NanoNym, receive via stealth, then spend from stealth account', async ({ seededPage, testWallet }) => {
     test.slow();
 
+    try {
     // Step 1: Create a NanoNym
     await expect(seededPage).toHaveURL(/\/accounts/);
     await seededPage.locator('button:has-text("ADD NEW NANONYM")').click();
@@ -148,6 +157,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
     await expect(confirmButton).toBeVisible({ timeout: 15000 });
     await confirmButton.click();
+    await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
 
     // Step 4: Wait for Nostr notification + on-chain confirmation
     await seededPage.waitForTimeout(10000);
@@ -164,33 +174,36 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     const fromDropdown = seededPage.locator('select.form-select-source');
     await expect(fromDropdown).toBeVisible();
 
-    const fromOptions = await fromDropdown.locator('option').allTextContents();
-    const stealthIndex = fromOptions.findIndex(opt =>
-      opt.toLowerCase().includes('nnym_') || opt.toLowerCase().includes('stealth')
+    const fromOptions = await readSpendableOptions(seededPage);
+    const stealth = fromOptions.find(option =>
+      option.value.startsWith('nnym_') || option.label.toLowerCase().includes('stealth')
     );
+    expect(stealth).toBeDefined();
 
-    if (stealthIndex >= 0) {
-      await fromDropdown.selectOption({ index: stealthIndex });
+    if (!stealth) return;
+    await fromDropdown.selectOption(stealth.value);
+    await expect(fromDropdown).toHaveValue(stealth.value);
 
-      const nanoDest = fromOptions.find(opt =>
-        opt.match(/nano_/) && !opt.toLowerCase().includes('nnym_')
-      );
-      if (nanoDest) {
-        await seededPage.locator('[data-testid="send-address-input"]').fill(nanoDest.trim());
-        await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
-        await seededPage.locator('[data-testid="send-send-button"]').click();
+    const nanoDest = fromOptions.find(option => option.value.startsWith('nano_'));
+    expect(nanoDest).toBeDefined();
+    if (!nanoDest) return;
+    await seededPage.locator('[data-testid="send-address-input"]').fill(nanoDest.value);
+    await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
+    await seededPage.locator('[data-testid="send-send-button"]').click();
 
-        const spendPrivacyWarning = seededPage.locator('#nanonym-privacy-warning-modal');
-        if (await spendPrivacyWarning.isVisible({ timeout: 3000 }).catch(() => false)) {
-          await seededPage.locator('#nanonym-privacy-warning-modal .uk-button-primary').click();
-        }
-
-        await seededPage.waitForTimeout(5000);
-      }
+    const spendPrivacyWarning = seededPage.locator('#nanonym-privacy-warning-modal');
+    if (await spendPrivacyWarning.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await seededPage.locator('#nanonym-privacy-warning-modal .uk-button-primary').click();
     }
 
-    // Step 7 (CLEANUP): Sweep any remaining stealth funds back to account #0
-    // CRITICAL: prevents XNO from being permanently lost in stealth accounts
-    await sweepStealthToAccount0(seededPage);
+    const spendConfirmButton = seededPage.locator('button:has-text("Confirm & Send")');
+    await expect(spendConfirmButton).toBeVisible({ timeout: 15000 });
+    await spendConfirmButton.click();
+    await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
+
+    } finally {
+      // Sweep even when an intermediate assertion fails after funds arrive.
+      await sweepStealthToAccount0(seededPage, testWallet.accounts[0]);
+    }
   });
 });

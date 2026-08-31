@@ -188,6 +188,29 @@
               ],
               "serviceWorker": false
             },
+            "nanonyms-e2e": {
+              "budgets": [
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb"
+                }
+              ],
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "namedChunks": false,
+              "extractLicenses": true,
+              "define": {
+                "FEATURE_NANONYMS": "true"
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.naultcore-e2e.ts"
+                }
+              ],
+              "serviceWorker": false
+            },
             "vitest": {
               "polyfills": [],
               "define": {
@@ -231,6 +254,9 @@
             },
             "naultcore-e2e": {
               "buildTarget": "nault:build:naultcore-e2e"
+            },
+            "nanonyms-e2e": {
+              "buildTarget": "nault:build:nanonyms-e2e"
             },
             "nanonyms": {
               "buildTarget": "nault:build:nanonyms"

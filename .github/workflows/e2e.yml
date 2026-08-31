@@ -36,6 +36,9 @@ jobs:
           PYTHON: python3.11
         run: pnpm install --frozen-lockfile
 
+      - name: Run Vitest tests
+        run: pnpm run test:vitest
+
       - name: Run Karma tests
         run: |
           CHROME_BIN=$(which chromium-browser || which chromium || echo "") \

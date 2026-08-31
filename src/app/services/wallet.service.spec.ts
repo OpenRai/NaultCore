@@ -57,7 +57,7 @@ describe('WalletService wallet state snapshots', () => {
 
     expect(after.revision).toBe(before.revision + 1);
     expect(after.accounts[0].id).toBe('nano_1test');
-    expect(after.accounts[0].balance.eq(10)).toBeTrue();
+    expect(after.accounts[0].balance.eq(10)).toBe(true);
     expect((after.accounts[0] as any).secret).toBeUndefined();
     expect((after.accounts[0] as any).keyPair).toBeUndefined();
     expect(() => (after.accounts as any).push({})).toThrow();
@@ -131,7 +131,13 @@ describe('WalletService reconciliation coordination', () => {
       if (attempts === 1) throw new Error('node unavailable');
     };
 
-    await expectAsync(service.refreshWalletState('manual')).toBeRejectedWithError('node unavailable');
+    let error: unknown;
+    try {
+      await service.refreshWalletState('manual');
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error instanceof Error ? error.message : error).toBe('node unavailable');
 
     expect(service.walletStateSubject.value.sync.status).toBe('error');
     expect(service.walletStateSubject.value.sync.reason).toBe('manual');
@@ -147,17 +153,17 @@ describe('WalletService WebSocket confirmation guard', () => {
     const service = createServiceForStateTests();
     const hash = 'A'.repeat(64);
     service.api = {
-      blocksInfo: jasmine.createSpy('blocksInfo').and.resolveTo({
+      blocksInfo: vi.fn().mockResolvedValue({
         blocks: {
           [hash]: { confirmed: 'true', subtype: 'receive' },
         },
       }),
     };
 
-    await expectAsync(service.verifyConfirmedTransaction({
+    expect(await service.verifyConfirmedTransaction({
       hash,
       block: { type: 'state', subtype: 'receive', account: 'nano_1test' },
-    })).toBeResolvedTo(true);
+    })).toBe(true);
     expect(service.api.blocksInfo).toHaveBeenCalledWith([hash]);
   });
 
@@ -165,24 +171,24 @@ describe('WalletService WebSocket confirmation guard', () => {
     const service = createServiceForStateTests();
     const hash = 'B'.repeat(64);
     service.api = {
-      blocksInfo: jasmine.createSpy('blocksInfo').and.resolveTo({
+      blocksInfo: vi.fn().mockResolvedValue({
         blocks: {
           [hash]: { confirmed: false },
         },
       }),
     };
 
-    await expectAsync(service.verifyConfirmedTransaction({
+    expect(await service.verifyConfirmedTransaction({
       hash,
       block: { type: 'state', account: 'nano_1test' },
-    })).toBeResolvedTo(false);
-    await expectAsync(service.verifyConfirmedTransaction({
+    })).toBe(false);
+    expect(await service.verifyConfirmedTransaction({
       hash: 'C'.repeat(64),
       block: { type: 'state', account: 'nano_1test' },
-    })).toBeResolvedTo(false);
-    await expectAsync(service.verifyConfirmedTransaction({
+    })).toBe(false);
+    expect(await service.verifyConfirmedTransaction({
       hash,
       block: { type: 'send', account: 'nano_1test' },
-    })).toBeResolvedTo(false);
+    })).toBe(false);
   });
 });

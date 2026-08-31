@@ -31,14 +31,24 @@ Open `http://localhost:4200/`.
 
 ## Test
 
-Karma unit tests require Brave on macOS:
+Run the migrated unit-test targets for both feature profiles:
+
+```bash
+source ~/.nvm/nvm.sh
+nvm exec pnpm run test:vitest
+nvm exec pnpm run test:vitest:nanonyms
+```
+
+Karma remains as a temporary parity gate and requires Brave on macOS:
 
 ```bash
 source ~/.nvm/nvm.sh
 CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
 ```
 
-See [AGENTS.md](AGENTS.md) for repository rules and the canonical commands.
+See [Unit Test Runner Migration](docs/unit-test-migration.md) for the inventory
+and retirement gate. See [AGENTS.md](AGENTS.md) for repository rules and the
+canonical commands.
 
 ## Contributing
 

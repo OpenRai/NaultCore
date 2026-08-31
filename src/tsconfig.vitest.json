@@ -12,6 +12,7 @@
   },
   "files": [
     "app/services/startup.service.spec.ts",
+    "app/pipes/account.pipe.spec.ts",
     "app/pipes/amount-split.pipe.spec.ts",
     "app/pipes/rai.pipe.spec.ts",
     "app/pipes/currency-symbol.pipe.spec.ts",

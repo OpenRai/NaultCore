@@ -276,6 +276,7 @@
             "tsConfig": "src/tsconfig.vitest.json",
             "include": [
               "src/app/services/startup.service.spec.ts",
+              "src/app/pipes/account.pipe.spec.ts",
               "src/app/pipes/amount-split.pipe.spec.ts",
               "src/app/pipes/rai.pipe.spec.ts",
               "src/app/pipes/currency-symbol.pipe.spec.ts",

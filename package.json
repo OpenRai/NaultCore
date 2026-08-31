@@ -30,6 +30,7 @@
     "wallet:build:naultcore:preview": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng build --configuration naultcore-preview --base-href /",
     "verify:pwa:preview": "node scripts/verify-pwa-preview.js",
     "verify:branding": "node scripts/verify-branding.js",
+    "verify:test-inventory": "node scripts/verify-vitest-inventory.js",
     "wallet:build-desktop": "FEATURE_NANONYMS=false pnpm run version && FEATURE_NANONYMS=false ng build --configuration=desktop --base-href ",
     "wallet:build-desktop:nanonyms": "FEATURE_NANONYMS=true pnpm run version && FEATURE_NANONYMS=true ng build --configuration=nanonyms --base-href ",
     "desktop:compile": "cd desktop-app && tsc && cd ..",

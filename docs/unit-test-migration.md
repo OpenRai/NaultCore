@@ -34,7 +34,12 @@ Run both feature profiles through Vitest:
 source ~/.nvm/nvm.sh
 nvm exec pnpm run test:vitest
 nvm exec pnpm run test:vitest:nanonyms
+nvm exec pnpm run verify:test-inventory
 ```
+
+`verify:test-inventory` fails if an `it(...)` or `test(...)` declaration appears
+outside the configured Vitest targets or if a configured target file is missing.
+CI runs this guard before the temporary Karma parity suite.
 
 Karma remains enabled as a temporary parity runner. On macOS, run it with
 Brave:

@@ -1,4 +1,5 @@
 import { RaiPipe } from './rai.pipe';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('RaiPipe', () => {
   let pipe: RaiPipe;

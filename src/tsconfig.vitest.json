@@ -10,7 +10,12 @@
     },
     "types": ["node"]
   },
-  "files": ["app/services/startup.service.spec.ts", "test-setup-vitest.ts"],
+  "files": [
+    "app/services/startup.service.spec.ts",
+    "app/pipes/amount-split.pipe.spec.ts",
+    "app/pipes/rai.pipe.spec.ts",
+    "test-setup-vitest.ts"
+  ],
   "angularCompilerOptions": {
     "strictTemplates": false
   }

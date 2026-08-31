@@ -37,4 +37,28 @@ describe('StartupService', () => {
     expect(service.state$.value.phases.runtime.error).toBe('node unavailable');
     expect(service.state$.value.network).toEqual({ status: 'failed', reason: 'node unavailable' });
   });
+
+  it('records total boot timing only after the readiness phase completes', async () => {
+    const service = new StartupService();
+    const phases = ['runtime', 'settings', 'cache', 'wallet', 'features', 'network', 'readiness'] as const;
+
+    for (const phase of phases) await service.runPhase(phase, () => undefined);
+
+    expect(service.state$.value.activePhase).toBeNull();
+    expect(service.state$.value.startedAt).not.toBeNull();
+    expect(service.state$.value.completedAt).not.toBeNull();
+    expect(service.state$.value.completedAt).toBeGreaterThanOrEqual(service.state$.value.startedAt as number);
+    await expect(service.runPhase('readiness', () => undefined)).rejects.toThrow('expected undefined, got readiness');
+  });
+
+  it('keeps network diagnostics narrow and actionable', () => {
+    const service = new StartupService();
+
+    service.reportNetwork('unavailable', 'no endpoint configured');
+    expect(service.state$.value.network).toEqual({ status: 'unavailable', reason: 'no endpoint configured' });
+    service.reportNetwork('connecting');
+    expect(service.state$.value.network).toEqual({ status: 'connecting', reason: null });
+    service.reportNetwork('ready');
+    expect(service.state$.value.network).toEqual({ status: 'ready', reason: null });
+  });
 });

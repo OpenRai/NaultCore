@@ -111,6 +111,7 @@ export class SendComponent implements OnInit {
   preparingTransaction = false;
   confirmingTransaction = false;
   selAccountInit = false;
+  private fromAccountSelectionTouched = false;
 
   // NanoNym-specific state (receiving)
   isNanoNymAddress = false;
@@ -165,7 +166,7 @@ export class SendComponent implements OnInit {
         return;
       }
 
-      if (this.selAccountInit) {
+      if (this.selAccountInit && !this.fromAccountSelectionTouched) {
         if (acc) {
           this.fromAccountID = acc.id;
         } else {
@@ -225,7 +226,7 @@ export class SendComponent implements OnInit {
       return null;
     }, null);
 
-    if (accountIDWithBalance) {
+    if (accountIDWithBalance && !this.fromAccountSelectionTouched) {
       this.fromAccountID = accountIDWithBalance;
     }
   }
@@ -1538,6 +1539,7 @@ export class SendComponent implements OnInit {
    * Find the corresponding SpendableAccount
    */
   onFromAccountChange(): void {
+    this.fromAccountSelectionTouched = true;
     const selected = this.spendableAccounts.find(acc => acc.id === this.fromAccountID);
     this.selectedSpendableAccount = selected || null;
 

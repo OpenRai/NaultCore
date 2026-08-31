@@ -84,6 +84,26 @@ describe('SendComponent - regular wallet balance refresh', () => {
   });
 });
 
+describe('SendComponent - account selection race', () => {
+  it('does not replace an explicit source selection after a balance refresh', async () => {
+    const component: any = {
+      walletService: {
+        walletState: { balance: new BigNumber(0) },
+        refreshWalletState: vi.fn(() => Promise.resolve()),
+      },
+      accounts: [{ id: 'nano_default', balance: new BigNumber(1) }],
+      spendableAccounts: [],
+      fromAccountID: 'nano_selected',
+      fromAccountSelectionTouched: false,
+    };
+
+    SendComponent.prototype.onFromAccountChange.call(component);
+    await SendComponent.prototype.findFirstAccount.call(component);
+
+    expect(component.fromAccountID).toBe('nano_selected');
+  });
+});
+
 describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {
   let component: any; // Use 'any' to access private methods
   let notificationService: MockNotificationService;

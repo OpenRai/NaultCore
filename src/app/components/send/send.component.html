@@ -19,7 +19,7 @@
                   <label class="uk-form-label" for="form-horizontal-select">From Account</label>
                   <div class="uk-form-controls">
                     <select class="form-select-source uk-select" [(ngModel)]="fromAccountID" (change)="resetRaw(); onFromAccountChange()" id="form-horizontal-select" [attr.data-testid]="testIds.send.sourceAccountInput">
-                      @for (account of spendableAccounts; track account) {
+                      @for (account of spendableAccounts; track account.id) {
                         <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
                       }
                     </select>
@@ -104,7 +104,7 @@
                     <div class="uk-form-controls">
                       <select required class="form-select-destination uk-select" [(ngModel)]="toOwnAccountID" id="form-horizontal-select" [attr.data-testid]="testIds.transfer.toAccountInput">
                         <option value="" disabled selected hidden>Account to transfer to</option>
-                        @for (account of spendableAccounts; track account) {
+                        @for (account of spendableAccounts; track account.id) {
                           @if (account.id !== fromAccountID) {
                             <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
                           }

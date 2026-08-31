@@ -57,7 +57,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     await seededPage.locator('a[href="/accounts"]').click();
     const accountRows = seededPage.locator('[data-testid="accounts-row"]');
     const destinationAccount = testWallet.accounts[0];
-    await expect(accountRows.locator(`[data-account-id="${destinationAccount}"]`)).toBeVisible({ timeout: 15000 });
+    await expect(seededPage.locator(`[data-testid="accounts-row"][data-account-id="${destinationAccount}"]`)).toBeVisible({ timeout: 15000 });
 
     // Navigate to Send
     await seededPage.locator('a[href="/send"]').click();

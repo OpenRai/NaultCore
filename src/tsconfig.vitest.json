@@ -20,6 +20,8 @@
     "app/testing/test-ids.spec.ts",
     "app/services/recovery-import.service.spec.ts",
     "app/services/pow-routing.service.spec.ts",
+    "app/services/notification.service.spec.ts",
+    "app/services/app-settings.service.spec.ts",
     "test-setup-vitest.ts",
     "globals.d.ts"
   ],

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { NotificationService } from './notification.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('NotificationService', () => {
   beforeEach(() => {
@@ -11,10 +12,10 @@ describe('NotificationService', () => {
 
   it('mirrors each toast to its matching console severity', () => {
     const service = TestBed.inject(NotificationService);
-    const debug = spyOn(console, 'debug');
-    const info = spyOn(console, 'info');
-    const warning = spyOn(console, 'warn');
-    const error = spyOn(console, 'error');
+    const debug = vi.spyOn(console, 'debug');
+    const info = vi.spyOn(console, 'info');
+    const warning = vi.spyOn(console, 'warn');
+    const error = vi.spyOn(console, 'error');
 
     service.sendInfo('Informational event');
     service.sendSuccess('Successful event');

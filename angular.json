@@ -315,7 +315,8 @@
               "src/app/services/nostr-send-queue.service.spec.ts",
               "src/app/services/nostr-sync-state.service.spec.ts",
               "src/app/services/nostr-notification.service.spec.ts",
-              "src/app/services/nanonym-manager.service.spec.ts"
+              "src/app/services/nanonym-manager.service.spec.ts",
+              "src/app/components/helpers/nano-account-id/nano-account-id.component.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

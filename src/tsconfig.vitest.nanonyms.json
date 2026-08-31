@@ -10,6 +10,7 @@
     "app/services/nostr-sync-state.service.spec.ts",
     "app/services/nostr-notification.service.spec.ts",
     "app/services/nanonym-manager.service.spec.ts",
+    "app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
     "app/services/nanonym-account-selection.service.ts",
     "app/services/nanonym-crypto.service.ts",
     "app/services/nostr-send-queue.service.ts",

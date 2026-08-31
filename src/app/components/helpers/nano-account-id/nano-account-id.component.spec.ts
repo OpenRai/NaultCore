@@ -1,32 +1,19 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-
 import { NanoAccountIdComponent } from './nano-account-id.component';
+
+const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
 
 describe('NanoAccountIdComponent', () => {
   let component: NanoAccountIdComponent;
-  let fixture: ComponentFixture<NanoAccountIdComponent>;
-
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ NanoAccountIdComponent ]
-    })
-    .compileComponents();
-  }));
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(NanoAccountIdComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    component = new NanoAccountIdComponent();
   });
 
-  // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
-  // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should create', () => {
+  it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  (FEATURE_NANONYMS ? describe : xdescribe)('NanoNym address detection', () => {
+  featureDescribe('NanoNym address detection', () => {
     it('should detect nnym_ addresses as NanoNym type', () => {
       const nnymAddress = 'nnym_17jxt55u9s3rusu5qbm8bfjmmqgpucne4pkudohq3rsy4wow5ptszdwfju6meyqzr71judrhrghrf3z3hn9ssiyurfq13jnduosek8at1yahc8pkdgouhrtnxh8mzd6ngnxx6134hzqebiorqazba47grpmubyi';
       component.accountID = nnymAddress;

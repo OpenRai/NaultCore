@@ -25,6 +25,7 @@ type StartupFixtures = {
 
 export async function unlockWalletThroughBridge(page: Page, password = e2eWalletPassword): Promise<void> {
   await page.waitForFunction(() => typeof window.__NAULTCORE_E2E__?.unlock === 'function');
+  await expect(page.locator('.nav-status-row:has-text("Wallet Locked")')).toBeVisible({ timeout: 15000 });
   const unlocked = await page.evaluate(value => window.__NAULTCORE_E2E__!.unlock(value), password);
   expect(unlocked).toBe(true);
 }

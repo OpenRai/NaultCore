@@ -1,5 +1,9 @@
 import { RecoveryImportService } from './recovery-import.service';
-import { beforeEach, describe, expect, it } from 'vitest';
+
+function partial<T extends object>(value: T): any {
+  const jasmineApi = (globalThis as any).jasmine;
+  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+}
 
 describe('RecoveryImportService', () => {
   let service: RecoveryImportService;
@@ -45,7 +49,7 @@ describe('RecoveryImportService', () => {
       { word: 'notaword', recognized: false },
       { word: 'about', recognized: true },
     ]);
-    expect(service.classify('abandon about abandon')).toEqual(expect.objectContaining({ kind: 'unknown' }));
+    expect(service.classify('abandon about abandon')).toEqual(partial({ kind: 'unknown' }));
   });
 
   it('shows word-level feedback only at supported Nano and BIP-39 phrase lengths', () => {

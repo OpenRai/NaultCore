@@ -24,7 +24,8 @@
     "app/services/app-settings.service.spec.ts",
     "app/services/recovery-verification.service.spec.ts",
     "test-setup-vitest.ts",
-    "globals.d.ts"
+    "globals.d.ts",
+    "../node_modules/vitest/globals.d.ts"
   ],
   "angularCompilerOptions": {
     "strictTemplates": false

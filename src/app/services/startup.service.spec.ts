@@ -1,5 +1,4 @@
 import { StartupService } from './startup.service';
-import { describe, expect, it } from 'vitest';
 
 describe('StartupService', () => {
   it('runs phases in order and publishes completion state', async () => {
@@ -20,8 +19,14 @@ describe('StartupService', () => {
   it('rejects out-of-order phases without advancing the pipeline', async () => {
     const service = new StartupService();
 
-    await expect(service.runPhase('wallet', () => undefined))
-      .rejects.toThrow('Startup phase out of order: expected runtime, got wallet');
+    let error: unknown;
+    try {
+      await service.runPhase('wallet', () => undefined);
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error instanceof Error ? error.message : error)
+      .toBe('Startup phase out of order: expected runtime, got wallet');
     expect(service.state$.value.phases.runtime.status).toBe('pending');
   });
 
@@ -29,8 +34,13 @@ describe('StartupService', () => {
     const service = new StartupService();
     const failure = new Error('node unavailable');
 
-    await expect(service.runPhase('runtime', () => { throw failure; }))
-      .rejects.toThrow('node unavailable');
+    let error: unknown;
+    try {
+      await service.runPhase('runtime', () => { throw failure; });
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBe(failure);
     service.reportNetwork('failed', failure.message);
 
     expect(service.state$.value.phases.runtime.status).toBe('failed');
@@ -48,7 +58,13 @@ describe('StartupService', () => {
     expect(service.state$.value.startedAt).not.toBeNull();
     expect(service.state$.value.completedAt).not.toBeNull();
     expect(service.state$.value.completedAt).toBeGreaterThanOrEqual(service.state$.value.startedAt as number);
-    await expect(service.runPhase('readiness', () => undefined)).rejects.toThrow('expected undefined, got readiness');
+    let error: unknown;
+    try {
+      await service.runPhase('readiness', () => undefined);
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error instanceof Error ? error.message : error).toBe('Startup phase out of order: expected undefined, got readiness');
   });
 
   it('keeps network diagnostics narrow and actionable', () => {

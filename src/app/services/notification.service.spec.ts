@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
 import { NotificationService } from './notification.service';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('NotificationService', () => {
   beforeEach(() => {

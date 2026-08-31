@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AppSettingsService } from './app-settings.service';
 

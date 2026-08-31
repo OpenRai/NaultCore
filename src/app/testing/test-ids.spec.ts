@@ -1,5 +1,4 @@
 import { TestIds } from './test-ids';
-import { describe, expect, it } from 'vitest';
 
 describe('TestIds', () => {
   it('should have a defined app.root test ID', () => {

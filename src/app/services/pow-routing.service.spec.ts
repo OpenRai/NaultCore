@@ -1,7 +1,6 @@
 import { BehaviorSubject } from 'rxjs';
 
 import { PowRoutingService } from './pow-routing.service';
-import { describe, expect, it, vi } from 'vitest';
 
 function createService(source: string = 'auto'): any {
   const service: any = Object.create(PowRoutingService.prototype);
@@ -22,7 +21,7 @@ describe('PowRoutingService', () => {
     const service = createService('remote');
     service.browserRecommendation = vi.fn();
 
-    await expect(service.resolveRoute()).resolves.toBe('remote');
+    expect(await service.resolveRoute()).toBe('remote');
 
     expect(service.browserRecommendation).not.toHaveBeenCalled();
     expect(service.state).toEqual({ policy: 'remote', route: 'remote', status: 'resolved', error: null });
@@ -36,8 +35,8 @@ describe('PowRoutingService', () => {
       return true;
     };
 
-    await expect(service.resolveRoute()).resolves.toBe('local');
-    await expect(service.resolveRoute()).resolves.toBe('local');
+    expect(await service.resolveRoute()).toBe('local');
+    expect(await service.resolveRoute()).toBe('local');
 
     expect(probes).toBe(1);
     expect(service.state.status).toBe('resolved');
@@ -54,7 +53,7 @@ describe('PowRoutingService', () => {
 
     await service.resolveRoute();
     recommendation = false;
-    await expect(service.reprobe()).resolves.toBe('remote');
+    expect(await service.reprobe()).toBe('remote');
 
     expect(probeArguments).toEqual([false, true]);
     expect(service.state).toEqual({ policy: 'auto', route: 'remote', status: 'resolved', error: null });

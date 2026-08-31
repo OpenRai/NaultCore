@@ -3,7 +3,11 @@ import { ApiService } from './api.service';
 import { RecoveryCandidate } from './recovery-import.service';
 import { RecoveryVerificationService } from './recovery-verification.service';
 import { UtilService } from './util.service';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+function partial<T extends object>(value: T): any {
+  const jasmineApi = (globalThis as any).jasmine;
+  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+}
 
 describe('RecoveryVerificationService', () => {
   let service: RecoveryVerificationService;
@@ -104,8 +108,8 @@ describe('RecoveryVerificationService', () => {
     const result = await service.verify(candidate, 0, 9);
 
     expect(result.interpretations).toEqual([
-      expect.objectContaining({ interpretation: 'nano-seed', checkedAccounts: 10, spendableRaw: '100', receivableRaw: '25', combinedRaw: '125' }),
-      expect.objectContaining({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
+      partial({ interpretation: 'nano-seed', checkedAccounts: 10, spendableRaw: '100', receivableRaw: '25', combinedRaw: '125' }),
+      partial({ interpretation: 'private-key', checkedAccounts: 1, spendableRaw: '200', receivableRaw: '0', combinedRaw: '200' }),
     ]);
     expect(result.recommendedInterpretation).toBe('private-key');
   });
@@ -124,7 +128,7 @@ describe('RecoveryVerificationService', () => {
 
     expect(result.accounts[0].hasActivity).toBe(true);
     expect(result.accounts[0].isOpened).toBe(false);
-    expect(result.interpretations[0]).toEqual(expect.objectContaining({ activeAccounts: 1, openedAccounts: 0, combinedRaw: '1' }));
+    expect(result.interpretations[0]).toEqual(partial({ activeAccounts: 1, openedAccounts: 0, combinedRaw: '1' }));
   });
 
   it('keeps the canonical Nano seed selected when compatible interpretations have equal totals', async () => {
@@ -176,7 +180,8 @@ describe('RecoveryVerificationService', () => {
 
     const result = await service.verify(candidate, 0, 0);
 
-    expect(mnemonicToSeedSync.mock.calls.at(-1)).toEqual([mnemonic, passphrase]);
+    const calls = (mnemonicToSeedSync as any).mock?.calls?.at(-1) ?? (mnemonicToSeedSync as any).calls.mostRecent().args;
+    expect(calls).toEqual([mnemonic, passphrase]);
     expect(result.interpretations.map(interpretation => interpretation.interpretation)).toEqual(['bip39-mnemonic']);
     expect(result.accounts.every(account => account.interpretation === 'bip39-mnemonic')).toBe(true);
   });

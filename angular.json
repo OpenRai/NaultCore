@@ -271,6 +271,7 @@
           "builder": "@angular/build:unit-test",
           "options": {
             "runner": "vitest",
+            "runnerConfig": "vitest.config.ts",
             "buildTarget": "nault:build:vitest",
             "tsConfig": "src/tsconfig.vitest.json",
             "include": [

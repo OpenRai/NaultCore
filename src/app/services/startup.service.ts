@@ -34,6 +34,8 @@ export interface StartupPhaseState {
 
 export interface StartupState {
   activePhase: StartupPhaseId | null;
+  startedAt: number | null;
+  completedAt: number | null;
   phases: Readonly<Record<StartupPhaseId, StartupPhaseState>>;
   network: {
     status: StartupNetworkStatus;
@@ -52,6 +54,8 @@ function createPhaseState(): StartupPhaseState {
 function createInitialState(): StartupState {
   return {
     activePhase: null,
+    startedAt: null,
+    completedAt: null,
     phases: {
       runtime: createPhaseState(),
       settings: createPhaseState(),
@@ -75,7 +79,8 @@ export class StartupService {
       throw new Error(`Startup phase out of order: expected ${phaseOrder[this.nextPhaseIndex]}, got ${phase}`);
     }
 
-    this.updatePhase(phase, { status: 'running', startedAt: Date.now(), completedAt: null, error: null }, phase);
+    const startedAt = Date.now();
+    this.updatePhase(phase, { status: 'running', startedAt, completedAt: null, error: null }, phase);
     try {
       const result = await work();
       this.updatePhase(phase, { status: 'complete', completedAt: Date.now() }, null);
@@ -100,6 +105,12 @@ export class StartupService {
       ...this.state$.value.phases,
       [phase]: { ...this.state$.value.phases[phase], ...update },
     };
-    this.state$.next({ ...this.state$.value, activePhase, phases });
+    this.state$.next({
+      ...this.state$.value,
+      activePhase,
+      startedAt: phase === 'runtime' && update.status === 'running' ? update.startedAt : this.state$.value.startedAt,
+      completedAt: phase === 'readiness' && update.status === 'complete' ? update.completedAt : this.state$.value.completedAt,
+      phases,
+    });
   }
 }

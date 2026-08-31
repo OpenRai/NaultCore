@@ -13,6 +13,8 @@ describe('StartupService', () => {
     expect(phases).toEqual(['runtime', 'settings', 'cache']);
     expect(service.state$.value.activePhase).toBeNull();
     expect(service.state$.value.phases.cache.status).toBe('complete');
+    expect(service.state$.value.startedAt).not.toBeNull();
+    expect(service.state$.value.completedAt).toBeNull();
   });
 
   it('rejects out-of-order phases without advancing the pipeline', async () => {

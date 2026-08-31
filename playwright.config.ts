@@ -2,11 +2,15 @@ import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import { e2eStorageStatePath } from './tests-playwright/test-wallet';
 
+// NanoNym E2E is an explicit profile opt-in. Capture the shell choice before
+// dotenv loads local convenience settings so a default run remains NaultCore.
+const featureNanonymsRequested = process.env.FEATURE_NANONYMS === 'true';
+
 // Load .env.test (gitignored) — contains NANO_TEST_SEED and optional CHROME_BIN.
 // Falls back gracefully if the file doesn't exist (CI uses secrets instead).
 dotenv.config({ path: '.env.test', quiet: true });
 dotenv.config({ path: '.env', quiet: true });
-const featureNanonyms = process.env.FEATURE_NANONYMS === 'true';
+const featureNanonyms = featureNanonymsRequested;
 process.env.FEATURE_NANONYMS = featureNanonyms ? 'true' : 'false';
 const hasFundedSeed = Boolean(process.env.NANO_TEST_SEED?.trim());
 

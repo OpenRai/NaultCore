@@ -212,3 +212,18 @@ export async function installStartupNetworkMocks(
   await page.route('**/*', route => handleHttpRoute(route, state, ledgerState, options));
   await page.routeWebSocket('wss://**/*', handleWebSocketRoute);
 }
+
+/** Install a deterministic failure scenario for startup network diagnostics. */
+export async function installUnavailableStartupNetwork(page: Page): Promise<void> {
+  await page.route('**/*', async route => {
+    if (route.request().url().startsWith('https://')) {
+      await route.abort('failed');
+      return;
+    }
+    await route.fallback();
+  });
+  await page.routeWebSocket('wss://**/*', websocket => websocket.close({
+    code: 1001,
+    reason: 'simulated unavailable network',
+  }));
+}

@@ -146,7 +146,13 @@ export class AppComponent implements OnInit {
       if (this.walletService.walletState.selectedAccountId) {
         this.walletService.selectAccount(this.walletService.walletState.selectedAccountId);
       }
-      await this.walletService.refreshWalletState('startup');
+      try {
+        await this.walletService.refreshWalletState('startup');
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        this.startup.reportNetwork('failed', `Wallet refresh: ${reason}`);
+        console.debug('Wallet startup refresh failed; continuing with hydrated wallet.', reason);
+      }
     });
 
     await this.startup.runPhase('features', async () => {

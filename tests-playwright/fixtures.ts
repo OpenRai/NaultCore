@@ -1,6 +1,6 @@
 import { test as base, expect, Page } from '@playwright/test';
 import { E2ETestWallet, e2eWalletPassword, getE2ETestWallet } from './test-wallet';
-import { installStartupNetworkMocks } from './startup-network-mocks';
+import { installStartupNetworkMocks, installUnavailableStartupNetwork } from './startup-network-mocks';
 
 /**
  * Playwright fixtures for NaultCore E2E tests.
@@ -19,7 +19,7 @@ export type WalletFixtures = {
 
 type StartupFixtures = {
   /** Mock by default; live network must be explicitly opted into by a suite. */
-  startupNetworkMode: 'mock' | 'live';
+  startupNetworkMode: 'mock' | 'live' | 'unavailable';
   startupNetwork: void;
 };
 
@@ -34,6 +34,7 @@ export const test = base.extend<WalletFixtures & StartupFixtures>({
 
   startupNetwork: [async ({ page, startupNetworkMode }, use) => {
     if (startupNetworkMode === 'mock') await installStartupNetworkMocks(page);
+    if (startupNetworkMode === 'unavailable') await installUnavailableStartupNetwork(page);
     await use();
   }, { auto: true }],
 

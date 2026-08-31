@@ -110,6 +110,7 @@ describe('ConfigureWalletComponent recovery material validation', () => {
 
   it('uses one distinct name for each detected recovery material shape', () => {
     const component = Object.create(ConfigureWalletComponent.prototype) as ConfigureWalletComponent;
+    (component as any).recoveryImport = classifier;
 
     expect(component.recoveryCandidateDescription(classifier.classify('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about')))
       .toBe('12-word secret recovery mnemonic');

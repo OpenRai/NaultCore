@@ -370,13 +370,12 @@ export class ConfigureWalletComponent implements OnInit {
   }
 
   updateRecoveryMaterialValidity() {
-    const material = this.recoveryMaterial.trim();
-    const candidate = this.recoveryImport.classify(material);
-    this.recoveryMaterialInvalid = material.length > 0 && candidate.kind === 'unknown';
-    this.recoveryMnemonicWordStatuses = this.recoveryImport.inspectMnemonicWords(material);
-    this.recoveryWordCheckVisible = this.recoveryImport.hasSupportedMnemonicWordCount(material);
-    this.recoveryMaterialHint = this.recoveryMaterialInvalid ? this.recoveryMaterialInvalidReason(material) : '';
-    this.recoveryMaterialIsBip39 = candidate.kind === 'mnemonic';
+    const inspection = this.recoveryImport.inspectMaterial(this.recoveryMaterial);
+    this.recoveryMaterialInvalid = inspection.invalid;
+    this.recoveryMnemonicWordStatuses = inspection.mnemonicWordStatuses;
+    this.recoveryWordCheckVisible = inspection.wordCheckVisible;
+    this.recoveryMaterialHint = this.recoveryMaterialInvalid ? this.recoveryMaterialInvalidReason(inspection.material) : '';
+    this.recoveryMaterialIsBip39 = inspection.isBip39;
     if (!this.recoveryMaterialIsBip39) {
       this.recoveryPassphraseEnabled = false;
       this.recoveryPassphrase = '';
@@ -448,9 +447,7 @@ export class ConfigureWalletComponent implements OnInit {
   }
 
   recoveryCandidateDescription(candidate: RecoveryCandidate): string {
-    if (candidate.kind === 'mnemonic') return `${candidate.wordCount}-word secret recovery mnemonic`;
-    if (candidate.kind === 'hex-secret') return '64-character hexadecimal secret';
-    return '128-character expanded private key';
+    return this.recoveryImport.describeCandidate(candidate);
   }
 
   continueWithRecoveryPreview() {

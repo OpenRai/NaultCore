@@ -60,4 +60,38 @@ describe('RecoveryImportService', () => {
       expect(service.hasSupportedMnemonicWordCount(Array(wordCount).fill('abandon').join(' '))).toBe(false);
     }
   });
+
+  it('assembles the browser-independent recovery material inspection state', () => {
+    const inspection = service.inspectMaterial('  abandon\n\tabandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about  ');
+
+    expect(inspection.material).toBe('abandon\n\tabandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+    expect(inspection.candidate.kind).toBe('mnemonic');
+    expect(inspection.candidate.normalizedMaterial).toBe('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+    expect(inspection.invalid).toBe(false);
+    expect(inspection.mnemonicWordStatuses.length).toBe(12);
+    expect(inspection.wordCheckVisible).toBe(true);
+    expect(inspection.isBip39).toBe(true);
+  });
+
+  it('marks non-empty unknown material invalid while retaining word-level diagnostics', () => {
+    const inspection = service.inspectMaterial('abandon notaword about');
+
+    expect(inspection.invalid).toBe(true);
+    expect(inspection.isBip39).toBe(false);
+    expect(inspection.mnemonicWordStatuses).toEqual([
+      { word: 'abandon', recognized: true },
+      { word: 'notaword', recognized: false },
+      { word: 'about', recognized: true },
+    ]);
+  });
+
+  it('describes each supported recovery candidate without retaining input state', () => {
+    expect(service.describeCandidate(service.classify('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about')))
+      .toBe('12-word secret recovery mnemonic');
+    expect(service.describeCandidate(service.classify('a'.repeat(64))))
+      .toBe('64-character hexadecimal secret');
+    expect(service.describeCandidate(service.classify('a'.repeat(128))))
+      .toBe('128-character expanded private key');
+    expect((service as any).rawMaterial).toBeUndefined();
+  });
 });

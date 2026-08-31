@@ -19,6 +19,15 @@ export interface RecoveryMnemonicWordStatus {
   recognized: boolean;
 }
 
+export interface RecoveryMaterialInspection {
+  material: string;
+  candidate: RecoveryCandidate;
+  invalid: boolean;
+  mnemonicWordStatuses: ReadonlyArray<RecoveryMnemonicWordStatus>;
+  wordCheckVisible: boolean;
+  isBip39: boolean;
+}
+
 /** Local-only recovery intake and classification. It does not probe nodes or persist wallet material. */
 @Injectable({ providedIn: 'root' })
 export class RecoveryImportService {
@@ -67,6 +76,25 @@ export class RecoveryImportService {
     }
 
     return this.unknown(material);
+  }
+
+  inspectMaterial(rawMaterial: string): RecoveryMaterialInspection {
+    const material = String(rawMaterial || '').trim();
+    const candidate = this.classify(material);
+    return {
+      material,
+      candidate,
+      invalid: material.length > 0 && candidate.kind === 'unknown',
+      mnemonicWordStatuses: this.inspectMnemonicWords(material),
+      wordCheckVisible: this.hasSupportedMnemonicWordCount(material),
+      isBip39: candidate.kind === 'mnemonic',
+    };
+  }
+
+  describeCandidate(candidate: RecoveryCandidate): string {
+    if (candidate.kind === 'mnemonic') return `${candidate.wordCount}-word secret recovery mnemonic`;
+    if (candidate.kind === 'hex-secret') return '64-character hexadecimal secret';
+    return '128-character expanded private key';
   }
 
   inspectMnemonicWords(rawMaterial: string): ReadonlyArray<RecoveryMnemonicWordStatus> {

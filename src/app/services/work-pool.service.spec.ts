@@ -119,6 +119,18 @@ describe('WorkPoolService', () => {
     await expectAsync(pending).toBeRejectedWithError('PoW cache cleared');
   });
 
+  it('cancels active and queued work through the user control seam', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    await Promise.resolve();
+
+    expect(service.cancelAllWork()).toBeTrue();
+    await expectAsync(pending).toBeRejectedWithError('Proof of Work generation cancelled by the user');
+    expect(service.state$.value.activeRoot).toBeNull();
+    expect(service.state$.value.queued).toBe(0);
+    expect(service.cancelAllWork()).toBeFalse();
+  });
+
   it('orders queued background work by priority', () => {
     const service = TestBed.inject(WorkPoolService);
     service.addWorkToCache(root('A'), 1, 'nano_a', 0);

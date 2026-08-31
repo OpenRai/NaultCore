@@ -3,7 +3,7 @@ import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {LedgerService, LedgerStatus} from '../../services/ledger.service';
 import {AppSettingsService} from '../../services/app-settings.service';
-import {PowService} from '../../services/pow.service';
+import {WorkPoolService} from '../../services/work-pool.service';
 import { TestIds } from '../../testing/test-ids';
 
 @Component({
@@ -18,7 +18,7 @@ export class WalletWidgetComponent implements OnInit {
   private notificationService = inject(NotificationService);
   ledgerService = inject(LedgerService);
   settings = inject(AppSettingsService);
-  private powService = inject(PowService);
+  private workPool = inject(WorkPoolService);
 
   readonly testIds = TestIds;
   ledgerStatus = {
@@ -47,13 +47,9 @@ export class WalletWidgetComponent implements OnInit {
       this.ledgerStatus = ledgerStatus;
     });
 
-    // Detect if a PoW is taking too long and alert
-    this.powService.powAlert$.subscribe(async shouldAlert => {
-      if (shouldAlert) {
-        this.powAlert = true;
-      } else {
-        this.powAlert = false;
-      }
+    // Detect if the shared PoW pool is taking too long and alert
+    this.workPool.state$.subscribe(state => {
+      this.powAlert = state.activeElapsedMs >= this.workPool.slowWorkLimitMs;
     });
 
     this.walletService.unlockModalRequested$.subscribe(async wasRequested => {
@@ -153,7 +149,9 @@ export class WalletWidgetComponent implements OnInit {
   }
 
   cancelPow() {
-    this.powService.cancelAllPow(true);
+    if (this.workPool.cancelAllWork()) {
+      this.notificationService.sendInfo(`Proof of Work generation cancelled by the user`);
+    }
   }
 
 }

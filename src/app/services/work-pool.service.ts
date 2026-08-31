@@ -82,6 +82,7 @@ export class WorkPoolService {
 
   readonly storeKey = 'nanovault-workcache';
   readonly cacheLength = 25;
+  readonly slowWorkLimitMs = 60_000;
   readonly state$ = new BehaviorSubject<WorkPoolState>({
     ready: 0,
     queued: 0,
@@ -308,6 +309,15 @@ export class WorkPoolService {
     this.workCache = [];
     this.receiveHints.clear();
     this.persist();
+    this.publishState();
+    return true;
+  }
+
+  /** Cancels active and queued work after an explicit user request. */
+  public cancelAllWork(): boolean {
+    if (!this.activeRequest && this.requests.length === 0) return false;
+    this.cancelPendingRequests(new Error('Proof of Work generation cancelled by the user'));
+    this.state$.next({ ...this.state$.value, lastError: null });
     this.publishState();
     return true;
   }

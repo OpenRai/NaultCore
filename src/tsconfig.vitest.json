@@ -14,6 +14,10 @@
     "app/services/startup.service.spec.ts",
     "app/pipes/amount-split.pipe.spec.ts",
     "app/pipes/rai.pipe.spec.ts",
+    "app/pipes/currency-symbol.pipe.spec.ts",
+    "app/pipes/fiat.pipe.spec.ts",
+    "app/pipes/squeeze.pipe.spec.ts",
+    "app/testing/test-ids.spec.ts",
     "test-setup-vitest.ts"
   ],
   "angularCompilerOptions": {

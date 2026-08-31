@@ -273,7 +273,11 @@
             "include": [
               "src/app/services/startup.service.spec.ts",
               "src/app/pipes/amount-split.pipe.spec.ts",
-              "src/app/pipes/rai.pipe.spec.ts"
+              "src/app/pipes/rai.pipe.spec.ts",
+              "src/app/pipes/currency-symbol.pipe.spec.ts",
+              "src/app/pipes/fiat.pipe.spec.ts",
+              "src/app/pipes/squeeze.pipe.spec.ts",
+              "src/app/testing/test-ids.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { NostrNotificationService, NanoNymNotification } from './nostr-notification.service';
+import { NOSTR_RUNTIME_ADAPTERS, NostrNotificationService, NanoNymNotification } from './nostr-notification.service';
 import { NanoNymCryptoService } from './nanonym-crypto.service';
 import { NostrSyncStateService } from './nostr-sync-state.service';
 import { UtilService } from './util.service';
@@ -22,21 +22,27 @@ featureDescribe('NostrNotificationService', () => {
   let service: NostrNotificationService;
   let cryptoService: NanoNymCryptoService;
   let syncStateService: NostrSyncStateService;
-  let mockPool: { subscribeMany: any; close: any };
+  let mockPool: { subscribeMany: any; publish: any; close: any };
 
   beforeEach(() => {
     localStorage.clear();
+    mockPool = {
+      subscribeMany: vi.fn(() => ({ close: vi.fn() })),
+      publish: vi.fn(),
+      close: vi.fn(),
+    };
     TestBed.configureTestingModule({
-      providers: [NostrNotificationService, NanoNymCryptoService, NostrSyncStateService, UtilService]
+      providers: [
+        NostrNotificationService,
+        NanoNymCryptoService,
+        NostrSyncStateService,
+        UtilService,
+        { provide: NOSTR_RUNTIME_ADAPTERS, useValue: { createPool: () => mockPool } },
+      ]
     });
     service = TestBed.inject(NostrNotificationService);
     cryptoService = TestBed.inject(NanoNymCryptoService);
     syncStateService = TestBed.inject(NostrSyncStateService);
-    mockPool = {
-      subscribeMany: vi.fn(() => ({ close: vi.fn() })),
-      close: vi.fn(),
-    };
-    (service as any).pool = mockPool;
   });
 
   afterEach(() => {

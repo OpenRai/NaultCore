@@ -1,4 +1,4 @@
-import { Injectable, inject } from "@angular/core";
+import { Injectable, InjectionToken, inject } from "@angular/core";
 import * as Rx from "rxjs";
 
 // Type-only imports (erased at compile time)
@@ -17,6 +17,27 @@ if (FEATURE_NANONYMS) {
   nip59 = nostrTools.nip59;
   nip19 = nostrTools.nip19;
 }
+
+export interface NostrPool {
+  publish(relays: string[], event: unknown): Promise<unknown> | unknown;
+  subscribeMany(relays: string[], filter: unknown, handlers: Record<string, unknown>): unknown;
+  close(relays: string[]): void;
+}
+
+export interface NostrRuntimeAdapters {
+  createPool: () => NostrPool;
+}
+
+/** Runtime seam for deterministic Nostr tests and startup adapters. */
+export const NOSTR_RUNTIME_ADAPTERS = new InjectionToken<NostrRuntimeAdapters>(
+  "NOSTR_RUNTIME_ADAPTERS",
+  {
+    providedIn: "root",
+    factory: () => ({
+      createPool: () => new _SimplePool({ enablePing: true, enableReconnect: true }),
+    }),
+  },
+);
 
 export interface NanoNymNotification {
   version: 2;
@@ -38,6 +59,7 @@ export interface RelayStatus {
 })
 export class NostrNotificationService {
   private syncStateService = inject(NostrSyncStateService);
+  private runtimeAdapters = inject(NOSTR_RUNTIME_ADAPTERS);
 
   // Default relay list - can be configured by user later
   // Reduced to 3 most reliable relays for testing
@@ -48,7 +70,7 @@ export class NostrNotificationService {
   ];
 
   // SimplePool for managing multiple relay connections
-  private pool: any;
+  private pool: NostrPool;
 
   // Observable for relay connection status
   public relayStatus$ = new Rx.BehaviorSubject<RelayStatus[]>([]);
@@ -90,16 +112,9 @@ export class NostrNotificationService {
 
   constructor() {
     if (!FEATURE_NANONYMS) return;
-    this.pool = this.createPool();
+    this.pool = this.runtimeAdapters.createPool();
     this.initializeRelays();
     this.setupVisibilityListener();
-  }
-
-  private createPool(): any {
-    return new _SimplePool({
-      enablePing: true,
-      enableReconnect: true,
-    });
   }
 
   private setupVisibilityListener(): void {
@@ -158,7 +173,7 @@ export class NostrNotificationService {
     this.relayFirstSeen.clear();
     this.relayEventCount.clear();
 
-    this.pool = this.createPool();
+    this.pool = this.runtimeAdapters.createPool();
     this.initializeRelays();
 
     this.activeSubscriptionState.forEach((state, nostrPublicHex) => {

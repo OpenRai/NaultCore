@@ -297,7 +297,8 @@
               "src/app/services/wallet.service.spec.ts",
               "src/app/services/work-pool.service.spec.ts",
               "src/app/services/util.service.spec.ts",
-              "src/app/services/websocket.service.spec.ts"
+              "src/app/services/websocket.service.spec.ts",
+              "src/app/components/helpers/nano-account-id/nano-account-id.component.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

@@ -32,6 +32,7 @@
     "app/services/util.service.ts",
     "app/services/websocket.service.spec.ts",
     "app/services/websocket.service.ts",
+    "app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
     "test-setup-vitest.ts",
     "globals.d.ts",
     "../node_modules/vitest/globals.d.ts"

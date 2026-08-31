@@ -34,6 +34,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     await expect.poll(readFixture).toEqual(fixture);
     await seededPage.reload();
     await seededPage.waitForURL('**/accounts', { timeout: 30000 });
+    await expect(seededPage.locator('.nav-status-row:has-text("Wallet Locked")')).toBeVisible({ timeout: 15000 });
     await unlockWalletThroughBridge(seededPage);
     await expect.poll(readFixture).toEqual(fixture);
   });

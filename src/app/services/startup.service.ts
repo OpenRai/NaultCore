@@ -75,6 +75,10 @@ export class StartupService {
   private nextPhaseIndex = 0;
 
   async runPhase<T>(phase: StartupPhaseId, work: () => Promise<T> | T): Promise<T> {
+    const activePhase = this.state$.value.activePhase;
+    if (activePhase !== null) {
+      throw new Error(`Startup phase already running: ${activePhase}`);
+    }
     if (phaseOrder[this.nextPhaseIndex] !== phase) {
       throw new Error(`Startup phase out of order: expected ${phaseOrder[this.nextPhaseIndex]}, got ${phase}`);
     }

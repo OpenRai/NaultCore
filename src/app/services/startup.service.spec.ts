@@ -30,6 +30,26 @@ describe('StartupService', () => {
     expect(service.state$.value.phases.runtime.status).toBe('pending');
   });
 
+  it('rejects duplicate phase execution while the first invocation is running', async () => {
+    const service = new StartupService();
+    let release!: () => void;
+    const running = new Promise<void>((resolve) => { release = resolve; });
+
+    const first = service.runPhase('runtime', () => running);
+    let error: unknown;
+    try {
+      await service.runPhase('runtime', () => undefined);
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error instanceof Error ? error.message : error).toBe('Startup phase already running: runtime');
+    expect(service.state$.value.phases.runtime.status).toBe('running');
+    release();
+    await first;
+    expect(service.state$.value.phases.runtime.status).toBe('complete');
+  });
+
   it('publishes a failed phase and a network diagnostic reason', async () => {
     const service = new StartupService();
     const failure = new Error('node unavailable');

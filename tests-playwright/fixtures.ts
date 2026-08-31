@@ -1,5 +1,6 @@
 import { test as base, expect, Page } from '@playwright/test';
 import { E2ETestWallet, e2eWalletPassword, getE2ETestWallet } from './test-wallet';
+import { installStartupNetworkMocks } from './startup-network-mocks';
 
 /**
  * Playwright fixtures for NanoNymNault E2E tests.
@@ -15,13 +16,26 @@ export type WalletFixtures = {
   testWallet: E2ETestWallet;
 };
 
+type StartupFixtures = {
+  /** Mock by default; live network must be explicitly opted into by a suite. */
+  startupNetworkMode: 'mock' | 'live';
+  startupNetwork: void;
+};
+
 export async function unlockWalletThroughBridge(page: Page, password = e2eWalletPassword): Promise<void> {
   await page.waitForFunction(() => typeof window.__NAULTCORE_E2E__?.unlock === 'function');
   const unlocked = await page.evaluate(value => window.__NAULTCORE_E2E__!.unlock(value), password);
   expect(unlocked).toBe(true);
 }
 
-export const test = base.extend<WalletFixtures>({
+export const test = base.extend<WalletFixtures & StartupFixtures>({
+  startupNetworkMode: ['mock', { option: true }],
+
+  startupNetwork: [async ({ page, startupNetworkMode }, use) => {
+    if (startupNetworkMode === 'mock') await installStartupNetworkMocks(page);
+    await use();
+  }, { auto: true }],
+
   testWallet: [async ({}, use) => {
     await use(getE2ETestWallet());
   }, { scope: 'test' }],

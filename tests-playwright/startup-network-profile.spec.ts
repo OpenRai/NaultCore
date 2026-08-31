@@ -1,6 +1,8 @@
 import { writeFileSync } from 'node:fs';
 import { test, expect, unlockWalletThroughBridge } from './fixtures';
 
+test.use({ startupNetworkMode: 'live' });
+
 /**
  * Opt-in startup network profiler.
  *

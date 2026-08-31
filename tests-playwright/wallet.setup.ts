@@ -2,9 +2,11 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { e2eStorageStatePath, getE2ETestWallet } from './test-wallet';
+import { installStartupNetworkMocks } from './startup-network-mocks';
 
 test('creates the reusable E2E wallet storage snapshot', async ({ page }) => {
   const wallet = getE2ETestWallet();
+  await installStartupNetworkMocks(page);
 
   await page.addInitScript(storageValue => {
     localStorage.setItem('nanovault-wallet', storageValue);

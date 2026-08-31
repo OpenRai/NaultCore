@@ -12,6 +12,8 @@
  */
 import { test, expect, unlockWalletThroughBridge } from './fixtures';
 
+test.use({ startupNetworkMode: 'live' });
+
 const skipOnchain = process.env.SKIP_ONCHAIN_E2E === 'true';
 
 test.describe('nano_ roundtrip: send between own accounts', () => {

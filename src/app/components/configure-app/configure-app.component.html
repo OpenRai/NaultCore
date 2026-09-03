@@ -174,14 +174,15 @@
             <div class="uk-form-horizontal">
 
               <div class="uk-margin">
-                <fieldset class="uk-form-controls pow-source-fieldset" [attr.aria-busy]="(powRoutingState$ | async)?.status === 'probing'">
+                <fieldset class="pow-source-fieldset" [attr.aria-busy]="(powRoutingState$ | async)?.status === 'probing'">
                   <legend class="uk-form-label">{{ 'configure-app.pow-source' | transloco }}</legend>
                 <div class="uk-form-controls">
-                  <div class="pow-source-segments" role="radiogroup" [attr.aria-label]="'configure-app.pow-source' | transloco">
+                  <div class="uk-inline uk-width-1-1">
+                    <select class="uk-select" [(ngModel)]="selectedPoWOption" [attr.aria-label]="'configure-app.pow-source' | transloco">
                     @for (pow of powOptions; track pow.value) {
-                      <input class="pow-source-radio" type="radio" [id]="'pow-source-' + pow.value" name="powSource" [value]="pow.value" [(ngModel)]="selectedPoWOption">
-                      <label class="pow-source-segment" [for]="'pow-source-' + pow.value">{{ pow.name | transloco }}</label>
+                      <option [value]="pow.value">{{ pow.name | transloco }}</option>
                     }
+                    </select>
                   </div>
                 </div>
                 </fieldset>

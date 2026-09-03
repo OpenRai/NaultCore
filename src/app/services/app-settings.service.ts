@@ -117,6 +117,14 @@ export class AppSettingsService {
     //   shouldRandom: false,
     // },
     {
+      name: 'Berry Pay',
+      value: 'berrypay',
+      api: 'https://xno-rpc.berrypay.org/proxy',
+      ws: 'wss://xno-rpc.berrypay.org/ws',
+      auth: null,
+      shouldRandom: true,
+    },
+    {
       name: 'Testnet (Local Node)',
       value: 'testnet',
       api: 'http://localhost:17076',

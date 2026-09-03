@@ -5,8 +5,7 @@ import { RecoveryVerificationService } from './recovery-verification.service';
 import { UtilService } from './util.service';
 
 function partial<T extends object>(value: T): any {
-  const jasmineApi = (globalThis as any).jasmine;
-  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+  return expect.objectContaining(value);
 }
 
 describe('RecoveryVerificationService', () => {

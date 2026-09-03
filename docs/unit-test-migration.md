@@ -1,24 +1,18 @@
-# Unit Test Runner Migration
+# Unit Test Architecture
 
-This repository is migrating Angular unit tests from Karma/Jasmine to Vitest.
-The migration keeps the NaultCore and NanoNym feature profiles separate while
-the two runners provide a temporary parity gate.
+NaultCore runs Angular unit tests with Vitest. The test targets keep the
+NaultCore and NanoNym feature profiles separate, while Playwright covers
+browser-level workflows.
 
-## Current inventory
+## Inventory contract
 
-At commit `4dc8fca`:
+The `include` arrays in `angular.json` are the active-unit-test inventory.
+`pnpm run verify:test-inventory` verifies that every spec file containing an
+active `it(...)` or `test(...)` declaration belongs to one of those targets.
+Skipped or archived placeholders are intentionally excluded.
 
-- `src/**/*.spec.ts` contains 68 spec files.
-- 28 files contain active `it(...)` or `test(...)` declarations.
-- Every active spec file is included by one of the Vitest targets in
-  `angular.json`.
-- The remaining 40 files contain no active test declarations. They are
-  placeholder, `xit(...)`-only, or integration-only files and are not part of
-  the Vitest targets.
-
-The `include` arrays in `angular.json` are the migration inventory. Use an
-anchored declaration search when auditing coverage; a loose `it(` search also
-matches skipped `xit(...)` tests.
+Audit the active inventory with an anchored declaration search so skipped tests
+are not counted as active:
 
 ```bash
 for file in $(rg --files src -g '*.spec.ts'); do
@@ -26,44 +20,22 @@ for file in $(rg --files src -g '*.spec.ts'); do
 done
 ```
 
-## Local runners
+## Local validation
 
-Run both feature profiles through Vitest:
-
-```bash
-source ~/.nvm/nvm.sh
-nvm exec pnpm run test:vitest
-nvm exec pnpm run test:vitest:nanonyms
-nvm exec pnpm run verify:test-inventory
-```
-
-`verify:test-inventory` fails if an `it(...)` or `test(...)` declaration appears
-outside the configured Vitest targets or if a configured target file is missing.
-CI runs this guard before the temporary Karma parity suite.
-
-Karma remains enabled as a temporary parity runner. On macOS, run it with
-Brave:
+Run the complete unit-test path with one command:
 
 ```bash
 source ~/.nvm/nvm.sh
-CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" \
-  nvm exec pnpm test
+nvm exec pnpm test
 ```
 
-The GitHub Actions unit job runs both Vitest targets and Karma. Playwright is
-the browser-level gate and runs after that unit job.
+This runs the NaultCore Vitest target, the NanoNym-enabled Vitest target, and
+the inventory guard. Run Playwright separately for browser-level validation as
+documented in [Testing](testing.md).
 
-## Retirement gate
+## Retirement record
 
-Do not remove Karma until all of these conditions hold:
-
-1. The active-spec inventory remains fully represented by the Vitest targets.
-2. Both Vitest profiles pass locally and in CI with meaningful assertions.
-3. The unit job passes on three consecutive current `main` or pull-request
-   runs.
-4. The Playwright job passes on the same current head.
-
-After the gate passes, remove the Karma packages, Angular Karma target,
-`karma.conf.js`, and obsolete Karma scripts and workflow references in one
-reviewable change. Keep the Vitest targets and Playwright workflow as the
-replacement validation paths.
+The legacy browser harness and its assertion framework were removed after the
+active inventory was represented by Vitest and both feature profiles had local
+unit and browser-level validation. New tests should use Vitest APIs such as
+`vi.fn`, `vi.spyOn`, fake timers, and `expect.objectContaining`.

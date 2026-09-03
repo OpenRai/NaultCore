@@ -126,6 +126,20 @@ test('exports a wallet backup', async ({ seededPage }) => {
   await expect(seededPage.getByRole('button', { name: 'Export As File' })).toBeVisible();
 });
 
+test('keeps recovery-secret copying behind the backup warning', async ({ seededPage }) => {
+  await navigate(seededPage, '/manage-wallet');
+
+  await seededPage.getByTestId('manage-wallet-reveal-mnemonic-button').click();
+  const modal = seededPage.locator('#backup-secrets-modal');
+  await expect(modal).toBeVisible();
+  await expect(modal.locator('.backup-warning-sticker')).toBeVisible();
+  await expect(seededPage.getByTestId('manage-wallet-copy-mnemonic-button')).toBeVisible();
+
+  const seedDisclosure = modal.locator('.backup-seed-disclosure');
+  await expect(seedDisclosure).not.toHaveAttribute('open', '');
+  await expect(seededPage.getByTestId('manage-wallet-copy-seed-button')).not.toBeVisible();
+});
+
 test('opens the representative management flow', async ({ seededPage }) => {
   await navigate(seededPage, '/representatives');
   await expect(seededPage.getByTestId('representatives-page-root')).toBeVisible();

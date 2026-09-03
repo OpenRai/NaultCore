@@ -33,20 +33,17 @@ function createSpy(name?: string): any {
   return spy;
 }
 
-const jasmineApi = {
+const vitestApi = {
   createSpy,
   objectContaining(value: unknown): unknown {
-    const expectApi = (globalThis as any).expect;
-    return expectApi.objectContaining
-      ? expectApi.objectContaining(value)
-      : (globalThis as any).jasmine.objectContaining(value);
+    return expect.objectContaining(value);
   },
 };
 
 class MockNanoNymStorageService {
-  getNextIndex = jasmineApi.createSpy('getNextIndex').and.returnValue(0);
-  addNanoNym = jasmineApi.createSpy('addNanoNym');
-  getNanoNym = jasmineApi.createSpy('getNanoNym').and.returnValue({
+  getNextIndex = vitestApi.createSpy('getNextIndex').and.returnValue(0);
+  addNanoNym = vitestApi.createSpy('addNanoNym');
+  getNanoNym = vitestApi.createSpy('getNanoNym').and.returnValue({
     index: 0,
     label: 'TestNym',
     nnymAddress: 'nnym_testaddress',
@@ -64,27 +61,27 @@ class MockNanoNymStorageService {
     paymentCount: 0,
     stealthAccounts: [],
   });
-  updateNanoNym = jasmineApi.createSpy('updateNanoNym');
-  addStealthAccount = jasmineApi.createSpy('addStealthAccount');
-  updateStealthAccountBalance = jasmineApi.createSpy('updateStealthAccountBalance');
-  getAllNanoNyms = jasmineApi.createSpy('getAllNanoNyms').and.returnValue([]);
-  getActiveNanoNyms = jasmineApi.createSpy('getActiveNanoNyms').and.returnValue([]);
-  whenLoaded = jasmineApi.createSpy('whenLoaded').and.returnValue(Promise.resolve());
+  updateNanoNym = vitestApi.createSpy('updateNanoNym');
+  addStealthAccount = vitestApi.createSpy('addStealthAccount');
+  updateStealthAccountBalance = vitestApi.createSpy('updateStealthAccountBalance');
+  getAllNanoNyms = vitestApi.createSpy('getAllNanoNyms').and.returnValue([]);
+  getActiveNanoNyms = vitestApi.createSpy('getActiveNanoNyms').and.returnValue([]);
+  whenLoaded = vitestApi.createSpy('whenLoaded').and.returnValue(Promise.resolve());
 }
 
 class MockNanoNymCryptoService {
-  deriveNanoNymKeys = jasmineApi.createSpy('deriveNanoNymKeys').and.returnValue({
+  deriveNanoNymKeys = vitestApi.createSpy('deriveNanoNymKeys').and.returnValue({
     spend: { public: new Uint8Array(32), private: new Uint8Array(32) },
     view: { public: new Uint8Array(32), private: new Uint8Array(32) },
     nostr: { public: new Uint8Array(32), private: new Uint8Array(32) },
   });
-  encodeNanoNymAddress = jasmineApi.createSpy('encodeNanoNymAddress').and.returnValue('nnym_testaddress');
-  getFallbackAddress = jasmineApi.createSpy('getFallbackAddress').and.returnValue('nano_testfallback');
-  generateSharedSecret = jasmineApi.createSpy('generateSharedSecret').and.returnValue(new Uint8Array(32));
-  deriveStealthAddress = jasmineApi.createSpy('deriveStealthAddress').and.returnValue({ address: 'nano_stealth', publicKey: new Uint8Array(32) });
-  deriveStealthPrivateKey = jasmineApi.createSpy('deriveStealthPrivateKey').and.returnValue(new Uint8Array(32));
-  hexToUint8Array = jasmineApi.createSpy('hexToUint8Array').and.callFake((hex: string) => new Uint8Array(hex.length / 2));
-  getKeyPairFromPrivateKey = jasmineApi.createSpy('getKeyPairFromPrivateKey').and.callFake((privKey: Uint8Array) => ({
+  encodeNanoNymAddress = vitestApi.createSpy('encodeNanoNymAddress').and.returnValue('nnym_testaddress');
+  getFallbackAddress = vitestApi.createSpy('getFallbackAddress').and.returnValue('nano_testfallback');
+  generateSharedSecret = vitestApi.createSpy('generateSharedSecret').and.returnValue(new Uint8Array(32));
+  deriveStealthAddress = vitestApi.createSpy('deriveStealthAddress').and.returnValue({ address: 'nano_stealth', publicKey: new Uint8Array(32) });
+  deriveStealthPrivateKey = vitestApi.createSpy('deriveStealthPrivateKey').and.returnValue(new Uint8Array(32));
+  hexToUint8Array = vitestApi.createSpy('hexToUint8Array').and.callFake((hex: string) => new Uint8Array(hex.length / 2));
+  getKeyPairFromPrivateKey = vitestApi.createSpy('getKeyPairFromPrivateKey').and.callFake((privKey: Uint8Array) => ({
     secretKey: privKey,
     publicKey: new Uint8Array(32)
   }));
@@ -102,12 +99,12 @@ class MockNostrNotificationService {
       memo: 'test memo'
     }
   });
-  subscribeToNotifications = jasmineApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
-  unsubscribeFromNotifications = jasmineApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
+  subscribeToNotifications = vitestApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
+  unsubscribeFromNotifications = vitestApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
 }
 
 class MockApiService {
-  accountInfo = jasmineApi.createSpy('accountInfo').and.returnValue(of({ balance: '0', error: 'Account not found' }).toPromise());
+  accountInfo = vitestApi.createSpy('accountInfo').and.returnValue(of({ balance: '0', error: 'Account not found' }).toPromise());
 }
 
 class MockWalletService {
@@ -120,40 +117,40 @@ class MockWalletService {
   }
   isLocked = () => this.locked;
   getRecoverySecret = () => this.locked ? null : 'testseed';
-  getWalletAccount = jasmineApi.createSpy('getWalletAccount');
+  getWalletAccount = vitestApi.createSpy('getWalletAccount');
 }
 
 class MockNanoBlockService {
-  generateReceive = jasmineApi.createSpy('generateReceive').and.returnValue(Promise.resolve('tx_hash_receive'));
-  generateSend = jasmineApi.createSpy('generateSend').and.returnValue(Promise.resolve('tx_hash_send'));
+  generateReceive = vitestApi.createSpy('generateReceive').and.returnValue(Promise.resolve('tx_hash_receive'));
+  generateSend = vitestApi.createSpy('generateSend').and.returnValue(Promise.resolve('tx_hash_send'));
 }
 
 class MockUtilService {
   hex = {
-    toUint8: jasmineApi.createSpy('toUint8').and.callFake((hex: string) => new Uint8Array(hex.length / 2)),
-    fromUint8: jasmineApi.createSpy('fromUint8').and.callFake((arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(''))
+    toUint8: vitestApi.createSpy('toUint8').and.callFake((hex: string) => new Uint8Array(hex.length / 2)),
+    fromUint8: vitestApi.createSpy('fromUint8').and.callFake((arr: Uint8Array) => Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join(''))
   };
   account = {
-    getPublicAccountID: jasmineApi.createSpy('getPublicAccountID').and.returnValue('nano_accountid'),
-    getAccountPublicKey: jasmineApi.createSpy('getAccountPublicKey').and.returnValue('account_public_key'),
+    getPublicAccountID: vitestApi.createSpy('getPublicAccountID').and.returnValue('nano_accountid'),
+    getAccountPublicKey: vitestApi.createSpy('getAccountPublicKey').and.returnValue('account_public_key'),
   };
   nano = {
-    rawToMnano: jasmineApi.createSpy('rawToMnano').and.callFake((raw: BigNumber) => raw.dividedBy('1000000000000000000000000000000'))
+    rawToMnano: vitestApi.createSpy('rawToMnano').and.callFake((raw: BigNumber) => raw.dividedBy('1000000000000000000000000000000'))
   }
 }
 
 class MockNotificationService {
-  sendSuccess = jasmineApi.createSpy('sendSuccess');
-  sendInfo = jasmineApi.createSpy('sendInfo');
-  removeNotification = jasmineApi.createSpy('removeNotification');
+  sendSuccess = vitestApi.createSpy('sendSuccess');
+  sendInfo = vitestApi.createSpy('sendInfo');
+  removeNotification = vitestApi.createSpy('removeNotification');
 }
 
 class MockNoPaddingZerosPipe {
-  transform = jasmineApi.createSpy('transform').and.callFake(value => value);
+  transform = vitestApi.createSpy('transform').and.callFake(value => value);
 }
 
 class MockNanoNymAccountSelectionService {
-  selectAccountsForSend = jasmineApi.createSpy('selectAccountsForSend').and.returnValue(Promise.resolve({
+  selectAccountsForSend = vitestApi.createSpy('selectAccountsForSend').and.returnValue(Promise.resolve({
     selectedAccounts: [],
     totalSelectedAmount: new BigNumber(0),
     privacyImpact: { numberOfSources: 0, warningLevel: 'none' }
@@ -161,8 +158,8 @@ class MockNanoNymAccountSelectionService {
 }
 
 class MockWebsocketService {
-  subscribeAccounts = jasmineApi.createSpy('subscribeAccounts');
-  unsubscribeAccounts = jasmineApi.createSpy('unsubscribeAccounts');
+  subscribeAccounts = vitestApi.createSpy('subscribeAccounts');
+  unsubscribeAccounts = vitestApi.createSpy('unsubscribeAccounts');
   newTransactions$ = new BehaviorSubject(null);
 }
 
@@ -174,15 +171,15 @@ class MockAppSettingsService {
 
 class MockOrbitdbNotificationService {
   incomingNotifications$ = new BehaviorSubject(null);
-  subscribeToNotifications = jasmineApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
-  unsubscribeFromNotifications = jasmineApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
+  subscribeToNotifications = vitestApi.createSpy('subscribeToNotifications').and.returnValue(Promise.resolve());
+  unsubscribeFromNotifications = vitestApi.createSpy('unsubscribeFromNotifications').and.returnValue(Promise.resolve());
 }
 
 class MockWorkPoolService {
-  addWorkToCache = jasmineApi.createSpy('addWorkToCache');
+  addWorkToCache = vitestApi.createSpy('addWorkToCache');
 }
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
 
 featureDescribe('NanoNymManagerService', () => {
 
@@ -200,7 +197,7 @@ featureDescribe('NanoNymManagerService', () => {
     (window as any).nacl = {
       sign: {
         keyPair: {
-          fromSecretKey: jasmineApi.createSpy('fromSecretKey').and.returnValue({
+          fromSecretKey: vitestApi.createSpy('fromSecretKey').and.returnValue({
             secretKey: new Uint8Array(32),
             publicKey: new Uint8Array(32),
           }),
@@ -259,7 +256,7 @@ featureDescribe('NanoNymManagerService', () => {
       (window as any).nacl = {
         sign: {
           keyPair: {
-            fromSecretKey: jasmineApi.createSpy('fromSecretKey').and.returnValue({
+            fromSecretKey: vitestApi.createSpy('fromSecretKey').and.returnValue({
               secretKey: new Uint8Array(32),
               publicKey: new Uint8Array(32),
             }),
@@ -309,7 +306,7 @@ featureDescribe('NanoNymManagerService', () => {
       expect(apiService.accountInfo).toHaveBeenCalledWith('nano_stealth');
       expect(nanoNymStorageService.addStealthAccount).toHaveBeenCalled();
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmineApi.objectContaining({
+        vitestApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -420,7 +417,7 @@ featureDescribe('NanoNymManagerService', () => {
       // Expect generateReceive to have been called for both pending blocks
       expect(nanoBlockService.generateReceive).toHaveBeenCalledTimes(2);
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmineApi.objectContaining({
+        vitestApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -428,7 +425,7 @@ featureDescribe('NanoNymManagerService', () => {
         false
       );
       expect(nanoBlockService.generateReceive).toHaveBeenCalledWith(
-        jasmineApi.objectContaining({
+        vitestApi.objectContaining({
           id: 'nano_stealth',
           secret: new Uint8Array(Array(32).fill(1)),
         }),
@@ -681,13 +678,13 @@ featureDescribe('NanoNymManagerService', () => {
       // Assert generateSend was called for each selected account
       expect(nanoBlockService.generateSend).toHaveBeenCalledTimes(2);
       expect(nanoBlockService.generateSend).toHaveBeenCalledWith(
-        jasmineApi.objectContaining({ id: 'nano_stealth1' }),
+        vitestApi.objectContaining({ id: 'nano_stealth1' }),
         destinationAddress,
         selectedStealthAccounts[0].amountRaw.toString(),
         false
       );
       expect(nanoBlockService.generateSend).toHaveBeenCalledWith(
-        jasmineApi.objectContaining({ id: 'nano_stealth2' }),
+        vitestApi.objectContaining({ id: 'nano_stealth2' }),
         destinationAddress,
         selectedStealthAccounts[1].amountRaw.toString(),
         false

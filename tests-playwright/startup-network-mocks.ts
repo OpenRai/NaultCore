@@ -62,7 +62,15 @@ function rpcResponse(
         })),
       };
     case 'accounts_frontiers':
-      return { frontiers: Object.fromEntries(accounts.map(account => [account, accountState(state, account).frontier])) };
+      return {
+        frontiers: Object.fromEntries(accounts.flatMap(account => {
+          const frontier = accountState(state, account).frontier;
+          // Nano omits unopened accounts from this response. Returning an
+          // all-zero frontier incorrectly makes wallet hydration treat the
+          // account as opened and invalidates receive/open work.
+          return frontier === ZERO_FRONTIER ? [] : [[account, frontier]];
+        })),
+      };
     case 'accounts_pending':
       return { blocks: Object.fromEntries(accounts.map(account => {
         const current = accountState(state, account);

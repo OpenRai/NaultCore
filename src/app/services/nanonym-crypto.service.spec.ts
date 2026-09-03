@@ -2,7 +2,7 @@ import { TestBed } from "@angular/core/testing";
 import { NanoNymCryptoService } from "./nanonym-crypto.service";
 import { UtilService } from "./util.service";
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
 
 featureDescribe("NanoNymCryptoService", () => {
   let service: NanoNymCryptoService;

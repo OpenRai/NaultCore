@@ -15,6 +15,7 @@ process.env.FEATURE_NANONYMS = featureNanonyms ? 'true' : 'false';
 const hasFundedSeed = Boolean(process.env.NANO_TEST_SEED?.trim());
 
 const isCI = !!process.env.CI;
+const isHeadless = isCI || process.env.PLAYWRIGHT_HEADLESS === 'true';
 const browserBin = process.env.CHROME_BIN || undefined;
 
 function getWebServerCommand(): string {
@@ -38,8 +39,8 @@ export default defineConfig({
     baseURL: 'http://localhost:4200',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
-    // Local: see the browser. CI: headless.
-    headless: isCI,
+    // CI and PLAYWRIGHT_HEADLESS=true run without opening a browser window.
+    headless: isHeadless,
   },
   projects: [
     ...(hasFundedSeed ? [{

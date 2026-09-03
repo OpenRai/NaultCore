@@ -49,12 +49,12 @@
           }
           @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
-              To backup your wallet's secret recovery mnemonic, <a [title]="('configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco)" ngxClipboard [cbContent]="seedMnemonic()" (cbOnSuccess)="notifications.sendSuccess('Wallet mnemonic copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.
+              Back up your wallet's secret recovery mnemonic from the <button type="button" class="backup-secret-link" (click)="openSecretBackupModal()" [attr.data-testid]="testIds.manageWallet.revealMnemonicButton">recovery phrases</button> dialog.
             </p>
           }
           @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
             <p>
-              To backup your wallet's secret recovery seed, <a [title]="( 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco )" ngxClipboard [cbContent]="walletService.getRecoverySecret()" (cbOnSuccess)="notifications.sendSuccess('Wallet seed copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
+              The hexadecimal secret recovery seed is available from the same <button type="button" class="backup-secret-link" (click)="openSecretBackupModal()" [attr.data-testid]="testIds.manageWallet.revealSeedButton">recovery phrases</button> dialog.
             </p>
           }
           @if (!walletService.lifecycle.locked && (walletService.lifecycle.type === 'privateKey' || walletService.lifecycle.type === 'expandedKey')) {
@@ -62,6 +62,58 @@
               To backup your wallet account's private key, <a title="Copy Private Key" ngxClipboard [cbContent]="walletService.getRecoverySecret()" (cbOnSuccess)="notifications.sendSuccess('Private Key copied to clipboard!')" uk-tooltip>click here</a> to copy it to your clipboard.<br>
             </p>
           }
+        </div>
+      </div>
+    }
+
+    @if (!walletService.lifecycle.locked && walletService.lifecycle.type === 'seed') {
+      <div id="backup-secrets-modal" uk-modal>
+        <div class="uk-modal-dialog uk-modal-body backup-secrets-modal" aria-labelledby="backup-secrets-modal-title">
+          <button class="uk-modal-close-default" type="button" uk-close aria-label="Close recovery phrases"></button>
+          <h2 id="backup-secrets-modal-title" class="uk-modal-title">Secret recovery phrases</h2>
+
+          <div class="backup-warning-sticker" role="alert">
+            <div class="backup-warning-symbol" aria-hidden="true"><span>!</span></div>
+            <p>
+              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.1' | transloco }}<strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.2-strong' | transloco }}</strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.3' | transloco }}<br>
+              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.2' | transloco }}
+            </p>
+          </div>
+
+          <section class="backup-mnemonic" aria-labelledby="backup-modal-mnemonic-heading">
+            <h3 id="backup-modal-mnemonic-heading">{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</h3>
+            <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
+            <div class="backup-secret-value">{{ seedMnemonic() }}</div>
+            <button
+              type="button"
+              class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
+              ngxClipboard
+              [cbContent]="seedMnemonic()"
+              (cbOnSuccess)="notifications.sendSuccess('Wallet mnemonic copied to clipboard!')"
+              [attr.data-testid]="testIds.manageWallet.copyMnemonicButton"
+            >
+              <span class="nlt-icon" uk-icon="icon: copy;"></span>
+              {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
+            </button>
+            <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
+          </section>
+
+          <details class="backup-seed-disclosure">
+            <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>
+            <p>{{ 'configure-wallet.new-wallet.seed-backup-guidance' | transloco }}</p>
+            <div class="backup-secret-value">{{ walletService.getRecoverySecret() }}</div>
+            <button
+              type="button"
+              class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
+              ngxClipboard
+              [cbContent]="walletService.getRecoverySecret()"
+              (cbOnSuccess)="notifications.sendSuccess('Wallet seed copied to clipboard!')"
+              [attr.data-testid]="testIds.manageWallet.copySeedButton"
+            >
+              <span class="nlt-icon" uk-icon="icon: copy;"></span>
+              {{ 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco }}
+            </button>
+          </details>
         </div>
       </div>
     }

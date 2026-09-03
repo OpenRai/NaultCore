@@ -40,6 +40,21 @@
 		}
 	}
 
+	// Account cards need a recognizable mark without competing with balances.
+	// Keep the brighter field at the far edge; all text sits over the darker,
+	// higher-contrast side of the card.
+	&.is-card {
+		background: linear-gradient(110deg, #286EAE 0%, #3D86D1 100%);
+
+		> .logo {
+			background-image: url('../../assets/img/symbol-white.png');
+			background-size: auto 128%;
+			background-position: calc(100% + 26px) 58%;
+			opacity: 0.13;
+			transform: rotate(-10deg);
+		}
+	}
+
 	&.incoming-card {
 		background: #272837;
 
@@ -76,12 +91,14 @@
 		background-size: 170%;
 		background-position: 29% 30%;
 		background-repeat: no-repeat;
+		pointer-events: none;
 	}
 
 	> .card-contents {
 		position: absolute;
 		width: 100%;
 		height: 100%;
+		z-index: 1;
 	}
 
 	> .card-contents > .account-name-container {

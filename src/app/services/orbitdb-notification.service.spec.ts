@@ -5,13 +5,13 @@ import { NanoNymNotification } from './nostr-notification.service';
 /**
  * OrbitDB tests - ARCHIVED
  *
- * These tests are marked as pending (xit) because the OrbitDB/Helia
+ * These tests are marked as pending because the OrbitDB/Helia
  * approach has been archived. They serve as reference for the next
  * Tier2 implementation.
  *
  * TODO: Rewrite tests for new Tier2 backend
  */
-(FEATURE_NANONYMS ? describe : xdescribe)('OrbitdbNotificationService Standalone', () => {
+(FEATURE_NANONYMS ? describe : describe.skip)('OrbitdbNotificationService Standalone', () => {
   let service: OrbitdbNotificationService;
 
   beforeEach(() => {
@@ -24,11 +24,11 @@ import { NanoNymNotification } from './nostr-notification.service';
     await service.shutdown();
   });
 
-  xit('should be created', () => {
+  it.skip('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  xit('should initialize without relay (standalone mode)', async () => {
+  it.skip('should initialize without relay (standalone mode)', async () => {
     const initResult = await service.initialize();
     expect(initResult).toBeTrue();
     expect(service.isReady()).toBeTrue();
@@ -42,7 +42,7 @@ import { NanoNymNotification } from './nostr-notification.service';
     console.log('Standalone DB address:', service['db']?.address);
   });
 
-  xit('should post and retrieve notification in standalone mode', async () => {
+  it.skip('should post and retrieve notification in standalone mode', async () => {
     await service.initialize();
 
     const mockNotification: NanoNymNotification = {
@@ -73,7 +73,7 @@ import { NanoNymNotification } from './nostr-notification.service';
   }, 30000);
 });
 
-(FEATURE_NANONYMS ? describe : xdescribe)('OrbitdbNotificationService with Relay', () => {
+(FEATURE_NANONYMS ? describe : describe.skip)('OrbitdbNotificationService with Relay', () => {
   let service: OrbitdbNotificationService;
 
   beforeEach(() => {
@@ -85,7 +85,7 @@ import { NanoNymNotification } from './nostr-notification.service';
     await service.shutdown();
   });
 
-  xit('should connect to relay and open remote database', async () => {
+  it.skip('should connect to relay and open remote database', async () => {
     const initResult = await service.initialize();
     expect(initResult).toBeTrue();
     expect(service.isReady()).toBeTrue();
@@ -95,7 +95,7 @@ import { NanoNymNotification } from './nostr-notification.service';
     expect(nodeInfo).toBeTruthy();
   });
 
-  xit('should post and retrieve notification with relay', async () => {
+  it.skip('should post and retrieve notification with relay', async () => {
     await service.initialize();
 
     const mockNotification: NanoNymNotification = {

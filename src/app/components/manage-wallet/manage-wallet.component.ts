@@ -102,6 +102,10 @@ export class ManageWalletComponent implements OnInit {
     await this.walletService.requestWalletUnlock();
   }
 
+  openSecretBackupModal() {
+    window['UIkit'].modal('#backup-secrets-modal').show();
+  }
+
   async exportWallet() {
     if (this.walletService.isLocked()) {
       const wasUnlocked = await this.walletService.requestWalletUnlock();

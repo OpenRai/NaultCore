@@ -12,8 +12,8 @@ describe('MusigService', () => {
 
   // SKIPPED: Test may fail due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit('should be created', () => {
+  // See docs/testing.md for the current test commands.
+  it.skip('should be created', () => {
     expect(service).toBeTruthy();
   });
 });

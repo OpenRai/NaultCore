@@ -27,8 +27,8 @@ describe('SendComponent', () => {
 
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  const skippedIt = (globalThis as any).xit ?? (it as any).skip;
+  // See docs/testing.md for the current test commands.
+  const skippedIt = it.skip;
   skippedIt('should create', () => {
     expect(SendComponent).toBeTruthy();
   });

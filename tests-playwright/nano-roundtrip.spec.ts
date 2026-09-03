@@ -12,8 +12,6 @@
  */
 import { test, expect, unlockWalletThroughBridge } from './fixtures';
 
-test.use({ startupNetworkMode: 'live' });
-
 const skipOnchain = process.env.SKIP_ONCHAIN_E2E === 'true';
 
 test.describe('nano_ roundtrip: send between own accounts', () => {
@@ -48,66 +46,70 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     await expect(accountRows.first()).toContainText(/nano_/);
   });
 
-  test('should send XNO to second account via external address', async ({ seededPage, testWallet }) => {
-    test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
-    test.slow();
+  test.describe('funded transfers', () => {
+    test.use({ startupNetworkMode: 'live' });
 
-    // Use the fixture's deterministic account mapping instead of relying on
-    // account-row ordering, which can change while balances hydrate.
-    await seededPage.locator('a[href="/accounts"]').click();
-    const accountRows = seededPage.locator('[data-testid="accounts-row"]');
-    const destinationAccount = testWallet.accounts[0];
-    await expect(seededPage.locator(`[data-testid="accounts-row"][data-account-id="${destinationAccount}"]`)).toBeVisible({ timeout: 15000 });
+    test('should send XNO to second account via external address', async ({ seededPage, testWallet }) => {
+      test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
+      test.slow();
 
-    // Navigate to Send
-    await seededPage.locator('a[href="/send"]').click();
-    await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
-    const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
-    await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
-    await sourceSelect.selectOption(testWallet.accounts[1]);
-    await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
+      // Use the fixture's deterministic account mapping instead of relying on
+      // account-row ordering, which can change while balances hydrate.
+      await seededPage.locator('a[href="/accounts"]').click();
+      const accountRows = seededPage.locator('[data-testid="accounts-row"]');
+      const destinationAccount = testWallet.accounts[0];
+      await expect(seededPage.locator(`[data-testid="accounts-row"][data-account-id="${destinationAccount}"]`)).toBeVisible({ timeout: 15000 });
 
-    await seededPage.locator('[data-testid="send-address-input"]').fill(destinationAccount);
-    await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
-    await seededPage.locator('[data-testid="send-send-button"]').click();
+      // Navigate to Send
+      await seededPage.locator('a[href="/send"]').click();
+      await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
+      const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
+      await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
+      await sourceSelect.selectOption(testWallet.accounts[1]);
+      await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
 
-    const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
-    await expect(confirmButton).toBeVisible({ timeout: 15000 });
-    await confirmButton.click();
-    await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
-  });
+      await seededPage.locator('[data-testid="send-address-input"]').fill(destinationAccount);
+      await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
+      await seededPage.locator('[data-testid="send-send-button"]').click();
 
-  test('should transfer XNO between own accounts', async ({ seededPage, testWallet }) => {
-    test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
-    test.slow();
+      const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
+      await expect(confirmButton).toBeVisible({ timeout: 15000 });
+      await confirmButton.click();
+      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
+    });
 
-    await seededPage.locator('a[href="/send"]').click();
-    await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
-    const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
-    await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
-    await sourceSelect.selectOption(testWallet.accounts[1]);
-    await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
+    test('should transfer XNO between own accounts', async ({ seededPage, testWallet }) => {
+      test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
+      test.slow();
 
-    // Switch to "Transfer between own accounts" tab
-    await seededPage.locator('text=Transfer between own accounts').click();
+      await seededPage.locator('a[href="/send"]').click();
+      await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
+      const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
+      await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
+      await sourceSelect.selectOption(testWallet.accounts[1]);
+      await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
 
-    const toSelect = seededPage.locator('[data-testid="transfer-to-account-input"]');
-    await expect(toSelect).toBeVisible();
+      // Switch to "Transfer between own accounts" tab
+      await seededPage.locator('text=Transfer between own accounts').click();
 
-    // Wait for destination options to load (accounts are fetched from node)
-    await expect(toSelect.locator('option')).not.toHaveCount(1, { timeout: 15000 });
+      const toSelect = seededPage.locator('[data-testid="transfer-to-account-input"]');
+      await expect(toSelect).toBeVisible();
 
-    const destinationAccount = testWallet.accounts[0];
-    await expect(toSelect.locator(`option[value="${destinationAccount}"]`)).toHaveCount(1, { timeout: 15000 });
-    await toSelect.selectOption(destinationAccount);
-    await expect(toSelect).toHaveValue(destinationAccount);
+      // Wait for destination options to load (accounts are fetched from node)
+      await expect(toSelect.locator('option')).not.toHaveCount(1, { timeout: 15000 });
 
-    await seededPage.locator('[data-testid="transfer-amount-input"]').fill('0.0001');
-    await seededPage.locator('[data-testid="transfer-transfer-button"]').click();
+      const destinationAccount = testWallet.accounts[0];
+      await expect(toSelect.locator(`option[value="${destinationAccount}"]`)).toHaveCount(1, { timeout: 15000 });
+      await toSelect.selectOption(destinationAccount);
+      await expect(toSelect).toHaveValue(destinationAccount);
 
-    const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
-    await expect(confirmButton).toBeVisible({ timeout: 15000 });
-    await confirmButton.click();
-    await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
+      await seededPage.locator('[data-testid="transfer-amount-input"]').fill('0.0001');
+      await seededPage.locator('[data-testid="transfer-transfer-button"]').click();
+
+      const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
+      await expect(confirmButton).toBeVisible({ timeout: 15000 });
+      await confirmButton.click();
+      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 30000 });
+    });
   });
 });

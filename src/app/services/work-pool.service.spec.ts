@@ -9,26 +9,19 @@ const sendThreshold = 'SEND-THRESHOLD';
 const receiveThreshold = 'RECEIVE-THRESHOLD';
 
 function partial<T extends object>(value: T): any {
-  const jasmineApi = (globalThis as any).jasmine;
-  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+  return expect.objectContaining(value);
 }
 
 function installTestClock(): void {
-  const jasmineApi = (globalThis as any).jasmine;
-  if (jasmineApi?.clock) jasmineApi.clock().install();
-  else vi.useFakeTimers();
+  vi.useFakeTimers();
 }
 
 function advanceTestClock(milliseconds: number): void {
-  const jasmineApi = (globalThis as any).jasmine;
-  if (jasmineApi?.clock) jasmineApi.clock().tick(milliseconds);
-  else vi.advanceTimersByTime(milliseconds);
+  vi.advanceTimersByTime(milliseconds);
 }
 
 function uninstallTestClock(): void {
-  const jasmineApi = (globalThis as any).jasmine;
-  if (jasmineApi?.clock) jasmineApi.clock().uninstall();
-  else vi.useRealTimers();
+  vi.useRealTimers();
 }
 
 async function expectRejectedWithError(promise: Promise<unknown>, message: string): Promise<void> {

@@ -25,6 +25,7 @@ test.use({ startupNetworkMode: 'live' });
 
 // Skip all NanoNym E2E tests when FEATURE_NANONYMS is disabled (NaultCore build)
 const featureNanonyms = process.env.FEATURE_NANONYMS !== 'false';
+const skipOnchain = process.env.SKIP_ONCHAIN_E2E === 'true';
 test.skip(!featureNanonyms, 'NanoNym features are disabled in this build (NaultCore)');
 
 /**
@@ -123,6 +124,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
   });
 
   test('should send XNO to NanoNym, receive via stealth, then spend from stealth account', async ({ seededPage, testWallet }) => {
+    test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
     test.slow();
 
     try {

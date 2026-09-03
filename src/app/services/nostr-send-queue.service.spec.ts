@@ -6,7 +6,7 @@ import {
 } from "./nostr-send-queue.service";
 import { NanoNymNotification } from "./nostr-notification.service";
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
 
 featureDescribe("NostrSendQueueService", () => {
   let service: NostrSendQueueService;

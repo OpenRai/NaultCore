@@ -13,7 +13,7 @@ import { TranslocoRootModule } from '../../transloco/transloco-root.module';
 })
 class ConfigureWalletTestModule {}
 
-const skippedIt = (globalThis as any).xit ?? (it as any).skip;
+const skippedIt = it.skip;
 
 describe('ConfigureWalletComponent', () => {
   let component: ConfigureWalletComponent;
@@ -34,7 +34,7 @@ describe('ConfigureWalletComponent', () => {
 
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
+  // See docs/testing.md for the current test commands.
   skippedIt('should create', () => {
     expect(component).toBeTruthy();
   });

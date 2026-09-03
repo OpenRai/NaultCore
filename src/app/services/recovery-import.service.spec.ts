@@ -1,8 +1,7 @@
 import { RecoveryImportService } from './recovery-import.service';
 
 function partial<T extends object>(value: T): any {
-  const jasmineApi = (globalThis as any).jasmine;
-  return jasmineApi?.objectContaining ? jasmineApi.objectContaining(value) : (expect as any).objectContaining(value);
+  return expect.objectContaining(value);
 }
 
 describe('RecoveryImportService', () => {

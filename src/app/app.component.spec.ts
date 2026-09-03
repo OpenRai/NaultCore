@@ -8,24 +8,24 @@ describe("AppComponent", () => {
   }));
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit("should create the app", waitForAsync(() => {
+  // See docs/testing.md for the current test commands.
+  it.skip("should create the app", waitForAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app).toBeTruthy();
   }));
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit(`should have as title 'app'`, waitForAsync(() => {
+  // See docs/testing.md for the current test commands.
+  it.skip(`should have as title 'app'`, waitForAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.debugElement.componentInstance;
     expect(app.title).toEqual("app");
   }));
   // SKIPPED: Test fails due to missing DI providers in TestBed configuration.
   // To fix: Add mock providers for all component/service dependencies.
-  // See NAULT-TESTS.md for details on test infrastructure issues.
-  xit("should render title in a h1 tag", waitForAsync(() => {
+  // See docs/testing.md for the current test commands.
+  it.skip("should render title in a h1 tag", waitForAsync(() => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.debugElement.nativeElement;

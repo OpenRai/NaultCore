@@ -3,14 +3,8 @@
 ## Commands
 
 ```bash
-# Vitest unit tests (NaultCore profile)
-source ~/.nvm/nvm.sh && nvm exec pnpm run test:vitest
-
-# Vitest unit tests (NanoNym profile)
-source ~/.nvm/nvm.sh && nvm exec pnpm run test:vitest:nanonyms
-
-# Temporary Karma parity gate (Brave on macOS)
-source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
+# Unit tests (both NaultCore and NanoNym profiles, plus inventory verification)
+source ~/.nvm/nvm.sh && nvm exec pnpm test
 
 # Playwright E2E (all tests)
 source ~/.nvm/nvm.sh && nvm exec pnpm run e2e:pw
@@ -19,9 +13,9 @@ source ~/.nvm/nvm.sh && nvm exec pnpm run e2e:pw
 source ~/.nvm/nvm.sh && nvm exec pnpm run e2e:pw -- --grep 'roundtrip' --workers=1
 ```
 
-The Vitest migration inventory and Karma retirement gate are documented in
-[Unit Test Runner Migration](unit-test-migration.md). Karma remains in CI until
-the three-consecutive-run gate passes.
+The unit-test inventory contract is documented in
+[Unit Test Runner Migration](unit-test-migration.md). Playwright remains the
+browser-level gate in CI.
 
 ## Environment
 
@@ -46,7 +40,7 @@ Implementation:
 
 ## pnpm-driven tasks on macOS
 
-Use the nvm wrapper as per AGENTS.md. For Karma unit tests, set `CHROME_BIN` to Brave:
+Use the nvm wrapper as per AGENTS.md:
 ```bash
-source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
+source ~/.nvm/nvm.sh && nvm exec pnpm test
 ```

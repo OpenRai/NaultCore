@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { NanoNymAccountSelectionService } from './nanonym-account-selection.service';
 import { StealthAccount } from '../types/nanonym.types';
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
 
 featureDescribe('NanoNymAccountSelectionService', () => {
   let service: NanoNymAccountSelectionService;

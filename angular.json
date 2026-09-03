@@ -269,36 +269,6 @@
             "buildTarget": "nault:build"
           }
         },
-        "test": {
-          "builder": "@angular/build:karma",
-          "options": {
-            "main": "src/test.ts",
-            "karmaConfig": "./karma.conf.js",
-            "polyfills": ["src/polyfills.ts", "zone.js/testing"],
-            "tsConfig": "src/tsconfig.spec.json",
-            "include": ["src/**/*.spec.ts"],
-            "scripts": [],
-            "styles": [
-              "src/styles.less"
-            ],
-            "assets": [
-              "src/assets",
-              "src/pow.wasm",
-              "src/manifest.webmanifest",
-              "src/manifest.naultcore.webmanifest"
-            ],
-            "define": {
-              "FEATURE_NANONYMS": "false"
-            }
-          },
-          "configurations": {
-            "nanonyms": {
-              "define": {
-                "FEATURE_NANONYMS": "true"
-              }
-            }
-          }
-        },
         "test-vitest": {
           "builder": "@angular/build:unit-test",
           "options": {

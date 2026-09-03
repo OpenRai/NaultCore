@@ -20,10 +20,9 @@
 
 Before running commands, check this block first.
 
-- **Karma unit tests require Brave on macOS** via `CHROME_BIN`.
 - **Canonical unit test command:**
   ```bash
-  source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test
+  source ~/.nvm/nvm.sh && nvm exec pnpm test
   ```
 - **All pnpm commands on macOS must run via** `source ~/.nvm/nvm.sh && nvm exec pnpm ...`
 - If command examples in docs disagree, follow this AGENTS.md preflight block.
@@ -119,7 +118,7 @@ The code, tests, and this file are the current NaultCore source of truth. Histor
 
 ## Quick Reference
 
-- **Test suite (macOS):** `source ~/.nvm/nvm.sh && CHROME_BIN="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" nvm exec pnpm test`
+- **Test suite (macOS):** `source ~/.nvm/nvm.sh && nvm exec pnpm test`
 - **Dev server:** `source ~/.nvm/nvm.sh && FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore-dev` → http://localhost:4200/ (service worker disabled for live rebuilds)
 - **E2E test IDs:** `docs/E2E-TEST-IDS.md`
 

@@ -94,6 +94,10 @@ export const TestIds = {
   manageWallet: {
     pageRoot: 'manage-wallet-page-root',
     changePasswordButton: 'manage-wallet-change-password-button',
+    revealMnemonicButton: 'manage-wallet-reveal-mnemonic-button',
+    revealSeedButton: 'manage-wallet-reveal-seed-button',
+    copyMnemonicButton: 'manage-wallet-copy-mnemonic-button',
+    copySeedButton: 'manage-wallet-copy-seed-button',
     backupWalletButton: 'manage-wallet-backup-wallet-button',
     logoutWalletButton: 'manage-wallet-logout-wallet-button',
     resetWalletButton: 'manage-wallet-reset-wallet-button',

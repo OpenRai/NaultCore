@@ -4,8 +4,8 @@ import { NanoNymCryptoService } from './nanonym-crypto.service';
 import { NostrSyncStateService } from './nostr-sync-state.service';
 import { UtilService } from './util.service';
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
-const pendingIt = (...args: any[]) => ((globalThis as any).xit ?? (it as any).skip)(...args);
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
+const pendingIt = it.skip;
 
 function fakeTimers<T extends (...args: any[]) => any>(work: T): (...args: Parameters<T>) => ReturnType<T> {
   return (...args: Parameters<T>) => {

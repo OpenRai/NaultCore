@@ -1,6 +1,6 @@
 import { NostrSyncStateService, NostrSyncState } from "./nostr-sync-state.service";
 
-const featureDescribe = FEATURE_NANONYMS ? describe : (globalThis as any).xdescribe;
+const featureDescribe = FEATURE_NANONYMS ? describe : describe.skip;
 
 function fakeTimers<T extends (...args: any[]) => any>(work: T): (...args: Parameters<T>) => ReturnType<T> {
   return (...args: Parameters<T>) => {

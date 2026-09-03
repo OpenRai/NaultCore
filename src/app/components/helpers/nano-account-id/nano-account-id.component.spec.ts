@@ -1,6 +1,6 @@
 import { NanoAccountIdComponent } from './nano-account-id.component';
 
-const skippedDescribe = (globalThis as any).xdescribe ?? (describe as any).skip;
+const skippedDescribe = describe.skip;
 const featureDescribe = FEATURE_NANONYMS ? describe : skippedDescribe;
 
 describe('NanoAccountIdComponent', () => {

@@ -15,7 +15,7 @@
                     <div class="uk-width-1-1">
                       <div class="uk-inline uk-width-1-1">
                         <a class="uk-form-icon uk-form-icon-flip" ngxClipboard [cbContent]="Mnano" (cbOnSuccess)="notifications.sendSuccess('Value Copied!')" uk-icon="icon: copy" title="Copy Value" uk-tooltip></a>
-                        <input [(ngModel)]="Mnano" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidMnano }" id="mnano" type="text" (ngModelChange)="unitChange('mnano')" placeholder="" autocomplete="off">
+                        <input [(ngModel)]="Mnano" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidMnano }" id="mnano" type="text" inputmode="decimal" (ngModelChange)="unitChange('mnano')" placeholder="" autocomplete="off">
                       </div>
                     </div>
                   </div>
@@ -33,7 +33,7 @@
                     <div class="uk-width-1-1">
                     <div class="uk-inline uk-width-1-1">
                       <a class="uk-form-icon uk-form-icon-flip" ngxClipboard [cbContent]="raw" (cbOnSuccess)="notifications.sendSuccess('Value Copied!')" uk-icon="icon: copy" title="Copy Value" uk-tooltip></a>
-                      <input [(ngModel)]="raw" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidRaw }" id="raw" type="text" (ngModelChange)="unitChange('raw')" placeholder="" autocomplete="off">
+                      <input [(ngModel)]="raw" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidRaw }" id="raw" type="text" inputmode="numeric" (ngModelChange)="unitChange('raw')" placeholder="" autocomplete="off">
                     </div>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
                     <div class="uk-width-1-1">
                     <div class="uk-inline uk-width-1-1">
                       <a class="uk-form-icon uk-form-icon-flip" ngxClipboard [cbContent]="fiatPrice" (cbOnSuccess)="notifications.sendSuccess('Value Copied!')" uk-icon="icon: copy" title="Copy Value" uk-tooltip></a>
-                      <input [(ngModel)]="fiatPrice" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidFiat }" id="fiat" type="text" (ngModelChange)="unitChange('fiat')" placeholder="" autocomplete="off">
+                      <input [(ngModel)]="fiatPrice" class="uk-input uk-margin-small-bottom" [ngClass]="{ 'uk-form-danger': invalidFiat }" id="fiat" type="text" inputmode="decimal" (ngModelChange)="unitChange('fiat')" placeholder="" autocomplete="off">
                     </div>
                     </div>
                 </div>
@@ -63,6 +63,5 @@
         </div>
       </div>
     </div>
-  
+
   </div>
-  

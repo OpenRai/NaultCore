@@ -55,22 +55,6 @@
           </div>
         </div>
       }
-      <div [class]="[ 'account', (walletState.selectedAccount === null) ? 'active' : 'inactive' ]" (click)="selectAccount(null)"> <!-- active/inactive total balance -->
-        <div class="name-column">
-          <div class="name">Total Balance</div>
-          <div class="address"> </div>
-        </div>
-        <div class="balance-column">
-          @if (walletState.sync.status !== 'loading') {
-            <div class="balance primary" [attr.data-testid]="testIds.app.totalBalanceXnoDropdown">{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 0 }}{{ (totalBalance$ | async) | rai: 'mnano,true' | amountsplit: 1 }} XNO</div>
-            <div class="balance converted" [attr.data-testid]="testIds.app.totalBalanceFiatDropdown">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency }}</div>
-          } @else {
-            <div class="balance loading">
-              <div uk-spinner="ratio: 0.5;"></div>
-            </div>
-          }
-        </div>
-      </div>
       @for (account of walletState.accounts; track account.id) {
         <!-- inactive accounts -->
         @if (( (walletState.selectedAccount === null) || (walletState.selectedAccount.id !== account.id) )) {

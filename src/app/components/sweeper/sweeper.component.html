@@ -63,7 +63,7 @@
                     <div uk-grid>
                       <div class="uk-width-1-1">
                         <div class="uk-inline uk-width-1-1">
-                          <input [(ngModel)]="destinationAccount" class="uk-input uk-margin-small-bottom {{validDestination ? '':'uk-form-danger'}}" id="custom-destination" type="text" (ngModelChange)="destinationChange(destinationAccount)" placeholder="nano_abc..123">
+                          <input [(ngModel)]="destinationAccount" class="uk-input uk-margin-small-bottom {{validDestination ? '':'uk-form-danger'}}" id="custom-destination" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" (ngModelChange)="destinationChange(destinationAccount)" placeholder="nano_abc..123">
                         </div>
                       </div>
                     </div>

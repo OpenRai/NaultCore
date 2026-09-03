@@ -181,7 +181,7 @@
                       @if (creatingNewEntry) {
                         <a class="uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('account1','account')" uk-tooltip [title]="t('general.scan-qr-code')"></a>
                       }
-                      <input type="text" class="uk-input" id="new-address-account" [(ngModel)]="newAddressAccount" [disabled]="!creatingNewEntry" placeholder="nano_abc123">
+                      <input type="text" class="uk-input" id="new-address-account" [(ngModel)]="newAddressAccount" [disabled]="!creatingNewEntry" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nano_abc123">
                     </div>
                   </div>
                 </div>

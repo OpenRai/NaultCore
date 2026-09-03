@@ -11,6 +11,36 @@ body {
 	overflow: hidden;
 }
 
+// Keep the application shell pinned to the visual viewport. The document
+// itself is not a scroll surface; individual content and overlay containers
+// own their scrolling instead.
+html {
+	inline-size: 100%;
+	block-size: 100%;
+	overflow: hidden;
+}
+
+body {
+	inline-size: 100%;
+	min-block-size: 100%;
+	block-size: 100%;
+}
+
+app-root {
+	display: block;
+	inline-size: 100%;
+	min-block-size: 100dvh;
+}
+
+.app {
+	inline-size: 100%;
+	margin-left: 0;
+}
+
+.app > .uk-width-1-1 {
+	padding-left: 0;
+}
+
 h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list dt,
 .uk-table th, .uk-form-label, .uk-form-icon, .nano-card, .nav-representative-info,
 .accounts-dropdown, .nav-container .nav-action-receive, .left-nav > li, .mobile-top-bar,
@@ -215,7 +245,7 @@ input[type=number] {
 	@media (max-width: 939px) {
 		display: flex;
 		position: fixed;
-		width: 100vw;
+		width: 100%;
 		left: 0;
 		margin-left: 0;
 		z-index: 2;
@@ -239,6 +269,8 @@ input[type=number] {
 	z-index: 1;
 	overflow-x: hidden;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 
 	> *:last-child > .uk-grid > *:last-child {
 		margin-bottom: 20px;
@@ -518,6 +550,17 @@ input[type=number] {
 }
 
 .uk-modal {
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-gutter: stable;
+
+	.uk-modal-dialog {
+		max-block-size: calc(100dvh - 30px);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+
 	.transaction {
 		padding-left: 0 !important;
 		padding-right: 0 !important;
@@ -1641,6 +1684,49 @@ input[type=number] {
 .modal-open .modal {
 	overflow-x: hidden;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
+
+	.modal-dialog {
+		max-block-size: calc(100dvh - 30px);
+	}
+
+	.modal-content {
+		max-block-size: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.modal-body {
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+}
+
+@media (max-width: 939px) {
+	// Touch users retain scrolling without a persistent scrollbar gutter.
+	.nav-container,
+	.content-container,
+	.accounts-dropdown,
+	.uk-modal,
+	.uk-modal-dialog,
+	.modal,
+	.modal-body {
+		scrollbar-width: none;
+	}
+
+	.nav-container::-webkit-scrollbar,
+	.content-container::-webkit-scrollbar,
+	.accounts-dropdown::-webkit-scrollbar,
+	.uk-modal::-webkit-scrollbar,
+	.uk-modal-dialog::-webkit-scrollbar,
+	.modal::-webkit-scrollbar,
+	.modal-body::-webkit-scrollbar {
+		display: none;
+		width: 0;
+		height: 0;
+	}
 }
 
 @media (min-width: 576px) {

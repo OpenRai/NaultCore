@@ -46,6 +46,23 @@
 	&.is-card {
 		background: linear-gradient(110deg, #286EAE 0%, #3D86D1 100%);
 
+		// A soft, offset glint gives the solitary mark a little atmosphere while
+		// keeping the account name and balances over the quieter side of the card.
+		&::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			pointer-events: none;
+			z-index: 0;
+			background: radial-gradient(circle at 100% 16%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.045) 28%, transparent 62%);
+		}
+
+		@supports (background: radial-gradient(circle in oklab at 100% 16%, white, transparent)) {
+			&::before {
+				background: radial-gradient(circle in oklab at 100% 16%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.045) 28%, transparent 62%);
+			}
+		}
+
 		> .logo {
 			background-image: url('../../assets/img/symbol-white.png');
 			background-size: auto 128%;

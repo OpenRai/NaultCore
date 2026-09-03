@@ -981,7 +981,7 @@
               <div class="uk-form-controls">
                 <div class="form-input-destination uk-inline uk-width-1-1">
                   <a class="uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('account1','account')" uk-tooltip title="Scan from QR code"></a>
-                  <input (blur)="validateDestination()" (input)="searchAddressBook()" (focus)="searchAddressBook()" [(ngModel)]="toAccountID" [ngClass]="{ 'uk-form-success': toAccountStatus === 2, 'uk-form-danger': toAccountStatus === 0 }" class="uk-input" id="form-horizontal-text2" type="text" placeholder="Account to send to" autocomplete="off">
+                  <input (blur)="validateDestination()" (input)="searchAddressBook()" (focus)="searchAddressBook()" [(ngModel)]="toAccountID" [ngClass]="{ 'uk-form-success': toAccountStatus === 2, 'uk-form-danger': toAccountStatus === 0 }" class="uk-input" id="form-horizontal-text2" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Account to send to">
                   @if ((addressBookResults$ | async).length) {
                     <div [hidden]="!showAddressBook" class="uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
                       <ul class="uk-nav uk-nav-default">
@@ -1013,7 +1013,7 @@
                     <div class="uk-width-1-1">
                       <div class="uk-inline uk-width-1-1">
                         <a class="uk-form-icon uk-form-icon-flip form-icon-btn" (click)="setMaxAmount()" style="padding-right: 7px;" uk-tooltip title="Set Maximum Amount">Max</a>
-                        <input [(ngModel)]="amount" [ngClass]="{ 'uk-form-danger': amountStatus === 0 }" class="uk-input" id="form-horizontal-text" (input)="syncFiatPrice()" type="text" placeholder="Amount of {{ selectedAmount.name }} to send" maxlength="40">
+                        <input [(ngModel)]="amount" [ngClass]="{ 'uk-form-danger': amountStatus === 0 }" class="uk-input" id="form-horizontal-text" (input)="syncFiatPrice()" type="text" inputmode="decimal" autocomplete="off" placeholder="Amount of {{ selectedAmount.name }} to send" maxlength="40">
                       </div>
                       @if (amountRaw.gt(0)) {
                         <div class="uk-width-1-1 uk-width-3-5@m uk-text-small uk-text-muted uk-margin-remove">
@@ -1024,7 +1024,7 @@
                         <div class="uk-width-1-1" style="margin-top: 10px;">
                           <div class="uk-width-1-1 uk-inline">
                             <a class="uk-form-icon uk-link-reset uk-link-muted" style="padding-left: 7px;" uk-tooltip title="Last Price: {{ price.price.lastPrice | fiat: settings.settings.displayCurrency }} / XNO">{{ settings.settings.displayCurrency | currencySymbol }}</a>
-                            <input [(ngModel)]="amountFiat" (input)="syncNanoPrice()" style="padding-left: 50px !important;" class="uk-input" id="form-horizontal-text-fiat" type="text" placeholder="Amount of {{ settings.settings.displayCurrency }} to send">
+                            <input [(ngModel)]="amountFiat" (input)="syncNanoPrice()" style="padding-left: 50px !important;" class="uk-input" id="form-horizontal-text-fiat" type="text" inputmode="decimal" autocomplete="off" placeholder="Amount of {{ settings.settings.displayCurrency }} to send">
                           </div>
                         </div>
                       }
@@ -1043,7 +1043,7 @@
               <div class="uk-form-controls">
                 <div class="form-input-destination uk-inline uk-width-1-1">
                   <a class="uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('rep1','account')" uk-tooltip title="Scan from QR code"></a>
-                  <input (blur)="validateRepresentative()" (input)="searchRepresentatives()" (focus)="searchRepresentatives()" (keyup.enter)="generateChange()" [(ngModel)]="representativeModel" class="uk-input" [ngClass]="{ 'uk-form-success': repStatus === 2, 'uk-form-danger': repStatus === 0 }" id="form-horizontal-text3" type="text" placeholder="nano_abc...123" #repInput>
+                  <input (blur)="validateRepresentative()" (input)="searchRepresentatives()" (focus)="searchRepresentatives()" (keyup.enter)="generateChange()" [(ngModel)]="representativeModel" class="uk-input" [ngClass]="{ 'uk-form-success': repStatus === 2, 'uk-form-danger': repStatus === 0 }" id="form-horizontal-text3" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nano_abc...123" #repInput>
                   @if ((representativeResults$ | async).length) {
                     <div [hidden]="!showRepresentatives" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
                       <ul class="uk-nav uk-nav-default">

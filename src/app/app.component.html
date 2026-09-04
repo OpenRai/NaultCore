@@ -355,7 +355,13 @@
         </div>
         <div class="footer footer-attribution uk-margin-remove-top" uk-grid>
           <div class="attribution uk-width-1-1 uk-text-center">
-            <div class="uk-text-small">{{ branding.applicationName }} &#64; {{ appVersion }}</div>
+            <button
+              type="button"
+              class="uk-text-small about-launcher"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="showAboutOverlay"
+              (click)="openAboutOverlay()"
+            >{{ branding.applicationName }} &#64; {{ appVersion }}</button>
             @if (branding.attribution) {
               <div class="uk-text-small uk-text-muted">{{ branding.attribution }}</div>
             }
@@ -381,3 +387,4 @@
 }
 
 <app-notifications></app-notifications>
+<app-about-overlay [open]="showAboutOverlay" [version]="appVersion" (closed)="closeAboutOverlay()"></app-about-overlay>

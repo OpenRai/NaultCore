@@ -31,8 +31,8 @@ test('opens an account and shows its account details', async ({ seededPage, test
 });
 
 test('opens the About overlay on a phone viewport and closes it with the visible control', async ({ seededPage }) => {
-  await seededPage.setViewportSize({ width: 393, height: 852 });
   await seededPage.getByRole('button', { name: /NaultCore @/ }).click();
+  await seededPage.setViewportSize({ width: 393, height: 852 });
 
   const dialog = seededPage.getByRole('dialog');
   await expect(dialog).toBeVisible();

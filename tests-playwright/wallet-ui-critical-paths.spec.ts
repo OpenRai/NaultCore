@@ -30,15 +30,43 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
 });
 
-test('opens and dismisses the OpenRai About overlay from the build label', async ({ seededPage }) => {
+test('opens the About overlay on a phone viewport and closes it with the visible control', async ({ seededPage }) => {
+  await seededPage.setViewportSize({ width: 393, height: 852 });
   await seededPage.getByRole('button', { name: /NaultCore @/ }).click();
 
-  const dialog = seededPage.getByRole('dialog', { name: /NaultCore @/ });
+  const dialog = seededPage.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog.locator('canvas')).toBeVisible();
-  await expect(dialog.getByText(/NaultCore @/)).toBeVisible();
+  await expect(dialog.locator('#about-overlay-title')).toBeVisible();
+  await expect(dialog.locator('#about-overlay-title')).not.toContainText('NaultCore @');
 
-  await seededPage.keyboard.press('Escape');
+  const closeButton = dialog.getByRole('button', { name: 'Close About' });
+  await expect(closeButton).toBeVisible();
+  const viewport = seededPage.viewportSize();
+  const closeBox = await closeButton.boundingBox();
+  expect(viewport).not.toBeNull();
+  expect(closeBox).not.toBeNull();
+  expect(closeBox!.x).toBeGreaterThanOrEqual(0);
+  expect(closeBox!.y).toBeGreaterThanOrEqual(0);
+  expect(closeBox!.x + closeBox!.width).toBeLessThanOrEqual(viewport!.width);
+  expect(closeBox!.y + closeBox!.height).toBeLessThanOrEqual(viewport!.height);
+
+  await closeButton.click();
+  await expect(dialog).toBeHidden();
+});
+
+test('dismisses the About overlay by clicking its blurred backdrop', async ({ seededPage }) => {
+  await seededPage.setViewportSize({ width: 1280, height: 900 });
+  await seededPage.getByRole('button', { name: /NaultCore @/ }).click();
+
+  const dialog = seededPage.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const dialogBox = await dialog.boundingBox();
+  expect(dialogBox).not.toBeNull();
+  expect(dialogBox!.x).toBeGreaterThan(8);
+  expect(dialogBox!.y).toBeGreaterThan(8);
+
+  await seededPage.mouse.click(2, 2);
   await expect(dialog).toBeHidden();
 });
 

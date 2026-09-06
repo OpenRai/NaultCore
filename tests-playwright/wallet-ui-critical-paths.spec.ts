@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { test, expect } from './fixtures';
+import { test, expect, unlockWalletThroughBridge } from './fixtures';
 
 async function navigate(page: Page, path: string): Promise<void> {
   const target = page.locator(`a[href="${path}"]`).first();
@@ -30,15 +30,18 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
 
   await seededPage.goto('/wallet');
+  await unlockWalletThroughBridge(seededPage);
   await expect(seededPage.getByTestId('wallet-account-selector')).toHaveValue(testWallet.accounts[0]);
 
   await seededPage.goto('/accounts');
+  await unlockWalletThroughBridge(seededPage);
   await seededPage.locator(`[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`).getByTestId('receive-account-button').click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[0]}$`));
 });
 
 test('opens the Wallet workspace and keeps actions scoped to the selected account', async ({ seededPage, testWallet }) => {
   await seededPage.goto('/wallet');
+  await unlockWalletThroughBridge(seededPage);
   await expect(seededPage).toHaveURL(/\/wallet$/);
   await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
   await expect(seededPage.getByTestId('wallet-total-balance')).toContainText('Across 3 accounts');
@@ -57,6 +60,7 @@ test('opens the Wallet workspace and keeps actions scoped to the selected accoun
   await expect(seededPage.getByTestId('send-source-account-input')).toHaveValue(testWallet.accounts[1]);
 
   await seededPage.goto('/wallet');
+  await unlockWalletThroughBridge(seededPage);
   await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
   await seededPage.getByTestId('wallet-receive-button').click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}$`));
@@ -128,7 +132,8 @@ test('keeps the current account PoW status visible in the compact Account Detail
 });
 
 test('shows the selected account receive address', async ({ seededPage, testWallet }) => {
-  await navigate(seededPage, '/receive');
+  await seededPage.goto('/receive');
+  await unlockWalletThroughBridge(seededPage);
 
   await expect(seededPage.getByTestId('receive-page-root')).toBeVisible();
   await seededPage.getByRole('combobox', { name: 'Account' }).selectOption(testWallet.accounts[0]);

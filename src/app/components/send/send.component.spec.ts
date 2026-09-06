@@ -85,6 +85,29 @@ describe('SendComponent - regular wallet balance refresh', () => {
 });
 
 describe('SendComponent - account selection race', () => {
+  it('applies an explicit account query without replacing a user source choice', () => {
+    const component: any = {
+      walletContext: {
+        resolveTransactionContext: vi.fn(() => ({
+          intent: 'send',
+          accountId: 'nano_context',
+          source: 'query',
+          explicit: true,
+        })),
+      },
+      fromAccountID: 'nano_default',
+      fromAccountSelectionTouched: false,
+    };
+
+    SendComponent.prototype['applyRequestedAccount'].call(component, 'nano_context');
+    expect(component.fromAccountID).toBe('nano_context');
+
+    component.fromAccountID = 'nano_user_choice';
+    component.fromAccountSelectionTouched = true;
+    SendComponent.prototype['applyRequestedAccount'].call(component, 'nano_context');
+    expect(component.fromAccountID).toBe('nano_user_choice');
+  });
+
   it('does not replace an explicit source selection after a balance refresh', async () => {
     const component: any = {
       walletService: {

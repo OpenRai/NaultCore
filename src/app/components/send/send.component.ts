@@ -24,6 +24,7 @@ import { NostrNotificationService } from "../../services/nostr-notification.serv
 import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymAccountSelectionService } from "../../services/nanonym-account-selection.service";
 import { OrbitdbNotificationService } from "../../services/orbitdb-notification.service";
+import { WalletContextService } from "../../services/wallet-context.service";
 
 const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
@@ -37,6 +38,7 @@ const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 export class SendComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private walletService = inject(WalletService);
+  private walletContext = inject(WalletContextService);
   private addressBookService = inject(AddressBookService);
   private notificationService = inject(NotificationService);
   private nodeApi = inject(ApiService);
@@ -179,6 +181,7 @@ export class SendComponent implements OnInit {
     // Update the account if query params changes. For example donation button while active on this page
     this.route.queryParams.subscribe((queries) => {
       this.updateQueries(queries);
+      this.applyRequestedAccount(queries.account);
     });
 
     // Set the account selected in the sidebar as default
@@ -186,8 +189,13 @@ export class SendComponent implements OnInit {
       this.fromAccountID = this.walletService.walletState.selectedAccount.id;
     } else {
       // If "total balance" is selected in the sidebar, use the first account in the wallet that has a balance
-      this.findFirstAccount();
+      await this.findFirstAccount();
     }
+
+    // A Wallet action carries an explicit account query parameter. It has
+    // precedence over the aggregate/selected-account fallback, but only
+    // while the user has not changed the source selector in this view.
+    this.applyRequestedAccount(params.account);
   }
 
   updateQueries(params) {
@@ -210,6 +218,15 @@ export class SendComponent implements OnInit {
       this.offerLookupIfDestinationIsAlias();
       this.validateDestination();
       this.sendDestinationType = "external-address";
+    }
+  }
+
+  private applyRequestedAccount(requestedAccountId: string | null | undefined): void {
+    if (this.fromAccountSelectionTouched) return;
+
+    const context = this.walletContext.resolveTransactionContext('send', requestedAccountId);
+    if (context.source === 'query' && context.accountId) {
+      this.fromAccountID = context.accountId;
     }
   }
 

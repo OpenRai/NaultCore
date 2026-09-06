@@ -19,6 +19,7 @@ import { Subscription } from "rxjs";
 import { TestIds } from '../../testing/test-ids';
 import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymStorageService } from "../../services/nanonym-storage.service";
+import { WalletContextService } from "../../services/wallet-context.service";
 
 @Component({
   standalone: false,
@@ -31,6 +32,7 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   private route = inject(Router);
   private activatedRoute = inject(ActivatedRoute);
   private walletService = inject(WalletService);
+  private walletContext = inject(WalletContextService);
   private notificationService = inject(NotificationService);
   private addressBook = inject(AddressBookService);
   modal = inject(ModalService);
@@ -155,11 +157,12 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     await this.updatePendingBlocks();
 
     const requestedAccount = this.activatedRoute.snapshot.queryParamMap.get('account');
-    if (requestedAccount && this.accounts.some(account => account.id === requestedAccount)) {
+    const context = this.walletContext.resolveTransactionContext('receive', requestedAccount);
+    if (context.source === 'query' && context.accountId) {
       // Quick Receive navigation is an explicit account intent, separate from
       // the wallet-scoped sidebar card's aggregate balance.
-      this.walletService.selectAccount(requestedAccount);
-      this.pendingAccountModel = requestedAccount;
+      this.walletService.selectAccount(context.accountId);
+      this.pendingAccountModel = context.accountId;
       this.onSelectedAccountChange(this.pendingAccountModel);
     } else if (this.walletService.walletState.selectedAccount !== null) {
       // Set the account selected in the sidebar as default

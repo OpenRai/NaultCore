@@ -47,11 +47,13 @@ test('opens the Wallet workspace and keeps actions scoped to the selected accoun
 
   await seededPage.getByTestId('wallet-send-button').click();
   await expect(seededPage).toHaveURL(new RegExp(`/send\\?account=${testWallet.accounts[1]}$`));
+  await expect(seededPage.getByTestId('send-source-account-input')).toHaveValue(testWallet.accounts[1]);
 
   await seededPage.goto('/wallet');
   await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
   await seededPage.getByTestId('wallet-receive-button').click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}$`));
+  await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);
 });
 
 test('opens the About overlay on a phone viewport and closes it with the visible control', async ({ seededPage }) => {

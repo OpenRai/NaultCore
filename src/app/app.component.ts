@@ -98,6 +98,10 @@ export class AppComponent implements OnInit {
   public appVersion = version;
   showAboutOverlay = false;
 
+  get mobileNavigationClosed(): boolean {
+    return this.innerWidth > 0 && this.innerWidth < 940 && !this.navExpanded;
+  }
+
   openAboutOverlay(): void {
     this.showAboutOverlay = true;
   }
@@ -305,6 +309,11 @@ export class AppComponent implements OnInit {
   toggleNav() {
     this.navExpanded = !this.navExpanded;
     this.onNavExpandedChange();
+  }
+
+  @HostListener('document:keydown.escape')
+  closeNavigationWithEscape(): void {
+    this.closeNav();
   }
 
   closeNav() {

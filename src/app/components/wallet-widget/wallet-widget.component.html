@@ -49,24 +49,24 @@
 
 @if (walletService.isConfigured() && !walletService.isLedgerWallet()) {
   @if (walletService.isLocked()) {
-    <div class="nav-status-row half-muted interactable" (click)="showModal()">
+    <button type="button" class="nav-status-row half-muted interactable" (click)="showModal()">
       <div class="status-icon">
         <span uk-icon="icon: lock; ratio: 1.2;" class="uk-text-top"></span>
       </div>
       <div class="status-labels">
         <div class="label primary half-muted">Wallet Locked</div>
       </div>
-    </div>
+    </button>
   }
   @if (!walletService.isLocked()) {
-    <div class="nav-status-row half-muted interactable" (click)="lockWallet()">
+    <button type="button" class="nav-status-row half-muted interactable" (click)="lockWallet()">
       <div class="status-icon">
         <span uk-icon="icon: unlock; ratio: 1.2;" class="uk-text-top"></span>
       </div>
       <div class="status-labels">
         <div class="label primary half-muted">Wallet Unlocked</div>
       </div>
-    </div>
+    </button>
   }
 }
 

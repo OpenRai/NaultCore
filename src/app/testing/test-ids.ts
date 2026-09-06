@@ -120,6 +120,7 @@ export const TestIds = {
     accountRow: 'accounts-row',
     accountRowDetailsButton: 'accounts-row-details-button',
     copyAccountIdButton: 'copy-account-id-button',
+    receiveAccountButton: 'receive-account-button',
   },
   accountDetails: {
     workStatus: 'account-details-work-status',

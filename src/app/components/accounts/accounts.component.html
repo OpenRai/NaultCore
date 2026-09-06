@@ -121,6 +121,7 @@
                     </a>
                     <div class="nano-address-actions uk-width-auto copy-container">
                       <ul class="uk-iconnav copy-icons">
+                        <li><a [routerLink]="['/receive']" [queryParams]="{ account: account.id }" (click)="selectAccountForAction(account.id); $event.stopPropagation()" uk-icon="icon: arrow-up" title="Receive to this account" uk-tooltip [attr.data-testid]="testIds.accounts.receiveAccountButton"></a></li>
                         <li><a ngxClipboard [cbContent]="account.id" (cbOnSuccess)="copied()" uk-icon="icon: copy" [title]="'general.copy' | transloco" uk-tooltip [attr.data-testid]="testIds.accounts.copyAccountIdButton"></a></li>
                         @if (isLedgerWallet) {
                           <li><a uk-icon="icon: commenting" [title]="'accounts.confirm-address-on-ledger' | transloco" (click)="showLedgerAddress(account)" uk-tooltip></a></li>

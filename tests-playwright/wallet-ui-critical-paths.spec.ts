@@ -28,6 +28,13 @@ test('opens an account and shows its account details', async ({ seededPage, test
 
   await expect(seededPage).toHaveURL(new RegExp(`/account/${testWallet.accounts[0]}`));
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
+
+  await seededPage.goto('/wallet');
+  await expect(seededPage.getByTestId('wallet-account-selector')).toHaveValue(testWallet.accounts[0]);
+
+  await seededPage.goto('/accounts');
+  await seededPage.locator(`[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`).getByTestId('receive-account-button').click();
+  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[0]}$`));
 });
 
 test('opens the Wallet workspace and keeps actions scoped to the selected account', async ({ seededPage, testWallet }) => {

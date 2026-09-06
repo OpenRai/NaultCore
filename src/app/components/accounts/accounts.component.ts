@@ -18,6 +18,7 @@ import { NanoNymStorageService } from '../../services/nanonym-storage.service';
 import { NanoNymManagerService } from '../../services/nanonym-manager.service';
 import { UtilService } from '../../services/util.service';
 import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.service';
+import { WalletContextService } from '../../services/wallet-context.service';
 
 @Component({
   standalone: false,
@@ -28,6 +29,7 @@ import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.ser
 })
 export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   private walletService = inject(WalletService);
+  private walletContext = inject(WalletContextService);
   private notificationService = inject(NotificationService);
   modal = inject(ModalService);
   settings = inject(AppSettingsService);
@@ -167,14 +169,13 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   navigateToAccount(account) {
-    const isSmallViewport = (window.innerWidth < 940);
-
-    if (isSmallViewport === true) {
-        this.walletService.selectAccount(account ? account.id : null);
-        this.walletService.saveWalletExport();
-    }
+    this.walletContext.selectAccount(account.id);
 
     this.router.navigate([`account/${account.id}`], { queryParams: {'compact': 1} });
+  }
+
+  selectAccountForAction(accountId: string): void {
+    this.walletContext.selectAccount(accountId);
   }
 
   navigateToNanoNym(account: any) {

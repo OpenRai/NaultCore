@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-
 import { QrScanComponent } from './qr-scan.component';
 
 describe('AddressBookComponent', () => {
@@ -9,8 +8,7 @@ describe('AddressBookComponent', () => {
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
       declarations: [ QrScanComponent ]
-    })
-    .compileComponents();
+    }).compileComponents();
   }));
 
   beforeEach(() => {

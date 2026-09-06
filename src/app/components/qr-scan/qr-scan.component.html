@@ -1,4 +1,4 @@
-<div class="uk-animation-slide-left-small" uk-grid>
+<div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.qrScan.pageRoot">
   <div class="uk-width-1-1">
 
     <h2 class="uk-heading-divider">Scan QR Code</h2>
@@ -34,6 +34,38 @@
           </div>
         </div>
 
+      </div>
+
+      <div class="uk-width-1-1">
+        <div class="uk-card uk-card-default uk-card-small">
+          <div class="uk-card-body">
+            <label class="uk-form-label" for="qr-manual-payload">Paste QR content</label>
+            <div class="uk-flex uk-flex-middle uk-grid-small" uk-grid>
+              <div class="uk-width-expand">
+                <input
+                  id="qr-manual-payload"
+                  class="uk-input"
+                  type="text"
+                  [value]="manualPayload"
+                  (input)="manualPayload = $any($event.target).value"
+                  autocomplete="off"
+                  placeholder="Nano address, payment request, or supported QR payload"
+                  [attr.data-testid]="testIds.qrScan.manualPayloadInput"
+                >
+              </div>
+              <div class="uk-width-auto">
+                <button
+                  type="button"
+                  class="uk-button uk-button-primary"
+                  (click)="submitManualPayload()"
+                  [disabled]="!manualPayload.trim()"
+                  [attr.data-testid]="testIds.qrScan.manualSubmitButton"
+                >Use content</button>
+              </div>
+            </div>
+            <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">Camera access is optional; you can always paste a QR payload here.</p>
+          </div>
+        </div>
       </div>
 
     </div>

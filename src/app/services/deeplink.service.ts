@@ -4,6 +4,7 @@ import { UtilService } from './util.service';
 import { NotificationService } from './notification.service';
 import { WalletService } from './wallet.service';
 import { RemoteSignService } from './remote-sign.service';
+import { WalletContextService } from './wallet-context.service';
 
 @Injectable()
 export class DeeplinkService {
@@ -11,15 +12,16 @@ export class DeeplinkService {
   private notifcationService = inject(NotificationService);
   private util = inject(UtilService);
   private walletService = inject(WalletService);
+  private walletContext = inject(WalletContextService);
   private remoteSignService = inject(RemoteSignService);
 
 
   navigate(deeplink: string): boolean {
-    const nano_scheme = /^(nano|nanorep|nanoseed|nanokey|nanosign|nanoprocess|https):.+$/g;
+    const nano_scheme = /^(nano|nanorep|nanoseed|nanokey|nanosign|nanoprocess|https):.+$/;
 
     if (this.util.account.isValidAccount(deeplink)) {
       // Got address, routing to send...
-      this.router.navigate(['send'], {queryParams: {to: deeplink}});
+      this.navigateToSend({ to: deeplink });
 
     } else if (this.util.nano.isValidSeed(deeplink)) {
       // Seed
@@ -37,14 +39,16 @@ export class DeeplinkService {
         } else if (url.pathname === '/import-address-book' && url.hash.slice(1).length) {
           // address book import
           this.router.navigate(['import-address-book'], { queryParams: {hostname: url.hostname}, fragment: url.hash.slice(1)});
+        } else {
+          return false;
         }
       } else if (url.protocol === 'nano:' && this.util.account.isValidAccount(url.pathname)) {
         // Got address, routing to send...
         const amount = url.searchParams.get('amount');
-        this.router.navigate(['send'], { queryParams: {
+        this.navigateToSend({
           to: url.pathname,
           amount: amount ? this.util.nano.rawToMnano(amount) : null
-        }});
+        });
 
       } else if (url.protocol === 'nanorep:' && this.util.account.isValidAccount(url.pathname)) {
         // Representative change
@@ -65,6 +69,8 @@ export class DeeplinkService {
 
       } else if (url.protocol === 'nanoprocess:') {
           this.remoteSignService.navigateProcessBlock(url);
+      } else {
+        return false;
       }
 
     } else {
@@ -75,6 +81,15 @@ export class DeeplinkService {
 
   hasAccounts() {
     return this.walletService.walletState.accounts.length > 0;
+  }
+
+  private navigateToSend(queryParams: Record<string, unknown>): void {
+    const context = this.walletContext.resolveTransactionContext('send');
+    this.router.navigate(['send'], {
+      queryParams: context.accountId
+        ? { ...queryParams, account: context.accountId }
+        : queryParams,
+    });
   }
 
   handleSeed(seed) {

@@ -3,6 +3,7 @@ import { BarcodeFormat } from '@zxing/library';
 import { NotificationService } from 'app/services';
 import { BehaviorSubject } from 'rxjs';
 import { DeeplinkService } from '../../services/deeplink.service';
+import { TestIds } from '../../testing/test-ids';
 
 @Component({
   standalone: false,
@@ -31,6 +32,9 @@ export class QrScanComponent implements OnInit {
   hasPermission: boolean;
 
   qrResultString: string;
+  manualPayload = '';
+
+  readonly testIds = TestIds;
 
   torchEnabled = false;
   torchAvailable$ = new BehaviorSubject<boolean>(false);
@@ -40,6 +44,12 @@ export class QrScanComponent implements OnInit {
 
   clearResult(): void {
     this.qrResultString = null;
+    this.manualPayload = '';
+  }
+
+  submitManualPayload(): void {
+    const payload = this.manualPayload.trim();
+    if (payload) this.onCodeResult(payload);
   }
 
   onCamerasFound(devices: MediaDeviceInfo[]): void {
@@ -48,6 +58,7 @@ export class QrScanComponent implements OnInit {
   }
 
   onCodeResult(resultString: string) {
+    resultString = resultString.trim();
     this.qrResultString = resultString;
 
     if (!this.deeplinkService.navigate(resultString)) {

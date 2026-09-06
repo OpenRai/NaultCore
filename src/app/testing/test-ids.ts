@@ -153,6 +153,11 @@ export const TestIds = {
   qrModal: {
     closeButton: 'qr-modal-close-button',
   },
+  qrScan: {
+    pageRoot: 'qr-scan-page-root',
+    manualPayloadInput: 'qr-scan-manual-payload-input',
+    manualSubmitButton: 'qr-scan-manual-submit-button',
+  },
   remoteSigning: {
     createButton: 'remote-signing-create-button',
     signButton: 'remote-signing-sign-button',

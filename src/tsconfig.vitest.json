@@ -35,6 +35,7 @@
     "app/services/util.service.ts",
     "app/services/websocket.service.spec.ts",
     "app/services/qr-modal.service.spec.ts",
+    "app/services/deeplink.service.spec.ts",
     "app/services/websocket.service.ts",
     "app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
     "app/components/configure-wallet/configure-wallet.component.spec.ts",

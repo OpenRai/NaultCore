@@ -23,12 +23,11 @@ import { environment } from "../environments/environment";
 import { ManageRepresentativesComponent } from "./components/manage-representatives/manage-representatives.component";
 import { MultisigComponent } from "./components/multisig/multisig.component";
 import { KeygeneratorComponent } from "./components/keygenerator/keygenerator.component";
+import { WalletComponent } from "./components/wallet/wallet.component";
 
 const routes: Routes = [
   { path: "", component: WelcomeComponent },
-  // Reserved Wallet destination. The Accounts workspace remains the explicit
-  // compatibility target until NaultCore-15q.3 supplies the Wallet component.
-  { path: "wallet", redirectTo: "accounts", pathMatch: "full" },
+  { path: "wallet", component: WalletComponent },
   { path: "accounts", component: AccountsComponent },
   { path: "account/:account", component: AccountDetailsComponent },
   { path: "address-book", component: AddressBookComponent },

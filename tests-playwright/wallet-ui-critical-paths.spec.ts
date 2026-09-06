@@ -30,6 +30,30 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage.getByText(testWallet.accounts[0], { exact: false }).first()).toBeVisible();
 });
 
+test('opens the Wallet workspace and keeps actions scoped to the selected account', async ({ seededPage, testWallet }) => {
+  await seededPage.goto('/wallet');
+  await expect(seededPage).toHaveURL(/\/wallet$/);
+  await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
+  await expect(seededPage.getByTestId('wallet-total-balance')).toContainText('Across 3 accounts');
+
+  const accountSelector = seededPage.getByTestId('wallet-account-selector');
+  await expect(accountSelector).toHaveValue('');
+  await accountSelector.selectOption(testWallet.accounts[1]);
+
+  await expect(seededPage.getByTestId('wallet-selected-account')).toContainText(testWallet.accounts[1]);
+  await expect(seededPage.getByTestId('wallet-activity')).toContainText('Account #1');
+  await expect(seededPage.getByTestId('wallet-send-button')).toBeVisible();
+  await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
+
+  await seededPage.getByTestId('wallet-send-button').click();
+  await expect(seededPage).toHaveURL(new RegExp(`/send\\?account=${testWallet.accounts[1]}$`));
+
+  await seededPage.goto('/wallet');
+  await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
+  await seededPage.getByTestId('wallet-receive-button').click();
+  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}$`));
+});
+
 test('opens the About overlay on a phone viewport and closes it with the visible control', async ({ seededPage }) => {
   await seededPage.getByRole('button', { name: /NaultCore @/ }).click();
   await seededPage.setViewportSize({ width: 393, height: 852 });

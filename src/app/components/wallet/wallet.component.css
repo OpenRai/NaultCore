@@ -1,0 +1,272 @@
+.wallet-page {
+  max-inline-size: 1100px;
+  margin-inline: auto;
+  padding-block: 1rem 2rem;
+}
+
+.wallet-page-header,
+.activity-header,
+.account-summary {
+  display: flex;
+  align-items: safe center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.wallet-page-header {
+  margin-block-end: 1.25rem;
+}
+
+.eyebrow,
+.card-kicker {
+  margin: 0;
+  color: var(--uk-muted-color, #8f9299);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wallet-page h2 {
+  margin-block: 0.2rem;
+}
+
+.page-summary,
+.card-note,
+.activity-empty {
+  color: var(--uk-muted-color, #777);
+}
+
+.page-summary {
+  margin-block: 0.4rem 0;
+}
+
+.wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.wallet-card {
+  min-inline-size: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  border-radius: 0.55rem;
+  background: var(--uk-card-background, #fff);
+  box-shadow: 0 0.35rem 1.2rem rgba(0, 0, 0, 0.06);
+}
+
+.dark-mode .wallet-card {
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: 0 0.35rem 1.2rem rgba(0, 0, 0, 0.18);
+}
+
+.total-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: 220px;
+}
+
+.balance-line {
+  display: flex;
+  align-items: baseline;
+  margin-block: 0.65rem 0.1rem;
+  color: var(--uk-text-color, #222);
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.balance-fraction,
+.selected-balance small {
+  color: var(--uk-muted-color, #777);
+  font-size: 0.55em;
+}
+
+.currency-name {
+  margin-inline-start: 0.45rem;
+  color: var(--uk-muted-color, #777);
+  font-size: 0.35em;
+  font-weight: 700;
+}
+
+.fiat-balance {
+  color: var(--uk-muted-color, #777);
+}
+
+.card-note {
+  max-inline-size: 34rem;
+  margin-block: 1.25rem 0;
+}
+
+.state-badge {
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(240, 170, 0, 0.15);
+  color: #ad7400;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.account-selector-label {
+  display: block;
+  margin-block: 0.7rem 0.35rem;
+  color: var(--uk-muted-color, #777);
+  font-size: 0.85rem;
+}
+
+.account-summary {
+  align-items: flex-end;
+  margin-block: 1.25rem;
+}
+
+.account-summary h3,
+.activity-header h3 {
+  margin: 0;
+}
+
+.account-address {
+  max-inline-size: 28rem;
+  margin-block-start: 0.35rem;
+  overflow: hidden;
+  color: var(--uk-muted-color, #777);
+  text-overflow: ellipsis;
+}
+
+.selected-balance {
+  flex: 0 0 auto;
+  color: var(--uk-text-color, #222);
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.selected-balance small {
+  display: block;
+}
+
+.account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.account-actions .uk-button {
+  margin: 0;
+}
+
+.add-account-link {
+  display: inline-block;
+  margin-block-start: 1rem;
+}
+
+.empty-selection {
+  margin-block: 1.25rem;
+  padding: 0.8rem;
+  border-inline-start: 3px solid #1e87f0;
+  background: rgba(30, 135, 240, 0.08);
+}
+
+.activity-card {
+  margin-block-start: 1rem;
+}
+
+.activity-header {
+  margin-block-end: 1rem;
+}
+
+.activity-list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.activity-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  min-inline-size: 0;
+  padding: 0.75rem 0.25rem;
+  border-block-start: 1px solid rgba(127, 127, 127, 0.16);
+}
+
+.direction-mark {
+  display: grid;
+  inline-size: 1.8rem;
+  block-size: 1.8rem;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.sent-mark {
+  background: rgba(220, 70, 70, 0.12);
+  color: #cc3d3d;
+}
+
+.received-mark {
+  background: rgba(50, 170, 105, 0.14);
+  color: #258854;
+}
+
+.activity-description {
+  display: grid;
+  gap: 0.15rem;
+  min-inline-size: 0;
+}
+
+.activity-description span {
+  overflow: hidden;
+  color: var(--uk-muted-color, #777);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.sent-amount {
+  color: #cc3d3d;
+}
+
+.received-amount {
+  color: #258854;
+}
+
+.activity-empty {
+  margin-block: 0;
+}
+
+@media (max-width: 639px) {
+  .wallet-page {
+    padding-inline: 0.25rem;
+  }
+
+  .wallet-page-header,
+  .activity-header,
+  .account-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wallet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-balance {
+    text-align: start;
+  }
+
+  .activity-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .activity-amount {
+    grid-column: 2;
+  }
+}

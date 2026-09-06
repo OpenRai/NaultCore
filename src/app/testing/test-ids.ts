@@ -66,6 +66,17 @@ export const TestIds = {
     nanoNymRow: 'receive-nanonym-row',
     nanoNymRowDetailsButton: 'receive-nanonym-row-details-button',
   },
+  wallet: {
+    pageRoot: 'wallet-page-root',
+    totalBalance: 'wallet-total-balance',
+    accountSelector: 'wallet-account-selector',
+    selectedAccount: 'wallet-selected-account',
+    copyAddressButton: 'wallet-copy-address-button',
+    sendButton: 'wallet-send-button',
+    receiveButton: 'wallet-receive-button',
+    addAccountButton: 'wallet-add-account-button',
+    activity: 'wallet-activity',
+  },
   addressBook: {
     pageRoot: 'address-book-page-root',
     addContactButton: 'address-book-add-contact-button',

@@ -73,6 +73,7 @@ import { TranslocoRootModule } from './transloco/transloco-root.module';
 import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
 import { AboutOverlayComponent } from './components/about-overlay/about-overlay.component';
 import { WalletContextService } from './services/wallet-context.service';
+import { WalletComponent } from './components/wallet/wallet.component';
 
 @NgModule({
   declarations: [
@@ -114,7 +115,8 @@ import { WalletContextService } from './services/wallet-context.service';
     KeygeneratorComponent,
     NanoTransactionMobileComponent,
     NoPaddingZerosPipe,
-    AboutOverlayComponent
+    AboutOverlayComponent,
+    WalletComponent
   ],
   imports: [
     BrowserModule,

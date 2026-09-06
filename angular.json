@@ -301,7 +301,8 @@
               "src/app/components/configure-wallet/configure-wallet.component.spec.ts",
               "src/app/components/configure-app/configure-app.component.spec.ts",
               "src/app/components/sweeper/sweeper.component.spec.ts",
-              "src/app/components/send/send.component.spec.ts"
+              "src/app/components/send/send.component.spec.ts",
+              "src/app/components/wallet/wallet.component.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

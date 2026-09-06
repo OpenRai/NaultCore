@@ -41,6 +41,7 @@
     "app/components/configure-app/configure-app.component.spec.ts",
     "app/components/sweeper/sweeper.component.spec.ts",
     "app/components/send/send.component.spec.ts",
+    "app/components/wallet/wallet.component.spec.ts",
     "test-setup-vitest.ts",
     "globals.d.ts",
     "../node_modules/vitest/globals.d.ts"

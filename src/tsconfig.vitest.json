@@ -27,6 +27,8 @@
     "app/services/recovery-verification.service.spec.ts",
     "app/services/wallet.service.spec.ts",
     "app/services/wallet.service.ts",
+    "app/services/wallet-context.service.spec.ts",
+    "app/services/wallet-context.service.ts",
     "app/services/work-pool.service.spec.ts",
     "app/services/work-pool.service.ts",
     "app/services/util.service.spec.ts",

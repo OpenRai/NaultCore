@@ -92,6 +92,50 @@ describe('WalletService wallet-owned mutations', () => {
     expect(service.walletStateSubject.value.selectedAccountId).toBe('nano_2');
     expect(service.walletStateSubject.value.revision).toBe(initialRevision + 2);
   });
+
+  it('rejects an invalid selected account without changing the aggregate context', () => {
+    const service = createServiceForStateTests();
+    service.wallet.accounts = [
+      { id: 'nano_1', index: 0, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+    ];
+
+    service.selectAccount('nano_missing');
+
+    expect(service.walletState.selectedAccountId).toBeNull();
+    expect(service.walletState.selectedAccount).toBeNull();
+  });
+
+  it('restores only a persisted account that is still present in the wallet', () => {
+    const service = createServiceForStateTests();
+    service.wallet.accounts = [
+      { id: 'nano_2', index: 2, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+    ];
+
+    const restored = service.restoreSelectedAccount('nano_2');
+    expect(restored?.id).toBe('nano_2');
+    expect(service.walletState.selectedAccountId).toBe('nano_2');
+
+    service.restoreSelectedAccount('nano_missing');
+    expect(service.walletState.selectedAccountId).toBeNull();
+  });
+
+  it('falls back to the lowest-index account when the selected account is removed', async () => {
+    const service = createServiceForStateTests();
+    service.wallet.accounts = [
+      { id: 'nano_2', index: 2, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+      { id: 'nano_1', index: 1, balance: new BigNumber(0), pending: new BigNumber(0), balanceRaw: new BigNumber(0), pendingRaw: new BigNumber(0), balanceFiat: 0, pendingFiat: 0, addressBookName: null, receivePow: false },
+    ];
+    service.wallet.selectedAccountId = 'nano_2';
+    service.wallet.selectedAccount = service.wallet.accounts[0];
+    service.websocket = { unsubscribeAccounts: vi.fn() };
+    service.refreshWalletState = vi.fn().mockResolvedValue(service.walletState);
+    service.saveWalletExport = vi.fn();
+
+    await service.removeWalletAccount('nano_2');
+
+    expect(service.walletState.selectedAccountId).toBe('nano_1');
+    expect(service.walletState.selectedAccount?.id).toBe('nano_1');
+  });
 });
 
 describe('WalletService reconciliation coordination', () => {

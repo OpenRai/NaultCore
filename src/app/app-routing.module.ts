@@ -26,6 +26,9 @@ import { KeygeneratorComponent } from "./components/keygenerator/keygenerator.co
 
 const routes: Routes = [
   { path: "", component: WelcomeComponent },
+  // Reserved Wallet destination. The Accounts workspace remains the explicit
+  // compatibility target until NaultCore-15q.3 supplies the Wallet component.
+  { path: "wallet", redirectTo: "accounts", pathMatch: "full" },
   { path: "accounts", component: AccountsComponent },
   { path: "account/:account", component: AccountDetailsComponent },
   { path: "address-book", component: AddressBookComponent },

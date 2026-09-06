@@ -571,6 +571,7 @@ export class WalletService {
   /** Select a regular wallet account and publish the coherent snapshot. */
   selectAccount(accountID: string|null): WalletAccount|null {
     const account = accountID ? this.wallet.accounts.find(a => a.id === accountID) || null : null;
+    if (accountID !== null && account === null) return this.wallet.selectedAccount;
     this.wallet.selectedAccountId = account?.id || null;
     this.wallet.selectedAccount = account;
     this.publishWalletState();
@@ -633,9 +634,18 @@ export class WalletService {
       }));
     }
 
-    this.wallet.selectedAccountId = walletJson.selectedAccountId || null;
+    this.restoreSelectedAccount(walletJson.selectedAccountId || null);
 
     return this.wallet;
+  }
+
+  /** Restore a persisted selection only when it still belongs to this wallet. */
+  private restoreSelectedAccount(accountId: string | null): WalletAccount | null {
+    const account = accountId ? this.wallet.accounts.find(a => a.id === accountId) || null : null;
+    this.wallet.selectedAccountId = account?.id || null;
+    this.wallet.selectedAccount = account;
+    this.publishWalletState();
+    return account;
   }
 
   // Using full list of indexes is the latest standard with back compatability with accountsIndex
@@ -1297,6 +1307,11 @@ export class WalletService {
     if (walletAccountIndex === -1) throw new Error(`Account is not in wallet`);
 
     this.wallet.accounts.splice(walletAccountIndex, 1);
+    if (this.wallet.selectedAccountId === accountID) {
+      const fallback = [...this.wallet.accounts].sort((a, b) => a.index - b.index)[0] || null;
+      this.wallet.selectedAccountId = fallback?.id || null;
+      this.wallet.selectedAccount = fallback;
+    }
     this.publishWalletState();
 
     this.websocket.unsubscribeAccounts([accountID]);

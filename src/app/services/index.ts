@@ -13,6 +13,7 @@ export * from './representative.service';
 export * from './startup.service';
 export * from './util.service';
 export * from './wallet.service';
+export * from './wallet-context.service';
 export * from './websocket.service';
 export * from './work-pool.service';
 export * from './ninja.service';

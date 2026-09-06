@@ -23,6 +23,7 @@ import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 import { branding } from 'environments/branding';
 import { PowRoutingService } from './services/pow-routing.service';
 import { STARTUP_RUNTIME_ADAPTERS, StartupService } from './services/startup.service';
+import { WalletContextService } from './services/wallet-context.service';
 
 
 @Component({
@@ -46,6 +47,7 @@ export class AppComponent implements OnInit {
   private powRouting = inject(PowRoutingService);
   readonly startup = inject(StartupService);
   private startupAdapters = inject(STARTUP_RUNTIME_ADAPTERS);
+  private walletContext = inject(WalletContextService);
   price = inject(PriceService);
   private util = inject(UtilService);
   private desktop = inject(DesktopService);
@@ -360,17 +362,16 @@ export class AppComponent implements OnInit {
 
   selectAccount(account) {
     // note: account is null when user is switching to 'Total Balance'
-    this.walletService.selectAccount(account ? account.id : null);
+    this.walletContext.selectAccount(account ? account.id : null);
     this.toggleAccountsDropdown();
-    this.walletService.saveWalletExport();
   }
 
   quickReceive(account) {
     if (!account) return;
-    this.walletService.selectAccount(account.id);
-    this.walletService.saveWalletExport();
+    this.walletContext.selectAccount(account.id);
     this.showAccountsDropdown = false;
-    this.router.navigate(['/receive'], { queryParams: { account: account.id } });
+    const target = this.walletContext.transaction('receive', account.id);
+    this.router.navigateByUrl(this.router.createUrlTree(target.commands, { queryParams: target.queryParams }));
   }
 
   performSearch() {

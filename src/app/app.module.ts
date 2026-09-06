@@ -72,6 +72,7 @@ import { NanoTransactionMobileComponent } from './components/helpers/nano-transa
 import { TranslocoRootModule } from './transloco/transloco-root.module';
 import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
 import { AboutOverlayComponent } from './components/about-overlay/about-overlay.component';
+import { WalletContextService } from './services/wallet-context.service';
 
 @NgModule({
   declarations: [
@@ -133,6 +134,7 @@ import { AboutOverlayComponent } from './components/about-overlay/about-overlay.
   providers: [
     UtilService,
     WalletService,
+    WalletContextService,
     NotificationService,
     ApiService,
     AddressBookService,

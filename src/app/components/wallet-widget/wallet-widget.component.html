@@ -88,6 +88,7 @@
       <h2 class="uk-modal-title">Unlock Wallet</h2>
     </div>
     <div class="uk-modal-body">
+      <p class="unlock-explanation">Unlocking permits NaultCore to sign a receive block for confirmed funds and spend funds from this wallet.</p>
       <input #passwordInput autofocus type="password" [(ngModel)]="unlockPassword" (keyup.enter)="unlockWallet()"
         [class]="{ 'uk-input': true, 'password-input': true, 'uk-form-danger': !mayAttemptUnlock }"
         [placeholder]="( mayAttemptUnlock ? 'Enter wallet password' : 'Incorrect password' )"

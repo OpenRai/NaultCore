@@ -10,6 +10,22 @@
     }
   </header>
 
+  @if (walletState.lifecycle.locked && walletState.hasPending) {
+    <button
+      class="receivable-unlock"
+      type="button"
+      (click)="requestWalletUnlock()"
+      [attr.data-testid]="testIds.wallet.unlockReceivableButton"
+      aria-describedby="wallet-receivable-unlock-description"
+    >
+      <span class="receivable-unlock-copy">
+        <strong>Confirmed funds are ready to receive</strong>
+        <span id="wallet-receivable-unlock-description">Unlocking permits NaultCore to sign the receive block and spend these funds.</span>
+      </span>
+      <span class="uk-button uk-button-primary">Unlock to receive</span>
+    </button>
+  }
+
   <section class="wallet-grid" aria-label="Wallet overview">
     <article class="wallet-card total-card" [attr.data-testid]="testIds.wallet.totalBalance">
       <div class="card-kicker">Total wallet balance</div>
@@ -51,7 +67,7 @@
         </div>
         <div class="account-actions">
           <button class="uk-button uk-button-default" type="button" ngxClipboard [cbContent]="account.id" [attr.data-testid]="testIds.wallet.copyAddressButton">Copy address</button>
-          <button class="uk-button uk-button-primary" type="button" (click)="openTransaction('receive')" [attr.data-testid]="testIds.wallet.receiveButton">Receive</button>
+          <button class="uk-button uk-button-primary" type="button" (click)="openReceive()" [attr.data-testid]="testIds.wallet.receiveButton">Receive</button>
           <button class="uk-button uk-button-secondary" type="button" (click)="openTransaction('send')" [attr.data-testid]="testIds.wallet.sendButton">Send</button>
         </div>
       } @else {
@@ -81,7 +97,15 @@
     } @else {
       <div class="activity-list">
         @for (pending of selectedPendingBlocks; track pending.hash) {
-          <div class="activity-row pending-row">
+          <div
+            class="activity-row pending-row actionable"
+            role="button"
+            tabindex="0"
+            (click)="openReceive()"
+            (keydown.enter)="openReceive()"
+            (keydown.space)="activateReceiveFromKeyboard($event)"
+            [attr.aria-label]="walletState.lifecycle.locked ? 'Unlock wallet to receive confirmed funds' : 'Open Receive for confirmed funds'"
+          >
             <span class="direction-mark received-mark" aria-hidden="true">+</span>
             <div class="activity-description"><strong>Ready to receive</strong><span>Confirmed incoming funds</span></div>
             <div class="activity-amount received-amount">+{{ formatBalancePart(pending.amount, 0) }}{{ formatBalancePart(pending.amount, 1) }} XNO</div>

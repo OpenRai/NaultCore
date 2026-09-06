@@ -383,6 +383,13 @@ export class AppComponent implements OnInit {
     this.router.navigateByUrl(this.router.createUrlTree(target.commands, { queryParams: target.queryParams }));
   }
 
+  requestWalletUnlockFromReceivable(event?: KeyboardEvent): void {
+    event?.preventDefault();
+    if (this.walletService.isLocked()) {
+      void this.walletService.requestWalletUnlock();
+    }
+  }
+
   performSearch() {
     const searchData = this.searchData.trim();
     if (!searchData.length) return;

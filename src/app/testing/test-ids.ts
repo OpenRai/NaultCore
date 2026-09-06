@@ -6,6 +6,7 @@ export const TestIds = {
     totalBalanceXnoCard: 'total-balance-xno-card',
     totalBalanceFiatCard: 'total-balance-fiat-card',
     incomingBalanceCard: 'incoming-balance-card',
+    pendingUnlockAction: 'pending-unlock-action',
     quickReceiveButton: 'quick-receive-button',
     quickReceiveMenu: 'quick-receive-menu',
   },
@@ -69,6 +70,7 @@ export const TestIds = {
   wallet: {
     pageRoot: 'wallet-page-root',
     totalBalance: 'wallet-total-balance',
+    unlockReceivableButton: 'wallet-unlock-receivable-button',
     accountSelector: 'wallet-account-selector',
     selectedAccount: 'wallet-selected-account',
     copyAddressButton: 'wallet-copy-address-button',

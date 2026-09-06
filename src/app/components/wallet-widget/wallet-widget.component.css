@@ -12,3 +12,8 @@
 .password-input {
   transition: border-color 100ms ease-in-out, background 100ms ease-in-out;
 }
+
+.unlock-explanation {
+  color: var(--uk-muted-color, #777);
+  font-size: 0.9rem;
+}

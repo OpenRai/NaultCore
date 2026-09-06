@@ -96,6 +96,24 @@ export class WalletComponent implements OnInit, OnDestroy {
     this.walletContext.selectAccount(accountId || null);
   }
 
+  requestWalletUnlock(): void {
+    if (!this.walletService.isLocked()) return;
+    void this.walletService.requestWalletUnlock();
+  }
+
+  async openReceive(): Promise<void> {
+    if (this.walletService.isLocked()) {
+      const unlocked = await this.walletService.requestWalletUnlock();
+      if (!unlocked) return;
+    }
+    this.openTransaction('receive');
+  }
+
+  activateReceiveFromKeyboard(event: KeyboardEvent): void {
+    event.preventDefault();
+    this.openReceive();
+  }
+
   openTransaction(intent: TransactionIntent): void {
     const target = this.walletContext.transaction(intent, this.selectedAccountId || null);
     this.router.navigateByUrl(this.router.createUrlTree([...target.commands], { queryParams: target.queryParams }));

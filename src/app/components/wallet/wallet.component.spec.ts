@@ -62,6 +62,8 @@ describe('WalletComponent', () => {
       getWalletAccount: vi.fn(id => walletState$.value.accounts.find(item => item.id === id)),
       selectAccount: vi.fn(),
       saveWalletExport: vi.fn(),
+      isLocked: vi.fn(() => false),
+      requestWalletUnlock: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -100,4 +102,14 @@ describe('WalletComponent', () => {
       queryParams: { account: account.id },
     });
   });
+
+  it('requests unlock instead of navigating to Receive while locked', async () => {
+    wallet.isLocked.mockReturnValue(true);
+    wallet.requestWalletUnlock.mockResolvedValue(false);
+
+    await component.openReceive();
+
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
+  });
+
 });

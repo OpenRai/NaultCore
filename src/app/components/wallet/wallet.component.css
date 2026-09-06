@@ -109,6 +109,43 @@
   font-weight: 700;
 }
 
+.receivable-unlock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  inline-size: 100%;
+  margin-block-end: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(30, 135, 240, 0.45);
+  border-radius: 0.55rem;
+  background: rgba(30, 135, 240, 0.08);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: start;
+}
+
+.receivable-unlock:hover {
+  background: rgba(30, 135, 240, 0.14);
+}
+
+.receivable-unlock:focus-visible,
+.activity-row.actionable:focus-visible {
+  outline: 3px solid rgba(30, 135, 240, 0.55);
+  outline-offset: 2px;
+}
+
+.receivable-unlock-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.receivable-unlock-copy > span {
+  color: var(--uk-muted-color, #777);
+  font-size: 0.85rem;
+}
+
 .account-selector-label {
   display: block;
   margin-block: 0.7rem 0.35rem;
@@ -191,6 +228,14 @@
   border-block-start: 1px solid rgba(127, 127, 127, 0.16);
 }
 
+.activity-row.actionable {
+  cursor: pointer;
+}
+
+.activity-row.actionable:hover {
+  background: rgba(30, 135, 240, 0.06);
+}
+
 .direction-mark {
   display: grid;
   inline-size: 1.8rem;
@@ -268,5 +313,10 @@
 
   .activity-amount {
     grid-column: 2;
+  }
+
+  .receivable-unlock {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

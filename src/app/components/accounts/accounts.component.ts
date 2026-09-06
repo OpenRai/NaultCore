@@ -63,6 +63,10 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   workStatusByAccount = new Map<string, WorkAccountStatus>();
   workStatusSub: Subscription | null = null;
 
+  get walletLocked(): boolean {
+    return this.walletService.isLocked();
+  }
+
   // Generate NanoNym Modal
   @ViewChild('generateNanoNymModal') generateNanoNymModalRef!: ElementRef;
   generateNanoNymModal: any = null;
@@ -176,6 +180,17 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   selectAccountForAction(accountId: string): void {
     this.walletContext.selectAccount(accountId);
+  }
+
+  async receiveToAccount(accountId: string, event: MouseEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectAccountForAction(accountId);
+    if (this.walletLocked) {
+      const unlocked = await this.walletService.requestWalletUnlock();
+      if (!unlocked) return;
+    }
+    this.router.navigate(['/receive'], { queryParams: { account: accountId } });
   }
 
   navigateToNanoNym(account: any) {

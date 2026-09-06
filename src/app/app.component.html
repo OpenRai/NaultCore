@@ -178,10 +178,15 @@
                 } @else {
                   @if ( (settings.settings.pendingOption !== 'manual')) {
                     @if (walletService.isLocked()) {
-                      <div class="nav-action-receive user-action-required uk-animation-slide-left">
+                      <button
+                        type="button"
+                        class="nav-action-receive user-action-required uk-animation-slide-left"
+                        (click)="requestWalletUnlockFromReceivable()"
+                        [attr.data-testid]="testIds.app.pendingUnlockAction"
+                      >
                         <div class="icon" uk-icon="icon: chevron-up; ratio: 1.2;"></div>
                         <div class="label">Unlock Wallet to Receive</div>
-                      </div>
+                      </button>
                     }
                   } @else {
                     <div class="nav-action-receive uk-animation-slide-left">
@@ -196,12 +201,18 @@
                   [class.interactable]="walletService.isLocked()"
                   [attr.role]="walletService.isLocked() ? 'button' : null"
                   [attr.tabindex]="walletService.isLocked() ? 0 : null"
-                  (click)="walletService.isLocked() && walletService.requestWalletUnlock()"
-                  (keyup.enter)="walletService.isLocked() && walletService.requestWalletUnlock()"
+                  [attr.aria-label]="walletService.isLocked() ? 'Unlock wallet to receive confirmed funds' : null"
+                  (click)="requestWalletUnlockFromReceivable()"
+                  (keydown.enter)="requestWalletUnlockFromReceivable()"
+                  (keydown.space)="requestWalletUnlockFromReceivable($event)"
                 >
                   <div class="card-contents">
                     <div class="account-name-container">
-                      <a routerLink="/receive" class="name">Receivable</a>
+                      @if (walletService.isLocked()) {
+                        <span class="name">Receivable</span>
+                      } @else {
+                        <a routerLink="/receive" class="name">Receivable</a>
+                      }
                       <div class="receivable-status">Confirmed &bull; ready to receive</div>
                     </div>
                     <div class="account-balances">

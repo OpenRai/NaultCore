@@ -83,3 +83,36 @@ test('a locked wallet with a receivable shows an unlockable receivable card', as
   await receivableCard.click();
   await expect(page.locator('#unlock-wallet-modal input[type="password"]')).toBeVisible();
 });
+
+test('the Wallet workspace exposes a mobile-safe unlock response for receivable funds', async ({ page }) => {
+  await mockWalletReceivable(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/wallet');
+
+  const unlockReceivable = page.getByTestId('wallet-unlock-receivable-button');
+  await expect(unlockReceivable).toBeVisible({ timeout: 15000 });
+  await expect(unlockReceivable).toContainText('Confirmed funds are ready to receive');
+  await expect(unlockReceivable).toContainText('Unlock to receive');
+  await unlockReceivable.press('Enter');
+
+  const unlockModal = page.locator('#unlock-wallet-modal');
+  await expect(unlockModal).toBeVisible();
+  await expect(unlockModal).toContainText('sign a receive block for confirmed funds and spend funds from this wallet');
+});
+
+test('an account Receive entry point uses unlock while the wallet is locked', async ({ page }) => {
+  await mockWalletReceivable(page);
+  await page.goto('/accounts');
+
+  const receiveButton = page.getByTestId('receive-account-button').first();
+  await expect(receiveButton).toBeVisible({ timeout: 15000 });
+  await receiveButton.click();
+
+  await expect(page.locator('#unlock-wallet-modal')).toBeVisible();
+  await expect(page).toHaveURL(/\/accounts$/);
+
+  await page.locator('#unlock-wallet-modal input[type="password"]').fill(e2eWalletPassword);
+  await page.getByTestId('wallet-widget-unlock-button').click();
+  await expect(page).toHaveURL(new RegExp(`/receive\\?account=${getE2ETestWallet().accounts[0]}$`));
+  await expect(page.getByTestId('receive-page-root')).toBeVisible({ timeout: 15000 });
+});

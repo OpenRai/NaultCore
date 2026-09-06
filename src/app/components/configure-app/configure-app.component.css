@@ -49,3 +49,50 @@
 @keyframes pow-source-spin {
     to { transform: rotate(360deg); }
 }
+
+
+.settings-section-index {
+    color: var(--uk-muted-color, #999);
+}
+
+.settings-section-index a {
+    color: inherit;
+}
+
+.settings-section-index a:hover {
+    color: var(--uk-link-color, #1e87f0);
+    text-decoration: none;
+}
+
+.settings-section-divider {
+    margin: 0 0.5em;
+    color: var(--uk-muted-color, #bbb);
+    user-select: none;
+}
+
+.settings-saved-pill {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.active-status-bar {
+    background: rgba(0, 0, 0, 0.03);
+    padding: 8px 12px;
+    border-radius: 4px;
+    border-left: 3px solid #1e87f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.dark-mode .active-status-bar {
+    background: rgba(255, 255, 255, 0.04);
+}

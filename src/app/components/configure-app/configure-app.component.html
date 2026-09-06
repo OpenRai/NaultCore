@@ -2,9 +2,24 @@
   <div class="uk-width-1-1">
     <h2 class="uk-heading-divider">{{ 'configure-app.configure-nault' | transloco }}</h2>
 
-    <div class="uk-card uk-card-default uk-margin">
-      <div class="uk-card-header">
-        <h3 class="uk-card-title">{{ 'configure-app.display-settings' | transloco }}</h3>
+    <p class="settings-section-index uk-visible@l uk-text-small uk-margin-medium-bottom">
+      <a href="#display-settings">{{ 'configure-app.display-settings' | transloco }}</a>
+      <span class="settings-section-divider" aria-hidden="true">·</span>
+      <a href="#wallet-settings">{{ 'configure-app.wallet-settings' | transloco }}</a>
+      <span class="settings-section-divider" aria-hidden="true">·</span>
+      <a href="#server-settings">{{ 'configure-app.nano-rpc-settings' | transloco }}</a>
+      <span class="settings-section-divider" aria-hidden="true">·</span>
+      <a href="#advanced-settings">{{ 'configure-app.advanced-options' | transloco }}</a>
+    </p>
+
+    <div class="uk-card uk-card-default uk-margin" id="display-settings">
+      <div class="uk-card-header uk-flex uk-flex-between uk-flex-middle">
+        <h3 class="uk-card-title uk-margin-remove">{{ 'configure-app.display-settings' | transloco }}</h3>
+        @if (savedSection === 'display') {
+          <span class="settings-saved-pill uk-badge uk-label-success uk-animation-fade" aria-live="polite">
+            <span uk-icon="icon: check; ratio: 0.7"></span> {{ 'configure-app.saved' | transloco }}
+          </span>
+        }
       </div>
       <div class="uk-card-body">
         <div uk-grid>
@@ -17,7 +32,7 @@
                   {{ 'configure-app.language' | transloco }}
                 </label>
                 <div class="uk-form-controls">
-                  <select class="uk-select" [(ngModel)]="selectedLanguage" id="languageselector">
+                  <select class="uk-select" [ngModel]="selectedLanguage" (ngModelChange)="onLanguageChange($event)" id="languageselector">
                     @for (language of languages; track language) {
                       <option [value]="language.id">{{ language.label }}</option>
                     }
@@ -34,7 +49,7 @@
               <div class="uk-margin">
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.fiat-currency' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-the-currency-pair-used-when-showing-fiat-values')"></span></label>
                 <div class="uk-form-controls">
-                  <select class="uk-select" [(ngModel)]="selectedCurrency" id="form-horizontal-select">
+                  <select class="uk-select" [ngModel]="selectedCurrency" (ngModelChange)="onCurrencyChange($event)" id="form-horizontal-select">
                     @for (currency of currencies; track currency) {
                       <option [value]="currency.value">{{ currency.name | transloco }}</option>
                     }
@@ -51,7 +66,7 @@
               <div class="uk-margin">
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.night-mode' | transloco }}</label>
                 <div class="uk-form-controls">
-                  <select class="uk-select" [(ngModel)]="selectedNightModeOption" id="form-horizontal-select">
+                  <select class="uk-select" [ngModel]="selectedNightModeOption" (ngModelChange)="onNightModeChange($event)" id="form-horizontal-select">
                     @for (nightModeOption of nightModeOptions; track nightModeOption) {
                       <option [value]="nightModeOption.value">{{ nightModeOption.name | transloco }}</option>
                     }
@@ -68,7 +83,7 @@
               <div class="uk-margin">
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.identicons' | transloco }}</label>
                 <div class="uk-form-controls">
-                  <select class="uk-select" [(ngModel)]="selectedIdenticonOption" id="form-horizontal-select">
+                  <select class="uk-select" [ngModel]="selectedIdenticonOption" (ngModelChange)="onIdenticonChange($event)" id="form-horizontal-select">
                     @for (identiconOption of identiconOptions; track identiconOption) {
                       <option [value]="identiconOption.value">{{ identiconOption.name | transloco }}</option>
                     }
@@ -86,7 +101,7 @@
                   <label class="uk-form-label">Nostr Notifications</label>
                   <div class="uk-form-controls">
                     <div class="uk-inline uk-width-1-1">
-                      <select class="uk-select" [(ngModel)]="useNostr">
+                      <select class="uk-select" [ngModel]="useNostr" (ngModelChange)="onNanonymChange('useNostr', $event)">
                         <option [ngValue]="true">Enabled</option>
                         <option [ngValue]="false">Disabled</option>
                       </select>
@@ -105,7 +120,7 @@
                   <label class="uk-form-label">OrbitDB Notifications</label>
                   <div class="uk-form-controls">
                     <div class="uk-inline uk-width-1-1">
-                      <select class="uk-select" [(ngModel)]="useOrbitDb">
+                      <select class="uk-select" [ngModel]="useOrbitDb" (ngModelChange)="onNanonymChange('useOrbitDb', $event)">
                         <option [ngValue]="true">Enabled</option>
                         <option [ngValue]="false">Disabled</option>
                       </select>
@@ -119,15 +134,17 @@
 
         </div>
       </div>
-      <div class="uk-card-footer uk-text-right@s uk-text-center nlt-button-group">
-        <button (click)="updateDisplaySettings()" class="uk-button uk-button-primary uk-width-auto@s uk-width-1-1" [attr.data-testid]="testIds.appSettings.saveSettingsButton">{{ 'configure-app.update-display-settings' | transloco }}</button>
-      </div>
     </div>
 
 
-    <div class="uk-card uk-card-default uk-margin">
-      <div class="uk-card-header">
-        <h3 class="uk-card-title">{{ 'configure-app.wallet-settings' | transloco }}</h3>
+    <div class="uk-card uk-card-default uk-margin" id="wallet-settings">
+      <div class="uk-card-header uk-flex uk-flex-between uk-flex-middle">
+        <h3 class="uk-card-title uk-margin-remove">{{ 'configure-app.wallet-settings' | transloco }}</h3>
+        @if (savedSection === 'wallet') {
+          <span class="settings-saved-pill uk-badge uk-label-success uk-animation-fade" aria-live="polite">
+            <span uk-icon="icon: check; ratio: 0.7"></span> {{ 'configure-app.saved' | transloco }}
+          </span>
+        }
       </div>
       <div class="uk-card-body">
         <div uk-grid>
@@ -140,7 +157,7 @@
                 <div class="uk-form-controls">
 
                   <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedInactivityMinutes">
+                    <select class="uk-select" [ngModel]="selectedInactivityMinutes" (ngModelChange)="onInactivityChange($event)">
                       @for (option of inactivityOptions; track option) {
                         <option [value]="option.value">{{ option.name | transloco: option.params }}</option>
                       }
@@ -159,7 +176,7 @@
                 <div class="uk-form-controls">
 
                   <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedStorage">
+                    <select class="uk-select" [ngModel]="selectedStorage" (ngModelChange)="onStorageChange($event)">
                       @for (storage of storageOptions; track storage) {
                         <option [value]="storage.value">{{ storage.name | transloco }}</option>
                       }
@@ -178,7 +195,7 @@
                   <legend class="uk-form-label">{{ 'configure-app.pow-source' | transloco }}</legend>
                 <div class="uk-form-controls">
                   <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedPoWOption" [attr.aria-label]="'configure-app.pow-source' | transloco">
+                    <select class="uk-select" [ngModel]="selectedPoWOption" (ngModelChange)="onPoWOptionChange($event)" [attr.aria-label]="'configure-app.pow-source' | transloco">
                     @for (pow of powOptions; track pow.value) {
                       <option [value]="pow.value">{{ pow.name | transloco }}</option>
                     }
@@ -205,12 +222,43 @@
               </div>
               @if (selectedPoWOption === 'remote') {
                 <div class="uk-margin">
+                  <div class="active-status-bar uk-margin-small-bottom">
+                    <span class="uk-text-meta">{{ 'configure-app.active-work-server' | transloco }}:</span>
+                    <strong>{{ activeWorkServer ? activeWorkServer : ('configure-app.default-rpc-work-server' | transloco) }}</strong>
+                  </div>
                   <label class="uk-form-label">{{ 'configure-app.work-server' | transloco }}</label>
                   <div class="uk-form-controls">
-                    <input [(ngModel)]="customWorkServer" class="uk-input uk-margin-small-bottom" type="text" placeholder="http://my-work-server:port">
+                    <input [(ngModel)]="candidateWorkServer" class="uk-input uk-margin-small-bottom" type="text" placeholder="http://my-work-server:port">
                     <span class="uk-text-meta">
                       {{ 'configure-app.this-has-to-be-a-valid-work.1' | transloco }} <a href="https://docs.nault.cc/2021/02/13/custom-work-server.html" target="_blank" rel="noopener noreferrer">{{ 'configure-app.this-has-to-be-a-valid-work.2-link-work' | transloco }}</a> {{ 'configure-app.this-has-to-be-a-valid-work.3' | transloco }}
                     </span>
+                    <label class="uk-form-label uk-margin-small-top" for="custom-work-server-auth">{{ 'configure-app.api-key' | transloco }}</label>
+                    <input [(ngModel)]="candidateWorkServerAuth" class="uk-input uk-margin-small-bottom" id="custom-work-server-auth" name="custom-work-server-auth" type="password" autocomplete="off" spellcheck="false" placeholder="Optional">
+                    <span class="uk-text-meta">
+                      {{ 'configure-app.this-has-to-be-a-valid-authorization-header' | transloco }}<br>
+                      <i>{{ 'configure-app.for-example-using-basic-auth' | transloco }}</i>
+                    </span>
+
+                    <div class="uk-margin-small-top uk-flex uk-flex-middle uk-flex-wrap" style="gap: 8px;">
+                      <button (click)="activateWorkServer()" [disabled]="testingWorkServer || !candidateWorkServer" class="uk-button uk-button-primary uk-button-small">
+                        @if (testingWorkServer) {
+                          <span class="pow-source-spinner" aria-hidden="true"></span> {{ 'configure-app.testing' | transloco }}
+                        } @else {
+                          {{ 'configure-app.test-and-use' | transloco }}
+                        }
+                      </button>
+                      @if (activeWorkServer) {
+                        <button (click)="resetWorkServerToDefault()" [disabled]="testingWorkServer" class="uk-button uk-button-default uk-button-small">
+                          {{ 'configure-app.reset-to-default-work-server' | transloco }}
+                        </button>
+                      }
+                    </div>
+
+                    @if (workServerTestError) {
+                      <div class="uk-alert uk-alert-danger uk-margin-small-top" role="alert">
+                        {{ workServerTestError }}
+                      </div>
+                    }
                   </div>
                 </div>
               }
@@ -219,7 +267,7 @@
                   <label class="uk-form-label">{{ 'configure-app.pow-multiplier' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.optional-increased-work-for-transaction-priority-during')"></span></label>
                   <div class="uk-form-controls">
                     <div class="uk-inline uk-width-1-1">
-                      <select class="uk-select" [(ngModel)]="selectedMultiplierOption">
+                      <select class="uk-select" [ngModel]="selectedMultiplierOption" (ngModelChange)="onMultiplierChange($event)">
                         @for (multiplier of multiplierOptions; track multiplier) {
                           <option [value]="multiplier.value">{{ multiplier.name | transloco }}</option>
                         }
@@ -239,7 +287,7 @@
                 <div class="uk-form-controls">
 
                   <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedPendingOption">
+                    <select class="uk-select" [ngModel]="selectedPendingOption" (ngModelChange)="onPendingOptionChange($event)">
                       @for (pending of pendingOptions; track pending) {
                         <option [value]="pending.value">{{ pending.name | transloco }}</option>
                       }
@@ -260,7 +308,7 @@
                     <div class="uk-width-1-1">
                       <div class="uk-inline uk-width-1-1">
                         <label class="uk-form-icon uk-link-reset uk-link-muted xno-symbol" for="form-horizontal-amount"></label>
-                        <input [(ngModel)]="minimumReceive" class="uk-input" style="padding-left: 52px !important;" id="form-horizontal-text4" type="text" inputmode="decimal" autocomplete="off" [placeholder]="t('configure-app.leave-blank-to-accept-transactions-of-any-amount')">
+                        <input [(ngModel)]="minimumReceive" (blur)="onMinimumReceiveBlur()" (keyup.enter)="onMinimumReceiveBlur()" class="uk-input" style="padding-left: 52px !important;" id="form-horizontal-text4" type="text" inputmode="decimal" autocomplete="off" [placeholder]="t('configure-app.leave-blank-to-accept-transactions-of-any-amount')">
                       </div>
 
                     </div>
@@ -278,7 +326,7 @@
                 <div class="uk-form-controls">
 
                   <div class="uk-inline uk-width-1-1">
-                    <select class="uk-select" [(ngModel)]="selectedDecentralizedAliasesOption">
+                    <select class="uk-select" [ngModel]="selectedDecentralizedAliasesOption" (ngModelChange)="onDecentralizedAliasesChange($event)">
                       @for (decentralizedAliasesOption of decentralizedAliasesOptions; track decentralizedAliasesOption) {
                         <option [value]="decentralizedAliasesOption.value">{{ decentralizedAliasesOption.name | transloco }}</option>
                       }
@@ -298,7 +346,7 @@
                 <div class="uk-form-controls">
                   <div class="uk-inline uk-width-1-1">
                     <a class="uk-form-icon uk-form-icon-flip" uk-icon="icon: camera" (click)="openQR('rep1','account')" uk-tooltip [title]="t('general.scan-qr-code')"></a>
-                    <input (blur)="validateRepresentative()" (input)="searchRepresentatives()" (focus)="searchRepresentatives()" [(ngModel)]="defaultRepresentative" class="uk-input" [ngClass]="{ 'uk-form-success': repStatus === 2, 'uk-form-danger': repStatus === 0 }" id="form-horizontal-text3" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" [placeholder]="t('configure-app.leave-blank-to-use-a-recommended-one')" #repInput>
+                    <input (blur)="validateRepresentative(); saveDefaultRepresentative()" (keyup.enter)="validateRepresentative(); saveDefaultRepresentative()" (input)="searchRepresentatives()" (focus)="searchRepresentatives()" [(ngModel)]="defaultRepresentative" class="uk-input" [ngClass]="{ 'uk-form-success': repStatus === 2, 'uk-form-danger': repStatus === 0 }" id="form-horizontal-text3" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" [placeholder]="t('configure-app.leave-blank-to-use-a-recommended-one')" #repInput>
 
                     @if ((representativeResults$ | async).length) {
                       <div [hidden]="!showRepresentatives" class="nlt-dropdown uk-animation-slide-down-small uk-width-1-1 uk-card uk-card-default uk-card-body uk-position-absolute" style="z-index: 15000">
@@ -338,18 +386,30 @@
 
         </div>
       </div>
-      <div class="uk-card-footer uk-text-right@s uk-text-center nlt-button-group">
-        <button (click)="updateWalletSettings()" class="uk-button uk-button-primary uk-width-auto@s uk-width-1-1" [attr.data-testid]="testIds.appSettings.saveSettingsButton">{{ 'configure-app.update-wallet-settings' | transloco }}</button>
-      </div>
     </div>
 
 
-    <div class="uk-card uk-card-default uk-margin">
-      <div class="uk-card-header" id="server-settings">
-        <h3 class="uk-card-title">{{ 'configure-app.server-settings' | transloco }}</h3>
+    <div class="uk-card uk-card-default uk-margin" id="server-settings">
+      <div class="uk-card-header uk-flex uk-flex-between uk-flex-middle">
+        <h3 class="uk-card-title uk-margin-remove">{{ 'configure-app.nano-rpc-settings' | transloco }}</h3>
+        @if (savedSection === 'server') {
+          <span class="settings-saved-pill uk-badge uk-label-success uk-animation-fade" aria-live="polite">
+            <span uk-icon="icon: check; ratio: 0.7"></span> {{ 'configure-app.saved' | transloco }}
+          </span>
+        }
       </div>
       <div class="uk-card-body">
         <div uk-grid>
+
+          <div class="uk-width-1-1">
+            <div class="active-status-bar uk-margin-small-bottom">
+              <span class="uk-text-meta">{{ 'configure-app.active-server' | transloco }}:</span>
+              <strong>{{ getActiveServerLabel() }}</strong>
+              @if (activeServerAPI && activeServer !== 'offline') {
+                <span class="uk-text-muted uk-text-small uk-margin-small-left">({{ activeServerAPI }})</span>
+              }
+            </div>
+          </div>
 
           <div class="uk-width-1-1">
             <div class="uk-form-horizontal">
@@ -357,7 +417,7 @@
               <div class="uk-margin">
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.server-configuration' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-which-server-is-used-to-communicate-with-the-nano')"></span></label>
                 <div class="uk-form-controls">
-                  <select class="uk-select" [(ngModel)]="selectedServer" (change)="serverConfigChange(selectedServer)" id="form-horizontal-select">
+                  <select class="uk-select" [ngModel]="selectedServer" (ngModelChange)="serverConfigChange($event)" id="form-horizontal-select">
                     @for (server of serverOptions; track server) {
                       <option [value]="server.value">{{ server.name }}</option>
                     }
@@ -445,6 +505,36 @@
             </div>
           }
 
+          <div class="uk-width-1-1">
+            <div class="uk-margin-small-top uk-flex uk-flex-middle uk-flex-wrap" style="gap: 8px;">
+              @if (selectedServer === 'offline') {
+                @if (activeServer !== 'offline') {
+                  <button (click)="activateOfflineMode()" class="uk-button uk-button-danger">
+                    {{ 'configure-app.use-offline-mode' | transloco }}
+                  </button>
+                }
+              } @else {
+                <button (click)="activateServer()" [disabled]="testingServer" class="uk-button uk-button-primary">
+                  @if (testingServer) {
+                    <span class="pow-source-spinner" aria-hidden="true"></span> {{ 'configure-app.testing' | transloco }}
+                  } @else {
+                    {{ 'configure-app.test-and-use' | transloco }}
+                  }
+                </button>
+                @if (isServerCandidateDifferent()) {
+                  <button (click)="revertServerCandidate()" [disabled]="testingServer" class="uk-button uk-button-default">
+                    {{ 'configure-app.revert' | transloco }}
+                  </button>
+                }
+              }
+            </div>
+            @if (serverTestError) {
+              <div class="uk-alert uk-alert-danger uk-margin-small-top" role="alert">
+                {{ serverTestError }}
+              </div>
+            }
+          </div>
+
           @if (showStatValues() || showServerConfigs()) {
             <div class="uk-width-1-1">
               <div class="uk-form-horizontal">
@@ -531,13 +621,10 @@
 
         </div>
       </div>
-      <div class="uk-card-footer uk-text-right@s uk-text-center">
-        <button (click)="updateServerSettings()" class="uk-button uk-button-primary uk-width-auto@s uk-width-1-1" [attr.data-testid]="testIds.appSettings.saveSettingsButton">{{ 'configure-app.update-server-settings' | transloco }}</button>
-      </div>
     </div>
 
 
-    <div class="uk-card uk-card-default uk-margin">
+    <div class="uk-card uk-card-default uk-margin" id="advanced-settings">
       <div class="uk-card-header">
         <h3 class="uk-card-title">{{ 'configure-app.advanced-options' | transloco }}</h3>
       </div>

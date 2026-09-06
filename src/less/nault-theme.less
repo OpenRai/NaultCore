@@ -18,12 +18,23 @@ html {
 	inline-size: 100%;
 	block-size: 100%;
 	overflow: hidden;
+	// Dark by default — matches the app's default dark theme.
+	// Safari's bottom toolbar samples the document background; without this
+	// it falls back to white even when the app UI is dark.
+	background-color: #22222A;
 }
 
 body {
 	inline-size: 100%;
 	min-block-size: 100%;
 	block-size: 100%;
+	background-color: #22222A;
+}
+
+// Light mode override — applied when body.light-mode is set by the app.
+body.light-mode,
+html:has(body.light-mode) {
+	background-color: #f8f8f8;
 }
 
 app-root {

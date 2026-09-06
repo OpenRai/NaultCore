@@ -145,15 +145,19 @@ test('adds, edits, and removes an address-book contact', async ({ seededPage, te
   await expect(editedContact).not.toBeVisible();
 });
 
-test('updates display settings', async ({ seededPage }) => {
+test('updates display settings with autosave', async ({ seededPage }) => {
   await navigate(seededPage, '/configure-app');
   await expect(seededPage.getByTestId('app-settings-page-root')).toBeVisible();
 
   const currency = seededPage.locator('select').filter({ has: seededPage.locator('option[value="EUR"]') });
   await currency.selectOption('EUR');
-  await seededPage.getByRole('button', { name: 'Update Display Settings' }).click();
-
+  await expect(seededPage.locator('.settings-saved-pill')).toBeVisible();
   await expect(currency).toHaveValue('EUR');
+
+  await navigate(seededPage, '/accounts');
+  await navigate(seededPage, '/configure-app');
+  const reloadedCurrency = seededPage.locator('select').filter({ has: seededPage.locator('option[value="EUR"]') });
+  await expect(reloadedCurrency).toHaveValue('EUR');
 });
 
 test('exports a wallet backup', async ({ seededPage }) => {

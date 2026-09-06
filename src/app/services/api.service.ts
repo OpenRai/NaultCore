@@ -13,7 +13,7 @@ export class ApiService {
 
   storeKey = `nanovault-active-difficulty`;
 
-  private async request(action, data, skipError, url = '', validateResponse?): Promise<any> {
+  private async request(action, data, skipError, url = '', validateResponse?, authorization = this.appSettings.settings.serverAuth): Promise<any> {
     data.action = action;
     const apiUrl = url === '' ? this.appSettings.settings.serverAPI : url;
     if (!apiUrl) {
@@ -28,14 +28,14 @@ export class ApiService {
     let options: any = {
       responseType: 'json',
     };
-    if (this.appSettings.settings.serverAuth != null && this.appSettings.settings.serverAuth !== '') {
+    if (authorization != null && authorization !== '') {
       options =
         Object.assign(
           {},
           options,
           {
             headers: new HttpHeaders()
-              .set('Authorization', this.appSettings.settings.serverAuth)
+              .set('Authorization', authorization)
           }
         );
     }
@@ -126,12 +126,12 @@ export class ApiService {
   async blockCount(): Promise<{count: number, unchecked: number, cemented: number }> {
     return await this.request('block_count', { include_cemented: 'true'}, false);
   }
-  async workGenerate(hash, difficulty, workServer = ''): Promise<{ work: string }> {
-    return this.workGenerateOnce(hash, difficulty, workServer, false);
+  async workGenerate(hash, difficulty, workServer = '', workServerAuth = ''): Promise<{ work: string }> {
+    return this.workGenerateOnce(hash, difficulty, workServer, false, workServerAuth);
   }
 
   /** Performs one work request without the random-server retry loop. */
-  async workGenerateOnce(hash, difficulty, workServer = '', skipError = true): Promise<{ work: string }> {
+  async workGenerateOnce(hash, difficulty, workServer = '', skipError = true, workServerAuth = ''): Promise<{ work: string }> {
     const validateResponse = (res) => {
       if(res.work == null) {
         return {
@@ -162,7 +162,7 @@ export class ApiService {
       };
     };
 
-    return await this.request('work_generate', { hash, difficulty }, skipError || workServer !== '', workServer, validateResponse);
+    return await this.request('work_generate', { hash, difficulty }, skipError || workServer !== '', workServer, validateResponse, workServer ? workServerAuth : undefined);
   }
   async process(block, subtype: TxType): Promise<{ hash: string, error?: string }> {
     return await this.request('process', { block: JSON.stringify(block), watch_work: 'false', subtype: TxType[subtype] }, false);
@@ -198,6 +198,46 @@ export class ApiService {
     online_stake_total: string, trended_stake_total: string, peers_stake_total: string }> {
     return await this.request('confirmation_quorum', { }, true);
   }
+  async probeServer(apiUrl: string, authorization?: string): Promise<{ success: boolean; version?: any; blockCount?: any; error?: string }> {
+    if (!apiUrl || (!apiUrl.startsWith('http://') && !apiUrl.startsWith('https://'))) {
+      return { success: false, error: 'Invalid API URL' };
+    }
+    let headers = new HttpHeaders();
+    if (authorization != null && authorization !== '') {
+      headers = headers.set('Authorization', authorization);
+    }
+    try {
+      const res: any = await this.http.post(apiUrl, { action: 'version' }, { headers, responseType: 'json' }).toPromise();
+      if (res && (res.node_vendor || res.rpc_version != null || res.protocol_version != null)) {
+        return { success: true, version: res };
+      }
+      const countRes: any = await this.http.post(apiUrl, { action: 'block_count' }, { headers, responseType: 'json' }).toPromise();
+      if (countRes && countRes.count != null) {
+        return { success: true, blockCount: countRes };
+      }
+      return { success: false, error: res?.error || 'Node returned an unexpected response' };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Connection failed' };
+    }
+  }
+
+  async probeWorkServer(workServerUrl: string, authorization?: string): Promise<{ success: boolean; error?: string }> {
+    if (!workServerUrl || (!workServerUrl.startsWith('http://') && !workServerUrl.startsWith('https://'))) {
+      return { success: false, error: 'Invalid work server URL' };
+    }
+    try {
+      const dummyHash = '0000000000000000000000000000000000000000000000000000000000000000';
+      const dummyThreshold = 'FFFFFFC000000000';
+      const res = await this.workGenerateOnce(dummyHash, dummyThreshold, workServerUrl, true, authorization || '');
+      if (res && res.work) {
+        return { success: true };
+      }
+      return { success: false, error: 'Work server returned an empty or invalid response' };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Work server connection failed' };
+    }
+  }
+
   public deleteCache() {
     localStorage.removeItem(this.storeKey);
   }

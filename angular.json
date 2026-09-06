@@ -278,6 +278,7 @@
             "tsConfig": "src/tsconfig.vitest.json",
             "include": [
               "src/app/services/startup.service.spec.ts",
+              "src/app/services/api.service.spec.ts",
               "src/app/pipes/account.pipe.spec.ts",
               "src/app/pipes/amount-split.pipe.spec.ts",
               "src/app/pipes/rai.pipe.spec.ts",
@@ -297,6 +298,7 @@
               "src/app/services/qr-modal.service.spec.ts",
               "src/app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
               "src/app/components/configure-wallet/configure-wallet.component.spec.ts",
+              "src/app/components/configure-app/configure-app.component.spec.ts",
               "src/app/components/sweeper/sweeper.component.spec.ts",
               "src/app/components/send/send.component.spec.ts"
             ],

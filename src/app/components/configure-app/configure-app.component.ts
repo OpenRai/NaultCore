@@ -195,6 +195,27 @@ export class ConfigureAppComponent implements OnInit {
   shouldRandom = null;
 
   customWorkServer = '';
+  customWorkServerAuth = '';
+
+  activeServer: string | null = null;
+  activeServerAPI: string | null = null;
+  activeServerWS: string | null = null;
+  activeServerAuth: string | null = null;
+  testingServer = false;
+  serverTestError: string | null = null;
+  serverTestSuccess: string | null = null;
+
+  activeWorkServer = '';
+  activeWorkServerAuth = '';
+  candidateWorkServer = '';
+  candidateWorkServerAuth = '';
+  testingWorkServer = false;
+  workServerTestError: string | null = null;
+  workServerTestSuccess: string | null = null;
+
+  savedSection: 'display' | 'wallet' | 'server' | null = null;
+  savedTimer: any = null;
+
 
   showServerValues = () => this.selectedServer && this.selectedServer !== 'random' && this.selectedServer !== 'offline';
   showStatValues = () => this.selectedServer && this.selectedServer !== 'offline';
@@ -295,6 +316,11 @@ export class ConfigureAppComponent implements OnInit {
     this.selectedMultiplierOption = matchingMultiplierOption ? matchingMultiplierOption.value : this.multiplierOptions[0].value;
 
     this.customWorkServer = settings.customWorkServer;
+    this.customWorkServerAuth = settings.customWorkServerAuth || '';
+    this.activeWorkServer = this.customWorkServer;
+    this.activeWorkServerAuth = this.customWorkServerAuth;
+    this.candidateWorkServer = this.customWorkServer;
+    this.candidateWorkServerAuth = this.customWorkServerAuth;
 
     const matchingPendingOption = this.pendingOptions.find(d => d.value === settings.pendingOption);
     this.selectedPendingOption = matchingPendingOption ? matchingPendingOption.value : this.pendingOptions[0].value;
@@ -308,6 +334,10 @@ export class ConfigureAppComponent implements OnInit {
     this.serverAPIUpdated = this.serverAPI;
     this.serverWS = settings.serverWS;
     this.serverAuth = settings.serverAuth;
+    this.activeServer = settings.serverName;
+    this.activeServerAPI = settings.serverAPI;
+    this.activeServerWS = settings.serverWS;
+    this.activeServerAuth = settings.serverAuth;
 
     this.minimumReceive = settings.minimumReceive;
     this.defaultRepresentative = settings.defaultRepresentative;
@@ -316,8 +346,40 @@ export class ConfigureAppComponent implements OnInit {
     }
   }
 
-  async updateDisplaySettings() {
-    if (this.selectedNightModeOption === 'disabled') {
+  showSavedIndicator(section: 'display' | 'wallet' | 'server') {
+    if (this.savedTimer) {
+      clearTimeout(this.savedTimer);
+    }
+    this.savedSection = section;
+    this.savedTimer = setTimeout(() => {
+      this.savedSection = null;
+      this.savedTimer = null;
+    }, 2500);
+  }
+
+
+  // --- Display Settings Autosave ---
+  onLanguageChange(newLang: string) {
+    this.selectedLanguage = newLang;
+    this.appSettings.setAppSetting('language', newLang);
+    this.translocoService.setActiveLang(newLang);
+    this.showSavedIndicator('display');
+  }
+
+  async onCurrencyChange(newCurrency: string) {
+    this.selectedCurrency = newCurrency;
+    this.appSettings.setAppSetting('displayCurrency', newCurrency);
+    if (newCurrency) {
+      await this.price.getPrice(newCurrency);
+      this.walletService.reloadFiatBalances();
+    }
+    this.showSavedIndicator('display');
+  }
+
+  onNightModeChange(newMode: string) {
+    this.selectedNightModeOption = newMode;
+    const lightMode = newMode === 'disabled';
+    if (lightMode) {
       this.renderer.addClass(document.body, 'light-mode');
       this.renderer.removeClass(document.body, 'dark-mode');
       this.appSettings.setAppSetting('lightModeEnabled', true);
@@ -326,40 +388,34 @@ export class ConfigureAppComponent implements OnInit {
       this.renderer.removeClass(document.body, 'light-mode');
       this.appSettings.setAppSetting('lightModeEnabled', false);
     }
+    // Sync Safari / Chrome PWA chrome bar to the actual in-app theme.
+    const themeColor = lightMode ? '#f8f8f8' : '#22222A';
+    document.querySelectorAll('meta[name="theme-color"]').forEach(el => {
+      el.setAttribute('content', themeColor);
+    });
+    this.showSavedIndicator('display');
+  }
 
-    this.appSettings.setAppSetting('identiconsStyle', this.selectedIdenticonOption);
+  onIdenticonChange(newIdenticon: string) {
+    this.selectedIdenticonOption = newIdenticon;
+    this.appSettings.setAppSetting('identiconsStyle', newIdenticon);
+    this.showSavedIndicator('display');
+  }
+
+  onNanonymChange(settingKey: 'useNostr' | 'useOrbitDb', value: boolean) {
+    this[settingKey] = value;
+    this.appSettings.setAppSetting(settingKey, value);
+    this.showSavedIndicator('display');
+  }
+
+  async updateDisplaySettings() {
+    this.onNightModeChange(this.selectedNightModeOption);
+    this.onIdenticonChange(this.selectedIdenticonOption);
     this.appSettings.setAppSetting('useNostr', this.useNostr);
     this.appSettings.setAppSetting('useOrbitDb', this.useOrbitDb);
-
-    const newCurrency = this.selectedCurrency;
-    // const updatePrefixes = this.appSettings.settings.displayPrefix !== this.selectedPrefix;
-    const reloadFiat = this.appSettings.settings.displayCurrency !== newCurrency;
+    await this.onCurrencyChange(this.selectedCurrency);
+    this.onLanguageChange(this.selectedLanguage);
     this.notifications.sendSuccess(this.translocoService.translate('configure-app.app-display-settings-successfully-updated'));
-
-    if (reloadFiat) {
-      // Reload prices with our currency, then call to reload fiat balances.
-      await this.price.getPrice(newCurrency);
-      this.appSettings.setAppSetting('displayCurrency', newCurrency);
-      this.walletService.reloadFiatBalances();
-    }
-
-    this.appSettings.setAppSetting('language', this.selectedLanguage);
-    this.translocoService.setActiveLang(this.selectedLanguage);
-
-    // if (updatePrefixes) {
-    //   this.appSettings.setAppSetting('displayPrefix', this.selectedPrefix);
-      // Go through accounts?
-      // this.wallet.accounts.forEach(account => {
-      //   account.id = this.util.account.setPrefix(account.id, this.selectedPrefix);
-      // });
-      // this.walletService.saveWalletExport();
-      //
-      // this.addressBook.addressBook.forEach(entry => {
-      //   entry.account = this.util.account.setPrefix(entry.account, this.selectedPrefix);
-      // });
-      // this.addressBook.saveAddressBook();
-    // }
-
   }
 
   async reprobePoW(): Promise<void> {
@@ -370,135 +426,347 @@ export class ConfigureAppComponent implements OnInit {
     }
   }
 
-  async updateWalletSettings() {
-    const newStorage = this.selectedStorage;
-    const resaveWallet = this.appSettings.settings.walletStore !== newStorage;
+  // --- Wallet Settings Autosave ---
+  onInactivityChange(minutes: number | string) {
+    const num = Number(minutes);
+    this.selectedInactivityMinutes = num;
+    this.appSettings.setAppSetting('lockInactivityMinutes', num);
+    this.showSavedIndicator('wallet');
+  }
 
-    // ask for user confirmation before clearing the wallet cache
-    if (resaveWallet && newStorage === this.storageOptions[1].value) {
+  async onStorageChange(newStorage: string) {
+    const prevStorage = this.appSettings.settings.walletStore;
+    if (newStorage === prevStorage) return;
+
+    if (newStorage === this.storageOptions[1].value) {
       const UIkit = window['UIkit'];
       try {
-        await UIkit.modal.confirm(
-          `<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span>
-          <span style="font-size: 18px;">
-          ${ this.translocoService.translate('configure-app.you-are-about-to-disable-storage-of-all-wallet-data-which') }
-          </span><br>
-          ${ this.walletService.isConfigured() ? '<br><b style="font-size: 18px;">' + this.translocoService.translate('reset-wallet.before-continuing-make-sure-you-have-saved-the-nano-seed') + '</b><br><br><span style="font-size: 18px;"><b>' + this.translocoService.translate('reset-wallet.you-will-not-be-able-to-recover-the-funds-without-a-backup') + '</b></span></p><br>' : '' }`
-        );
+        if (UIkit?.modal?.confirm) {
+          await UIkit.modal.confirm(
+            `<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span>
+            <span style="font-size: 18px;">
+            ${ this.translocoService.translate('configure-app.you-are-about-to-disable-storage-of-all-wallet-data-which') }
+            </span><br>
+            ${ this.walletService.isConfigured() ? '<br><b style="font-size: 18px;">' + this.translocoService.translate('reset-wallet.before-continuing-make-sure-you-have-saved-the-nano-seed') + '</b><br><br><span style="font-size: 18px;"><b>' + this.translocoService.translate('reset-wallet.you-will-not-be-able-to-recover-the-funds-without-a-backup') + '</b></span></p><br>' : '' }`
+          );
+        }
       } catch (err) {
-        // pressing cancel, reset storage setting and interrupt
-        this.selectedStorage = this.storageOptions[0].value;
+        this.selectedStorage = prevStorage;
         this.notifications.sendInfo(this.translocoService.translate('configure-app.switched-back-to-browser-local-storage-for-the-wallet-data'), {length: 10000});
         return;
       }
     }
 
-    const newPoW = this.selectedPoWOption;
-    const newMultiplier = this.selectedMultiplierOption;
-    const pendingOption = this.selectedPendingOption;
-    let minReceive = null;
-    if (this.util.account.isValidNanoAmount(this.minimumReceive)) {
-      minReceive = this.minimumReceive;
+    this.selectedStorage = newStorage;
+    this.appSettings.setAppSetting('walletStore', newStorage);
+    this.walletService.saveWalletExport();
+    this.showSavedIndicator('wallet');
+  }
+
+  onPoWOptionChange(policy: PowPolicy) {
+    this.selectedPoWOption = policy;
+    if (policy !== 'local') {
+      this.selectedMultiplierOption = this.multiplierOptions[0].value;
+      this.appSettings.setAppSetting('multiplierSource', this.selectedMultiplierOption);
     }
-
-    const decentralizedAliasesOption = this.selectedDecentralizedAliasesOption;
-
-    // reload pending if threshold changes or if receive priority changes from manual to auto
-    let reloadPending = this.appSettings.settings.minimumReceive !== this.minimumReceive
-    || (pendingOption !== 'manual' && pendingOption !== this.appSettings.settings.pendingOption);
-
-    if (this.defaultRepresentative && this.defaultRepresentative.length) {
-      const valid = this.util.account.isValidAccount(this.defaultRepresentative);
-      if (!valid) {
-        return this.notifications.sendWarning(
-          this.translocoService.translate('configure-app.default-representative-is-not-a-valid-account')
-        );
-      }
+    this.appSettings.setAppSetting('powSource', policy);
+    this.powRouting.applyPolicy(policy);
+    if (policy === 'auto') {
+      void this.powRouting.resolveRoute();
     }
+    this.showSavedIndicator('wallet');
+  }
 
-    if (newPoW !== 'local') this.selectedMultiplierOption = this.multiplierOptions[0].value;
-
-    // reset work cache so that the new PoW will be used but only if larger than before
-    if (
-      newMultiplier > this.appSettings.settings.multiplierSource &&
-      newMultiplier > 1 &&
-      newPoW === 'local'
-    ) {
-      // if user accept to reset cache
+  async onMultiplierChange(multiplier: number | string) {
+    const num = Number(multiplier);
+    const prev = this.appSettings.settings.multiplierSource;
+    this.selectedMultiplierOption = num;
+    this.appSettings.setAppSetting('multiplierSource', num);
+    if (num > prev && num > 1 && this.selectedPoWOption === 'local') {
       if (await this.clearWorkCache()) {
-        reloadPending = true; // force reload balance => re-work pow
+        this.walletService.refreshWalletState('settings-change');
       }
     }
+    this.showSavedIndicator('wallet');
+  }
 
-    const newSettings = {
-      walletStore: newStorage,
-      lockInactivityMinutes: Number(this.selectedInactivityMinutes),
-      powSource: newPoW,
-      multiplierSource: Number(this.selectedMultiplierOption),
-      customWorkServer: this.customWorkServer,
-      pendingOption: pendingOption,
-      decentralizedAliasesOption: decentralizedAliasesOption,
-      minimumReceive: minReceive,
-      defaultRepresentative: this.defaultRepresentative || null,
-    };
-
-    this.appSettings.setAppSettings(newSettings);
-    this.powRouting.applyPolicy(newPoW);
-    if (newPoW === 'auto') void this.powRouting.resolveRoute();
-    this.notifications.sendSuccess(this.translocoService.translate('configure-app.app-wallet-settings-successfully-updated'));
-
-    if (resaveWallet) {
-      this.walletService.saveWalletExport(); // If swapping the storage engine, resave the wallet
-    }
-    if (reloadPending) {
+  onPendingOptionChange(pendingOption: string) {
+    const prev = this.appSettings.settings.pendingOption;
+    this.selectedPendingOption = pendingOption;
+    this.appSettings.setAppSetting('pendingOption', pendingOption);
+    if (pendingOption !== 'manual' && pendingOption !== prev) {
       this.walletService.refreshWalletState('settings-change');
+    }
+    this.showSavedIndicator('wallet');
+  }
+
+  onDecentralizedAliasesChange(option: string) {
+    this.selectedDecentralizedAliasesOption = option;
+    this.appSettings.setAppSetting('decentralizedAliasesOption', option);
+    this.showSavedIndicator('wallet');
+  }
+
+  onMinimumReceiveBlur() {
+    const raw = (this.minimumReceive ?? '').toString().trim();
+    if (raw === '') {
+      this.minimumReceive = null;
+      if (this.appSettings.settings.minimumReceive !== null) {
+        this.appSettings.setAppSetting('minimumReceive', null);
+        this.walletService.refreshWalletState('settings-change');
+      }
+      this.showSavedIndicator('wallet');
+      return;
+    }
+    if (this.util.account.isValidNanoAmount(raw)) {
+      if (this.appSettings.settings.minimumReceive !== raw) {
+        this.appSettings.setAppSetting('minimumReceive', raw);
+        this.walletService.refreshWalletState('settings-change');
+      }
+      this.showSavedIndicator('wallet');
+    } else {
+      this.notifications.sendWarning(this.translocoService.translate('configure-app.invalid-minimum-receive-amount'));
+    }
+  }
+
+  saveDefaultRepresentative() {
+    const rep = (this.defaultRepresentative ?? '').toString().trim();
+    if (!rep) {
+      this.defaultRepresentative = null;
+      this.representativeListMatch = '';
+      if (this.appSettings.settings.defaultRepresentative !== null) {
+        this.appSettings.setAppSetting('defaultRepresentative', null);
+      }
+      this.showSavedIndicator('wallet');
+      return;
+    }
+    if (this.util.account.isValidAccount(rep)) {
+      if (this.appSettings.settings.defaultRepresentative !== rep) {
+        this.appSettings.setAppSetting('defaultRepresentative', rep);
+      }
+      this.showSavedIndicator('wallet');
+    } else {
+      this.notifications.sendWarning(this.translocoService.translate('configure-app.default-representative-is-not-a-valid-account'));
+    }
+  }
+
+  async updateWalletSettings() {
+    await this.onStorageChange(this.selectedStorage);
+    this.onInactivityChange(this.selectedInactivityMinutes);
+    this.onPoWOptionChange(this.selectedPoWOption);
+    await this.onMultiplierChange(this.selectedMultiplierOption);
+    this.onPendingOptionChange(this.selectedPendingOption);
+    this.onDecentralizedAliasesChange(this.selectedDecentralizedAliasesOption);
+    this.onMinimumReceiveBlur();
+    this.saveDefaultRepresentative();
+    this.notifications.sendSuccess(this.translocoService.translate('configure-app.app-wallet-settings-successfully-updated'));
+  }
+
+  // --- Work Server Candidate & Activation ---
+  isWorkServerCandidateDifferent(): boolean {
+    const candidateServer = (this.candidateWorkServer || '').trim();
+    const activeServer = (this.activeWorkServer || '').trim();
+    const candidateAuth = (this.candidateWorkServerAuth || '').trim();
+    const activeAuth = (this.activeWorkServerAuth || '').trim();
+    return candidateServer !== activeServer || candidateAuth !== activeAuth;
+  }
+
+  async activateWorkServer(): Promise<void> {
+    const url = (this.candidateWorkServer || '').trim();
+    const auth = (this.candidateWorkServerAuth || '').trim();
+
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+      this.workServerTestError = this.translocoService.translate('configure-app.work-server-connection-failed');
+      return;
+    }
+
+    this.testingWorkServer = true;
+    this.workServerTestError = null;
+    this.workServerTestSuccess = null;
+
+    try {
+      const probe = await this.api.probeWorkServer(url, auth);
+      if (probe.success) {
+        this.activeWorkServer = url;
+        this.activeWorkServerAuth = auth;
+        this.customWorkServer = url;
+        this.customWorkServerAuth = auth;
+        this.appSettings.setAppSetting('customWorkServer', url);
+        this.appSettings.setAppSetting('customWorkServerAuth', auth);
+        this.workServerTestSuccess = this.translocoService.translate('configure-app.work-server-connected-success');
+        this.notifications.sendSuccess(this.workServerTestSuccess);
+        this.showSavedIndicator('wallet');
+      } else {
+        this.workServerTestError = this.translocoService.translate('configure-app.work-server-connection-failed');
+      }
+    } catch {
+      this.workServerTestError = this.translocoService.translate('configure-app.work-server-connection-failed');
+    } finally {
+      this.testingWorkServer = false;
+    }
+  }
+
+  resetWorkServerToDefault(): void {
+    this.activeWorkServer = '';
+    this.activeWorkServerAuth = '';
+    this.customWorkServer = '';
+    this.customWorkServerAuth = '';
+    this.candidateWorkServer = '';
+    this.candidateWorkServerAuth = '';
+    this.appSettings.setAppSetting('customWorkServer', '');
+    this.appSettings.setAppSetting('customWorkServerAuth', '');
+    this.workServerTestError = null;
+    this.workServerTestSuccess = null;
+    this.showSavedIndicator('wallet');
+  }
+
+  // --- Nano RPC Server Candidate & Activation ---
+  getActiveServerLabel(): string {
+    if (!this.activeServer) return 'None';
+    if (this.activeServer === 'offline') return 'Offline';
+    if (this.activeServer === 'random') return 'Random';
+    const found = this.serverOptions.find(o => o.value === this.activeServer);
+    return found ? found.name : this.activeServer;
+  }
+
+  isServerCandidateDifferent(): boolean {
+    if (this.selectedServer !== this.activeServer) return true;
+    if (this.selectedServer === 'custom') {
+      const apiChanged = (this.serverAPI || '').trim() !== (this.activeServerAPI || '').trim();
+      const wsChanged = (this.serverWS || '').trim() !== (this.activeServerWS || '').trim();
+      const authChanged = (this.serverAuth || '').trim() !== (this.activeServerAuth || '').trim();
+      return apiChanged || wsChanged || authChanged;
+    }
+    return false;
+  }
+
+  revertServerCandidate(): void {
+    this.selectedServer = this.activeServer;
+    this.serverAPI = this.activeServerAPI;
+    this.serverWS = this.activeServerWS;
+    this.serverAuth = this.activeServerAuth;
+    this.serverTestError = null;
+    this.serverTestSuccess = null;
+  }
+
+  async activateOfflineMode(): Promise<void> {
+    this.selectedServer = 'offline';
+    this.serverAPI = null;
+    this.serverWS = null;
+    this.serverAuth = null;
+    this.activeServer = 'offline';
+    this.activeServerAPI = null;
+    this.activeServerWS = null;
+    this.activeServerAuth = null;
+    this.appSettings.setAppSettings({
+      serverName: 'offline',
+      serverAPI: null,
+      serverWS: null,
+      serverAuth: null,
+    });
+    this.appSettings.loadAppSettings();
+    this.node.setOffline(null);
+    this.notifications.sendInfo(this.translocoService.translate('configure-app.offline-mode-activated'));
+    this.serverTestError = null;
+    this.serverTestSuccess = null;
+    this.showSavedIndicator('server');
+  }
+
+  async activateServer(): Promise<void> {
+    if (this.selectedServer === 'offline') {
+      return this.activateOfflineMode();
+    }
+
+    if (this.selectedServer === 'random') {
+      this.testingServer = true;
+      this.serverTestError = null;
+      this.serverTestSuccess = null;
+      try {
+        this.appSettings.setAppSettings({
+          serverName: 'random',
+          serverAPI: null,
+          serverWS: null,
+          serverAuth: null,
+        });
+        this.appSettings.loadAppSettings();
+        this.activeServer = 'random';
+        this.activeServerAPI = this.appSettings.settings.serverAPI;
+        this.activeServerWS = this.appSettings.settings.serverWS;
+        this.activeServerAuth = this.appSettings.settings.serverAuth;
+        this.serverAPI = this.activeServerAPI;
+        this.serverWS = this.activeServerWS;
+        this.serverAuth = this.activeServerAuth;
+        this.serverAPIUpdated = this.activeServerAPI;
+        this.node.node.status = false;
+        await this.walletService.refreshWalletState('server-change');
+        this.websocket.forceReconnect();
+        this.updateNodeStats();
+        this.serverTestSuccess = this.translocoService.translate('configure-app.server-connected-success', { server: 'Random' });
+        this.notifications.sendSuccess(this.serverTestSuccess);
+        this.showSavedIndicator('server');
+      } catch {
+        this.serverTestError = this.translocoService.translate('configure-app.server-connection-failed');
+      } finally {
+        this.testingServer = false;
+      }
+      return;
+    }
+
+    const targetApi = (this.serverAPI || '').trim();
+    if (!targetApi || (!targetApi.startsWith('http://') && !targetApi.startsWith('https://'))) {
+      this.serverTestError = this.translocoService.translate('configure-app.custom-api-server-has-an-invalid-address');
+      return;
+    }
+
+    const targetWs = (this.serverWS || '').trim();
+    if (targetWs && !targetWs.startsWith('ws://') && !targetWs.startsWith('wss://')) {
+      this.serverTestError = this.translocoService.translate('configure-app.custom-update-server-has-an-invalid-address');
+      return;
+    }
+
+    const targetAuth = (this.serverAuth || '').trim();
+
+    this.testingServer = true;
+    this.serverTestError = null;
+    this.serverTestSuccess = null;
+
+    try {
+      const probe = await this.api.probeServer(targetApi, targetAuth);
+      if (probe.success) {
+        this.appSettings.setAppSettings({
+          serverName: this.selectedServer,
+          serverAPI: targetApi,
+          serverWS: targetWs || null,
+          serverAuth: targetAuth || null,
+        });
+        this.appSettings.loadAppSettings();
+
+        this.activeServer = this.selectedServer;
+        this.activeServerAPI = targetApi;
+        this.activeServerWS = targetWs || null;
+        this.activeServerAuth = targetAuth || null;
+        this.serverAPIUpdated = targetApi;
+
+        this.node.node.status = false;
+        await this.walletService.refreshWalletState('server-change');
+        this.websocket.forceReconnect();
+        this.updateNodeStats();
+
+        const serverName = this.getActiveServerLabel();
+        this.serverTestSuccess = this.translocoService.translate('configure-app.server-connected-success', { server: serverName });
+        this.notifications.sendSuccess(this.serverTestSuccess);
+        this.showSavedIndicator('server');
+      } else {
+        this.serverTestError = this.translocoService.translate('configure-app.server-connection-failed');
+      }
+    } catch {
+      this.serverTestError = this.translocoService.translate('configure-app.server-connection-failed');
+    } finally {
+      this.testingServer = false;
     }
   }
 
   async updateServerSettings() {
-    const newSettings = {
-      serverName: this.selectedServer,
-      serverAPI: null,
-      serverWS: null,
-      serverAuth: null,
-    };
-
-    // Custom... do some basic validation
-    if (this.serverAPI != null && this.serverAPI.trim().length > 1) {
-      if (this.serverAPI.startsWith('https://') || this.serverAPI.startsWith('http://')) {
-        newSettings.serverAPI = this.serverAPI;
-      } else {
-        return this.notifications.sendWarning(this.translocoService.translate('configure-app.custom-api-server-has-an-invalid-address'));
-      }
-    }
-
-    if (this.serverWS != null && this.serverWS.trim().length > 1) {
-      if (this.serverWS.startsWith('wss://') || this.serverWS.startsWith('ws://')) {
-        newSettings.serverWS = this.serverWS;
-      } else {
-        return this.notifications.sendWarning(this.translocoService.translate('configure-app.custom-update-server-has-an-invalid-address'));
-      }
-    }
-
-    if (this.serverAuth != null && this.serverAuth.trim().length > 1) {
-      newSettings.serverAuth = this.serverAuth;
-    }
-
-    this.appSettings.setAppSettings(newSettings);
-    this.appSettings.loadAppSettings();
-
-    this.notifications.sendSuccess(this.translocoService.translate('configure-app.server-settings-successfully-updated'));
-
-    this.node.node.status = false; // Directly set node to offline since API url changed. Status updates after reconciliation.
-
-    // Reload balances which triggers an api check + reconnect to websocket server
-    await this.walletService.refreshWalletState('server-change');
-    this.websocket.forceReconnect();
-    // this is updated after setting server to random and doing recheck of wallet balance
-    this.serverAPIUpdated = this.appSettings.settings.serverAPI;
-    this.serverAPI = this.serverAPIUpdated;
-    this.statsRefreshEnabled = true;
-    this.updateNodeStats();
+    await this.activateServer();
   }
 
   searchRepresentatives() {
@@ -522,6 +790,7 @@ export class ConfigureAppComponent implements OnInit {
     this.defaultRepresentative = rep;
     this.searchRepresentatives();
     this.validateRepresentative();
+    this.saveDefaultRepresentative();
   }
 
   async validateRepresentative() {
@@ -547,6 +816,26 @@ export class ConfigureAppComponent implements OnInit {
 
   // When changing the Server Config option, prefill values
   serverConfigChange(newServer) {
+    this.selectedServer = newServer;
+    this.serverTestError = null;
+    this.serverTestSuccess = null;
+
+    if (newServer === 'offline') {
+      this.serverAPI = null;
+      this.serverWS = null;
+      this.serverAuth = null;
+      this.shouldRandom = null;
+      return;
+    }
+
+    if (newServer === 'random') {
+      this.serverAPI = this.activeServer === 'random' ? this.activeServerAPI : null;
+      this.serverWS = null;
+      this.serverAuth = null;
+      this.shouldRandom = this.translocoService.translate('general.yes');
+      return;
+    }
+
     const custom = this.serverOptions.find(c => c.value === newServer);
     if (custom) {
       this.serverAPI = custom.api;

@@ -332,13 +332,20 @@ export class AppComponent implements OnInit {
   }
 
   updateAppTheme() {
-    if (this.settings.settings.lightModeEnabled) {
+    const lightMode = this.settings.settings.lightModeEnabled;
+    if (lightMode) {
       this.renderer.addClass(document.body, 'light-mode');
       this.renderer.removeClass(document.body, 'dark-mode');
     } else {
       this.renderer.addClass(document.body, 'dark-mode');
       this.renderer.removeClass(document.body, 'light-mode');
     }
+    // Sync Safari / Chrome PWA chrome bar to actual in-app theme,
+    // regardless of the OS-level prefers-color-scheme preference.
+    const themeColor = lightMode ? '#f8f8f8' : '#22222A';
+    document.querySelectorAll('meta[name="theme-color"]').forEach(el => {
+      el.setAttribute('content', themeColor);
+    });
   }
 
   toggleAccountsDropdown() {

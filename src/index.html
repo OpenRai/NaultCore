@@ -23,7 +23,7 @@
   <script type="text/javascript" src="assets/lib/blake2b/blake2b.js"></script>
   <script type="text/javascript" src="assets/lib/tweetnacl/nacl.js"></script>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
   <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon/favicon-32x32.png">
@@ -35,7 +35,9 @@
   <meta name="application-name" content="NaultCore">
   <meta name="msapplication-TileColor" content="#4a90e2">
   <meta name="msapplication-config" content="assets/favicon/browserconfig.xml">
-  <meta name="theme-color" content="#22222A">
+  <!-- theme-color: dark is default; light-mode variant used when system prefers light -->
+  <meta name="theme-color" content="#22222A" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f8f8f8" media="(prefers-color-scheme: light)">
 </head>
 <body class="body" style="margin: 0;">
   <app-root>

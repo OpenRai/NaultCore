@@ -543,6 +543,8 @@ export class WorkPoolService {
         request.root,
         threshold,
         this.appSettings.settings.customWorkServer || '',
+        true,
+        this.appSettings.settings.customWorkServerAuth || '',
       );
       const work = response?.work?.toUpperCase();
       if (work && this.util.nano.validateWork(request.root, threshold, work)) {

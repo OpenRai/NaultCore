@@ -73,7 +73,7 @@ describe('WorkPoolService', () => {
         WorkPoolService,
         { provide: UtilService, useValue: util },
         { provide: ApiService, useValue: api },
-        { provide: AppSettingsService, useValue: { settings: { customWorkServer: '' } } },
+        { provide: AppSettingsService, useValue: { settings: { customWorkServer: '', customWorkServerAuth: '' } } },
         { provide: PowRoutingService, useValue: { state: { policy: 'local', route: 'local' }, resolveRoute: () => Promise.resolve('local') } },
       ],
     });
@@ -115,9 +115,31 @@ describe('WorkPoolService', () => {
     api.workGenerateOnce.mockResolvedValue({ work: `${sendThreshold}-WORK` });
     const pending = service.getWork(root('A'), 1, 'nano_1');
     await Promise.resolve();
-    expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold, '');
+    expect(api.workGenerateOnce).toHaveBeenCalledWith(root('A'), sendThreshold, '', true, '');
     expect(await pending).toBe(`${sendThreshold}-WORK`);
     expect(ControlledWorker.instances.length).toBe(0);
+  });
+
+  it('passes the custom work server Authorization header only to the remote provider', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const routing = TestBed.inject(PowRoutingService) as any;
+    const settings = TestBed.inject(AppSettingsService) as any;
+    routing.state = { policy: 'remote', route: 'remote' };
+    settings.settings.customWorkServer = 'https://work.example/api';
+    settings.settings.customWorkServerAuth = 'Bearer work-token';
+    api.workGenerateOnce.mockResolvedValue({ work: `${sendThreshold}-WORK` });
+
+    const pending = service.getWork(root('A'), 1, 'nano_1');
+    await Promise.resolve();
+
+    expect(api.workGenerateOnce).toHaveBeenCalledWith(
+      root('A'),
+      sendThreshold,
+      'https://work.example/api',
+      true,
+      'Bearer work-token',
+    );
+    expect(await pending).toBe(`${sendThreshold}-WORK`);
   });
 
   it('rejects invalid remote work, retries deterministically, and accepts the next valid response', async () => {

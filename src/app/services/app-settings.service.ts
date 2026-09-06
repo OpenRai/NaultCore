@@ -20,6 +20,7 @@ interface AppSettings {
   powSource: PoWSource;
   multiplierSource: number;
   customWorkServer: string;
+  customWorkServerAuth: string;
   pendingOption: string;
   decentralizedAliasesOption: string;
   serverName: string;
@@ -53,6 +54,7 @@ export class AppSettingsService {
     powSource: 'auto',
     multiplierSource: 1,
     customWorkServer: '',
+    customWorkServerAuth: '',
     pendingOption: 'amount',
     decentralizedAliasesOption: 'disabled',
     serverName: 'random',
@@ -258,6 +260,7 @@ export class AppSettingsService {
       powSource: 'auto',
       multiplierSource: 1,
       customWorkServer: '',
+      customWorkServerAuth: '',
       pendingOption: 'amount',
       decentralizedAliasesOption: 'disabled',
       serverName: 'random',

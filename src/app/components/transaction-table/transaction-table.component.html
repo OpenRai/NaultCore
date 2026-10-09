@@ -1,0 +1,231 @@
+<section class="tx-table" [attr.data-testid]="testIds.transactionTable.root">
+
+  <!-- Filter bar: every filter is optional and they combine conjunctively.
+       Collapsed by default so the transaction list is what the reader sees
+       first; it opens on demand and never hides an active filter. -->
+  <details class="tx-filters" [open]="filtersExpanded" (toggle)="onFiltersToggle($event)">
+    <summary
+      class="tx-filters-toggle"
+      [attr.data-testid]="testIds.transactionTable.filterToggle"
+    >
+      <span uk-icon="icon: filter" class="tx-filters-toggle-icon" aria-hidden="true"></span>
+      <span class="tx-filters-toggle-label">{{ labels.filtersToggle }}</span>
+      @if (filtered) {
+        <span class="tx-filters-active" aria-hidden="true">{{ labels.filtersActive }}</span>
+      }
+      <span uk-icon="icon: chevron-down; ratio: 0.7" class="tx-filters-toggle-chevron" aria-hidden="true"></span>
+    </summary>
+
+    <div class="tx-filters-body" role="search">
+      <div class="tx-filter-search">
+        <span uk-icon="icon: search" class="tx-filter-icon"></span>
+        <input
+          type="search"
+          class="uk-input tx-search-input"
+          [value]="filter.search"
+          (input)="onSearchChange($any($event.target).value)"
+          [placeholder]="labels.searchPlaceholder"
+          [attr.aria-label]="labels.searchPlaceholder"
+          [attr.data-testid]="testIds.transactionTable.searchInput"
+        >
+      </div>
+
+      <div class="tx-filter-controls">
+        <select
+          class="uk-select tx-select"
+          [value]="filter.direction"
+          (change)="onDirectionChange($any($event.target).value)"
+          [attr.aria-label]="labels.direction"
+          [attr.data-testid]="testIds.transactionTable.directionFilter"
+        >
+          <option value="all">{{ labels.directionAll }}</option>
+          <option value="received">{{ labels.received }}</option>
+          <option value="sent">{{ labels.sent }}</option>
+        </select>
+
+        @if (showAccountFilter) {
+          <select
+            class="uk-select tx-select"
+            [value]="filter.accountId ?? ''"
+            (change)="onAccountChange($any($event.target).value)"
+            [attr.aria-label]="labels.account"
+            [attr.data-testid]="testIds.transactionTable.accountFilter"
+          >
+            <option value="">{{ labels.allAccounts }}</option>
+            @for (account of accounts; track account.id) {
+              <option [value]="account.id">{{ account.label }}</option>
+            }
+          </select>
+        }
+
+        <div class="tx-amount-range">
+          <input
+            type="text"
+            inputmode="decimal"
+            class="uk-input tx-amount-input"
+            [value]="filter.amountMin"
+            (input)="onAmountMinChange($any($event.target).value)"
+            [placeholder]="labels.amountMin"
+            [attr.aria-label]="labels.amountMin"
+            [attr.data-testid]="testIds.transactionTable.amountMinInput"
+          >
+          <span class="tx-range-sep" aria-hidden="true">–</span>
+          <input
+            type="text"
+            inputmode="decimal"
+            class="uk-input tx-amount-input"
+            [value]="filter.amountMax"
+            (input)="onAmountMaxChange($any($event.target).value)"
+            [placeholder]="labels.amountMax"
+            [attr.aria-label]="labels.amountMax"
+            [attr.data-testid]="testIds.transactionTable.amountMaxInput"
+          >
+        </div>
+
+        @if (filtered) {
+          <button
+            type="button"
+            class="uk-button uk-button-text tx-clear"
+            (click)="resetFilters()"
+            [attr.data-testid]="testIds.transactionTable.clearFilters"
+          >
+            <span uk-icon="icon: close; ratio: 0.7"></span>
+            {{ labels.clearFilters }}
+          </button>
+        }
+      </div>
+    </div>
+  </details>
+
+  <!-- Result summary: never leave the reader guessing whether the table is empty
+       because nothing happened or because a filter hid it. -->
+  <div class="tx-summary" aria-live="polite">
+    <span class="tx-summary-count" [attr.data-testid]="testIds.transactionTable.resultCount">
+      @if (filtered) {
+        {{ showingOfLabel() }}
+      } @else {
+        {{ entryCountLabel() }}
+      }
+    </span>
+    @if (totalVisible > 0) {
+      <span class="tx-summary-totals">
+        <span class="tx-total tx-total-in">
+          <span uk-icon="icon: arrow-down; ratio: 0.6"></span>
+          {{ formatAmount(totals.incoming) }}
+        </span>
+        <span class="tx-total tx-total-out">
+          <span uk-icon="icon: arrow-up; ratio: 0.6"></span>
+          {{ formatAmount(totals.outgoing) }}
+        </span>
+      </span>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="tx-state" [attr.data-testid]="testIds.transactionTable.loading">
+      <span uk-spinner="ratio: 0.8"></span>
+      <p>{{ labels.loading }}</p>
+    </div>
+  } @else if (!transactions.length) {
+    <div class="tx-state" [attr.data-testid]="testIds.transactionTable.empty">
+      <span uk-icon="icon: clock; ratio: 1.5" class="tx-state-icon"></span>
+      <p class="tx-state-title">{{ labels.noActivity }}</p>
+      <span class="tx-state-desc">{{ labels.noActivityDesc }}</span>
+    </div>
+  } @else if (!visible.length) {
+    <div class="tx-state" [attr.data-testid]="testIds.transactionTable.noMatches">
+      <span uk-icon="icon: search; ratio: 1.5" class="tx-state-icon"></span>
+      <p class="tx-state-title">{{ labels.noMatches }}</p>
+      <button type="button" class="uk-button uk-button-small" (click)="resetFilters()">
+        {{ labels.clearFilters }}
+      </button>
+    </div>
+  } @else {
+    <!-- Container queries, not media queries: this adapts to the width it is
+         actually given, whether that is a full page or a narrow panel. -->
+    <div class="tx-table-wrapper">
+      <table class="tx-table-grid">
+        <caption class="uk-hidden">{{ labels.caption }}</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="col-status">
+              <span class="uk-hidden">{{ labels.status }}</span>
+            </th>
+            <th scope="col" class="col-detail">{{ labels.details }}</th>
+            <th scope="col" class="col-amount">{{ labels.amount }}</th>
+            <th scope="col" class="col-date">{{ labels.date }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tx of visible; track trackByHash($index, tx)) {
+            <tr
+              class="tx-row"
+              [class.tx-row-received]="tx.direction === 'received'"
+              [class.tx-row-sent]="tx.direction === 'sent'"
+              [class.tx-row-pending]="tx.status === 'pending'"
+            >
+              <td class="col-status">
+                @if (tx.status === 'pending') {
+                  <span class="tx-badge tx-badge-pending">{{ labels.pending }}</span>
+                } @else {
+                  <span
+                    class="tx-badge"
+                    [class.tx-badge-received]="tx.direction === 'received'"
+                    [class.tx-badge-sent]="tx.direction === 'sent'"
+                  >{{ directionLabel(tx.direction) }}</span>
+                }
+              </td>
+
+              <td class="col-detail">
+                <div class="tx-detail-primary">
+                  <!-- Show the label when we have one, the truncated address
+                       otherwise. Never both: an address alone is unreadable and
+                       a label alone is unverified. -->
+                  @if (tx.counterpartyLabel) {
+                    <a class="tx-counterparty-label" [routerLink]="'/account/' + tx.counterparty">{{ tx.counterpartyLabel }}</a>
+                  } @else if (tx.counterparty) {
+                    <a
+                      class="tx-counterparty-addr nano-address-monospace"
+                      [routerLink]="'/account/' + tx.counterparty"
+                      [title]="tx.counterparty"
+                      [attr.data-testid]="testIds.transactionTable.counterpartyLink"
+                    >{{ truncateAddress(tx.counterparty) }}</a>
+                  } @else {
+                    <span class="tx-counterparty-none">{{ labels.noCounterparty }}</span>
+                  }
+                </div>
+                <div class="tx-detail-secondary">
+                  <!-- Which of our accounts moved. Hidden on a single-account
+                       view where it would only ever say the same thing. -->
+                  @if (showAccountFilter) {
+                    <a class="tx-local-account" [routerLink]="'/account/' + tx.accountId">{{ tx.accountLabel }}</a>
+                    <span class="tx-dot" aria-hidden="true">·</span>
+                  }
+                  <a
+                    class="tx-hash nano-address-monospace"
+                    [routerLink]="'/transaction/' + tx.hash"
+                    [title]="tx.hash"
+                    [attr.data-testid]="testIds.transactionTable.hashLink"
+                  >{{ tx.hash.slice(0, 12) }}…</a>
+                </div>
+              </td>
+
+              <td class="col-amount">
+                <span
+                  class="tx-amount"
+                  [class.tx-amount-in]="tx.direction === 'received'"
+                  [class.tx-amount-out]="tx.direction === 'sent'"
+                >
+                  {{ tx.direction === 'received' ? '+' : '−' }}{{ formatAmount(tx.amount) }}
+                </span>
+                <span class="tx-unit">XNO</span>
+              </td>
+
+              <td class="col-date">{{ formatDate(tx.timestamp) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

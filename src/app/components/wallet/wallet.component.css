@@ -1,322 +1,373 @@
+:host {
+  --w-card-bg: #ffffff;
+  --w-card-border: rgba(0, 0, 0, 0.08);
+  --w-card-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+  --w-text: #1d1d22;
+  --w-text-muted: #6e6e80;
+  --w-subtle-bg: #f7f7fa;
+  --w-subtle-border: rgba(0, 0, 0, 0.06);
+  --w-hover-bg: #f4f4f8;
+  --w-green: #2fb344;
+  --w-blue: #1e87f0;
+  --w-amber: #d97706;
+}
+
+:host-context(.dark-mode) {
+  --w-card-bg: #22222a;
+  --w-card-border: rgba(255, 255, 255, 0.08);
+  --w-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --w-text: #f0f0f8;
+  --w-text-muted: #8f8fab;
+  --w-subtle-bg: #1a1a20;
+  --w-subtle-border: rgba(255, 255, 255, 0.06);
+  --w-hover-bg: rgba(255, 255, 255, 0.04);
+  --w-green: #48d262;
+  --w-blue: #4a90e2;
+  --w-amber: #fbbf24;
+}
+
+/* The page is the sizing container, so the balance can scale against the width
+   it actually has rather than the viewport. */
 .wallet-page {
-  max-inline-size: 1100px;
-  margin-inline: auto;
-  padding-block: 1rem 2rem;
-}
-
-.wallet-page-header,
-.activity-header,
-.account-summary {
-  display: flex;
-  align-items: safe center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.wallet-page-header {
-  margin-block-end: 1.25rem;
-}
-
-.eyebrow,
-.card-kicker {
-  margin: 0;
-  color: var(--uk-muted-color, #8f9299);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wallet-page h2 {
-  margin-block: 0.2rem;
-}
-
-.page-summary,
-.card-note,
-.activity-empty {
-  color: var(--uk-muted-color, #777);
-}
-
-.page-summary {
-  margin-block: 0.4rem 0;
-}
-
-.wallet-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.wallet-card {
-  min-inline-size: 0;
-  padding: clamp(1rem, 2vw, 1.5rem);
-  border: 1px solid rgba(127, 127, 127, 0.2);
-  border-radius: 0.55rem;
-  background: var(--uk-card-background, #fff);
-  box-shadow: 0 0.35rem 1.2rem rgba(0, 0, 0, 0.06);
-}
-
-.dark-mode .wallet-card {
-  background: rgba(255, 255, 255, 0.035);
-  box-shadow: 0 0.35rem 1.2rem rgba(0, 0, 0, 0.18);
-}
-
-.total-card {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-block-size: 220px;
+  gap: 1rem;
 }
 
-.balance-line {
+/* ---------- Header ---------- */
+
+.wallet-header {
   display: flex;
-  align-items: baseline;
-  margin-block: 0.65rem 0.1rem;
-  color: var(--uk-text-color, #222);
-  font-size: clamp(2rem, 6vw, 3.6rem);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.balance-fraction,
-.selected-balance small {
-  color: var(--uk-muted-color, #777);
-  font-size: 0.55em;
-}
+.wallet-header-main { min-inline-size: 0; }
 
-.currency-name {
-  margin-inline-start: 0.45rem;
-  color: var(--uk-muted-color, #777);
-  font-size: 0.35em;
+.eyebrow {
+  display: block;
+  font-size: 0.72rem;
   font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--w-blue);
 }
 
-.fiat-balance {
-  color: var(--uk-muted-color, #777);
-}
-
-.card-note {
-  max-inline-size: 34rem;
-  margin-block: 1.25rem 0;
+.wallet-title {
+  margin: 0.1rem 0 0;
+  font-size: clamp(1.6rem, 5cqi, 2.1rem);
+  font-weight: 700;
+  color: var(--w-text);
+  overflow-wrap: anywhere;
 }
 
 .state-badge {
-  padding: 0.35rem 0.7rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: rgba(240, 170, 0, 0.15);
-  color: #ad7400;
-  font-size: 0.8rem;
-  font-weight: 700;
+  background: rgba(217, 119, 6, 0.14);
+  color: var(--w-amber);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
-.receivable-unlock {
+/* ---------- Receivable banner ---------- */
+
+.receivable-unlock-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   inline-size: 100%;
-  margin-block-end: 1rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(30, 135, 240, 0.45);
-  border-radius: 0.55rem;
-  background: rgba(30, 135, 240, 0.08);
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
   text-align: start;
-}
-
-.receivable-unlock:hover {
-  background: rgba(30, 135, 240, 0.14);
-}
-
-.receivable-unlock:focus-visible,
-.activity-row.actionable:focus-visible {
-  outline: 3px solid rgba(30, 135, 240, 0.55);
-  outline-offset: 2px;
-}
-
-.receivable-unlock-copy {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.receivable-unlock-copy > span {
-  color: var(--uk-muted-color, #777);
-  font-size: 0.85rem;
-}
-
-.account-selector-label {
-  display: block;
-  margin-block: 0.7rem 0.35rem;
-  color: var(--uk-muted-color, #777);
-  font-size: 0.85rem;
-}
-
-.account-summary {
-  align-items: flex-end;
-  margin-block: 1.25rem;
-}
-
-.account-summary h3,
-.activity-header h3 {
-  margin: 0;
-}
-
-.account-address {
-  max-inline-size: 28rem;
-  margin-block-start: 0.35rem;
-  overflow: hidden;
-  color: var(--uk-muted-color, #777);
-  text-overflow: ellipsis;
-}
-
-.selected-balance {
-  flex: 0 0 auto;
-  color: var(--uk-text-color, #222);
-  font-size: 1.2rem;
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-}
-
-.selected-balance small {
-  display: block;
-}
-
-.account-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.account-actions .uk-button {
-  margin: 0;
-}
-
-.add-account-link {
-  display: inline-block;
-  margin-block-start: 1rem;
-}
-
-.empty-selection {
-  margin-block: 1.25rem;
-  padding: 0.8rem;
-  border-inline-start: 3px solid #1e87f0;
-  background: rgba(30, 135, 240, 0.08);
-}
-
-.activity-card {
-  margin-block-start: 1rem;
-}
-
-.activity-header {
-  margin-block-end: 1rem;
-}
-
-.activity-list {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.activity-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem;
-  min-inline-size: 0;
-  padding: 0.75rem 0.25rem;
-  border-block-start: 1px solid rgba(127, 127, 127, 0.16);
-}
-
-.activity-row.actionable {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--w-card-border);
+  border-inline-start: 4px solid var(--w-amber);
+  border-radius: 10px;
+  background: var(--w-subtle-bg);
   cursor: pointer;
 }
 
-.activity-row.actionable:hover {
-  background: rgba(30, 135, 240, 0.06);
-}
-
-.direction-mark {
-  display: grid;
-  inline-size: 1.8rem;
-  block-size: 1.8rem;
-  place-items: center;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.sent-mark {
-  background: rgba(220, 70, 70, 0.12);
-  color: #cc3d3d;
-}
-
-.received-mark {
-  background: rgba(50, 170, 105, 0.14);
-  color: #258854;
-}
-
-.activity-description {
-  display: grid;
+.receivable-unlock-text {
+  display: flex;
+  flex-direction: column;
   gap: 0.15rem;
   min-inline-size: 0;
+  color: var(--w-text-muted);
+  font-size: 0.85rem;
 }
 
-.activity-description span {
+.receivable-unlock-text strong { color: var(--w-text); }
+
+/* ---------- Summary card ---------- */
+
+.wallet-summary-card {
+  background: var(--w-card-bg);
+  border: 1px solid var(--w-card-border);
+  border-radius: 14px;
+  box-shadow: var(--w-card-shadow);
   overflow: hidden;
-  color: var(--uk-muted-color, #777);
-  font-size: 0.8rem;
+}
+
+/* minmax(0, ...) is the important part: it lets this column shrink below its
+   content width instead of being forced open by the sibling column, which is
+   what previously squeezed the balance until it wrapped per character. */
+.summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  padding: 1.25rem 1.4rem;
+  align-items: start;
+}
+
+.summary-primary {
+  min-inline-size: 0;
+}
+
+.card-kicker {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: var(--w-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* The headline number.
+   - `white-space: nowrap` stops the browser ever breaking "1000000" into a
+     vertical column of single digits, which is what word-break: break-all did.
+   - `clamp()` with cqi units shrinks the type as the column narrows, so the
+     value stays on one line instead of wrapping.
+   - The wrapper scrolls rather than overflowing if a pathological balance still
+     cannot fit, because a scrolled number beats an unreadable one. */
+.balance-display-wrap {
+  overflow-x: auto;
+  /* Without this, setting overflow-x makes overflow-y compute to auto too and
+     a phantom vertical scrollbar appears beside the number. */
+  overflow-y: hidden;
+  max-inline-size: 100%;
+}
+
+.balance-display {
+  display: flex;
+  align-items: baseline;
+  /* No gap: the integer and its decimals are one number and must read as one.
+     Only the unit is offset. */
+  gap: 0;
+  margin: 0;
+  color: var(--w-text);
+  font-size: clamp(1.35rem, 9cqi, 3rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  font-weight: 700;
+  white-space: nowrap;
+  min-inline-size: 0;
+}
+
+.balance-int,
+.balance-dec,
+.balance-unit { flex: 0 0 auto; }
+
+.balance-dec {
+  font-size: 0.55em;
+  font-weight: 500;
+  color: var(--w-text-muted);
+}
+
+.balance-unit {
+  margin-inline-start: 0.35rem;
+  font-size: 0.3em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--w-text-muted);
+}
+
+.balance-fiat {
+  margin-top: 0.25rem;
+  color: var(--w-text-muted);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.summary-accounts-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--w-blue);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.summary-accounts-link:hover { text-decoration: underline; }
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(6rem, auto));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.summary-stat {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: var(--w-subtle-bg);
+  border: 1px solid var(--w-subtle-border);
+  min-inline-size: 0;
+}
+
+.summary-stat dt {
+  margin: 0 0 0.15rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--w-text-muted);
+}
+
+.summary-stat dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--w-text);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.stat-pending { color: var(--w-amber); }
+.stat-none { color: var(--w-text-muted); }
+
+/* ---------- Action bar ---------- */
+
+.wallet-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1.4rem;
+  border-top: 1px solid var(--w-subtle-border);
+  background: var(--w-subtle-bg);
+}
+
+.action-context {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  flex-wrap: wrap;
+}
+
+.action-context-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--w-text-muted);
+}
+
+.action-context-select {
+  inline-size: auto;
+  max-inline-size: 100%;
+  min-inline-size: 9rem;
+  font-size: 0.9rem;
+}
+
+/* A full address must not push the Send button off the bar. */
+.action-context-addr {
+  font-size: 0.78rem;
+  color: var(--w-text-muted);
+  min-inline-size: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.activity-amount {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.action-buttons {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.sent-amount {
-  color: #cc3d3d;
+.hero-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-inline-size: 8rem;
+  justify-content: center;
 }
 
-.received-amount {
-  color: #258854;
+.btn-icon { flex: 0 0 auto; }
+
+/* ---------- Activity ---------- */
+
+.wallet-activity-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-inline-size: 0;
 }
 
-.activity-empty {
-  margin-block: 0;
+.activity-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 639px) {
-  .wallet-page {
-    padding-inline: 0.25rem;
+.activity-section-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--w-text);
+}
+
+.activity-manage-link {
+  color: var(--w-blue);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.activity-manage-link:hover { text-decoration: underline; }
+
+/* ---------- Responsive ---------- */
+
+/* Driven by the page's own width, so this also works in a narrow panel. */
+@container (width < 720px) {
+  .summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
   }
 
-  .wallet-page-header,
-  .activity-header,
-  .account-summary {
-    align-items: flex-start;
+  .summary-stats {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  }
+}
+
+@container (width < 520px) {
+  .summary-grid {
+    padding: 1rem;
+  }
+
+  .wallet-action-bar {
+    padding: 0.85rem 1rem;
+  }
+
+  .action-buttons {
+    inline-size: 100%;
+  }
+
+  /* Full-width buttons are a comfortable tap target on a phone. */
+  .hero-action-btn {
+    flex: 1 1 0;
+    min-inline-size: 0;
+  }
+
+  .receivable-unlock-banner {
     flex-direction: column;
-  }
-
-  .wallet-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .selected-balance {
-    text-align: start;
-  }
-
-  .activity-row {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .activity-amount {
-    grid-column: 2;
-  }
-
-  .receivable-unlock {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: stretch;
   }
 }

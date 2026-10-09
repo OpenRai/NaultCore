@@ -289,6 +289,9 @@
               "src/app/services/recovery-import.service.spec.ts",
               "src/app/services/pow-routing.service.spec.ts",
               "src/app/services/notification.service.spec.ts",
+              "src/app/models/transaction.model.spec.ts",
+              "src/app/services/transaction-history.service.spec.ts",
+              "src/app/services/audio-feedback.service.spec.ts",
               "src/app/services/app-settings.service.spec.ts",
               "src/app/services/recovery-verification.service.spec.ts",
               "src/app/services/wallet.service.spec.ts",
@@ -303,7 +306,8 @@
               "src/app/components/configure-app/configure-app.component.spec.ts",
               "src/app/components/sweeper/sweeper.component.spec.ts",
               "src/app/components/send/send.component.spec.ts",
-              "src/app/components/wallet/wallet.component.spec.ts"
+              "src/app/components/wallet/wallet.component.spec.ts",
+              "src/app/components/transaction-table/transaction-table.component.spec.ts"
             ],
             "setupFiles": ["src/test-setup-vitest.ts"]
           }

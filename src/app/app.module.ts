@@ -11,6 +11,7 @@ import {UtilService} from './services/util.service';
 import {WalletService} from './services/wallet.service';
 import {ConfigureWalletComponent} from './components/configure-wallet/configure-wallet.component';
 import {NotificationService} from './services/notification.service';
+import {AudioFeedbackService} from './services/audio-feedback.service';
 import {NotificationsComponent} from './components/notifications/notifications.component';
 import {RaiPipe} from './pipes/rai.pipe';
 import {AccountsComponent} from './components/accounts/accounts.component';
@@ -69,11 +70,14 @@ import { environment } from '../environments/environment';
 import { MultisigComponent } from './components/multisig/multisig.component';
 import { KeygeneratorComponent } from './components/keygenerator/keygenerator.component';
 import { NanoTransactionMobileComponent } from './components/helpers/nano-transaction-mobile/nano-transaction-mobile.component';
+import { TranslocoModule } from '@jsverse/transloco';
 import { TranslocoRootModule } from './transloco/transloco-root.module';
 import { NoPaddingZerosPipe } from './pipes/no-padding-zeros.pipe';
 import { AboutOverlayComponent } from './components/about-overlay/about-overlay.component';
 import { WalletContextService } from './services/wallet-context.service';
 import { WalletComponent } from './components/wallet/wallet.component';
+import { TransactionTableComponent } from './components/transaction-table/transaction-table.component';
+import { TransactionHistoryService } from './services/transaction-history.service';
 
 @NgModule({
   declarations: [
@@ -116,7 +120,8 @@ import { WalletComponent } from './components/wallet/wallet.component';
     NanoTransactionMobileComponent,
     NoPaddingZerosPipe,
     AboutOverlayComponent,
-    WalletComponent
+    WalletComponent,
+    TransactionTableComponent
   ],
   imports: [
     BrowserModule,
@@ -131,6 +136,7 @@ import { WalletComponent } from './components/wallet/wallet.component';
       enabled: environment.production && !environment.desktop,
       registrationStrategy: 'registerImmediately',
     }),
+    TranslocoModule,
     TranslocoRootModule,
   ],
   providers: [
@@ -138,6 +144,8 @@ import { WalletComponent } from './components/wallet/wallet.component';
     WalletService,
     WalletContextService,
     NotificationService,
+    AudioFeedbackService,
+    TransactionHistoryService,
     ApiService,
     AddressBookService,
     ModalService,

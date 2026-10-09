@@ -1,0 +1,447 @@
+:host {
+  /* Same palette tokens as the Wallet page so the two read as one surface. */
+  --tx-card-bg: #ffffff;
+  --tx-border: rgba(0, 0, 0, 0.08);
+  --tx-border-soft: rgba(0, 0, 0, 0.05);
+  --tx-text: #1d1d22;
+  --tx-text-muted: #6e6e80;
+  --tx-subtle-bg: #f7f7fa;
+  --tx-hover-bg: #f4f4f8;
+  --tx-head-bg: #f2f3f7;
+  --tx-green: #2fb344;
+  --tx-red: #d0342c;
+  --tx-amber: #d97706;
+  --tx-blue: #1e87f0;
+
+  /* Lets the disclosure below animate to `height: auto`. Chrome-only today;
+     other engines toggle instantly with the same markup. */
+  interpolate-size: allow-keywords;
+
+  display: block;
+}
+
+:host-context(.dark-mode) {
+  --tx-card-bg: #22222a;
+  --tx-border: rgba(255, 255, 255, 0.08);
+  --tx-border-soft: rgba(255, 255, 255, 0.05);
+  --tx-text: #f0f0f8;
+  --tx-text-muted: #8f8fab;
+  --tx-subtle-bg: #1a1a20;
+  --tx-hover-bg: rgba(255, 255, 255, 0.04);
+  --tx-head-bg: #1d1d24;
+  --tx-green: #48d262;
+  --tx-red: #ff6b6b;
+  --tx-amber: #fbbf24;
+  --tx-blue: #4a90e2;
+}
+
+.tx-table {
+  background: var(--tx-card-bg);
+  border: 1px solid var(--tx-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ---------- Filter bar ---------- */
+
+/* A native <details> disclosure: collapsed by default so the transaction list
+   is what the reader sees first. Free keyboard support and expanded state. */
+.tx-filters {
+  border-bottom: 1px solid var(--tx-border-soft);
+}
+
+.tx-filters-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.55rem;
+  padding-inline: 1rem;
+  min-block-size: 2.25rem;
+  cursor: pointer;
+  list-style: none;
+  color: var(--tx-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tx-filters-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.tx-filters-toggle:focus-visible {
+  outline: max(2px, 0.08em) solid currentColor;
+  outline-offset: 0.25em;
+}
+
+.tx-filters-toggle:active {
+  background: var(--tx-hover-bg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tx-filters-toggle:hover {
+    background: var(--tx-subtle-bg);
+  }
+}
+
+.tx-filters-toggle-icon {
+  color: var(--tx-text-muted);
+}
+
+.tx-filters-toggle-chevron {
+  margin-inline-start: auto;
+  color: var(--tx-text-muted);
+}
+
+.tx-filters[open] .tx-filters-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tx-filters-toggle-chevron {
+    transition: transform 0.2s ease-out;
+  }
+}
+
+/* Quiet pill: the collapsed toggle still admits a filter is active. */
+.tx-filters-active {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--tx-subtle-bg);
+  color: var(--tx-text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Padding stays on the body, never on ::details-content: the box keeps its
+   padding visible while collapsed if it lives on the pseudo-element. */
+.tx-filters-body {
+  padding: 0.9rem 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+/* Accordion animation. `::details-content` is Chrome 131 / Safari 18.4 /
+   Firefox 143+ and `interpolate-size` is Chrome-only: elsewhere the whole
+   rule is invalid and the disclosure toggles without animating, which is the
+   intended graceful degradation. */
+.tx-filters::details-content {
+  height: 0;
+  overflow: clip;
+}
+
+.tx-filters[open]::details-content {
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tx-filters::details-content {
+    transition:
+      height 0.3s var(--ease-out, ease-out),
+      content-visibility 0.3s allow-discrete;
+  }
+}
+
+.tx-filter-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tx-filter-icon {
+  position: absolute;
+  inset-inline-start: 0.65rem;
+  color: var(--tx-text-muted);
+  pointer-events: none;
+}
+
+.tx-search-input {
+  padding-inline-start: 2.1rem;
+}
+
+.tx-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tx-select {
+  max-inline-size: 100%;
+  min-inline-size: 8.5rem;
+  flex: 0 1 auto;
+}
+
+.tx-amount-range {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tx-amount-input {
+  inline-size: 7.5rem;
+}
+
+.tx-range-sep {
+  color: var(--tx-text-muted);
+}
+
+.tx-clear {
+  margin-inline-start: auto;
+}
+
+/* ---------- Summary ---------- */
+
+.tx-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 1rem;
+  background: var(--tx-subtle-bg);
+  border-bottom: 1px solid var(--tx-border-soft);
+  font-size: 0.82rem;
+  color: var(--tx-text-muted);
+}
+
+.tx-summary-totals {
+  display: flex;
+  gap: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tx-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tx-total-in { color: var(--tx-green); }
+.tx-total-out { color: var(--tx-red); }
+
+/* ---------- States ---------- */
+
+.tx-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--tx-text-muted);
+}
+
+.tx-state-icon { color: var(--tx-text-muted); opacity: 0.6; }
+.tx-state-title { margin: 0; color: var(--tx-text); font-weight: 600; }
+.tx-state-desc { font-size: 0.85rem; }
+
+/* ---------- Table ---------- */
+
+.tx-table-wrapper {
+  overflow: auto;
+  max-inline-size: 100%;
+  /* Enables the @container queries below to react to this element's own width
+     rather than the viewport, so the table also behaves inside narrow panels. */
+  container-type: inline-size;
+}
+
+.tx-table-grid {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+
+/* Sticky column headers: the header stays visible however far the body scrolls,
+   so a row of numbers is never orphaned from its labels. `separate` spacing is
+   required for sticky to paint a clean background. */
+.tx-table-grid thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--tx-head-bg);
+  color: var(--tx-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: start;
+  padding: 0.6rem 0.85rem;
+  border-block-end: 1px solid var(--tx-border);
+  white-space: nowrap;
+}
+
+.tx-table-grid tbody td {
+  padding: 0.7rem 0.85rem;
+  border-block-end: 1px solid var(--tx-border-soft);
+  vertical-align: middle;
+}
+
+.tx-table-grid tbody tr:last-child td { border-block-end: none; }
+.tx-table-grid tbody tr:hover { background: var(--tx-hover-bg); }
+
+.col-status { inline-size: 7.5rem; }
+.col-amount { inline-size: 9rem; text-align: end; white-space: nowrap; }
+.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--tx-text-muted); font-size: 0.82rem; }
+
+.tx-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tx-badge-received { background: rgba(47, 179, 68, 0.14); color: var(--tx-green); }
+.tx-badge-sent { background: rgba(208, 52, 44, 0.12); color: var(--tx-red); }
+.tx-badge-pending { background: rgba(217, 119, 6, 0.14); color: var(--tx-amber); }
+
+.tx-row-pending td { background: rgba(217, 119, 6, 0.05); }
+
+.tx-detail-primary {
+  font-weight: 600;
+  /* Long labels and addresses must wrap or ellipsize, never force the page wide. */
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.tx-counterparty-label,
+.tx-counterparty-addr {
+  color: var(--tx-text);
+  text-decoration: none;
+}
+
+.tx-counterparty-label:hover,
+.tx-counterparty-addr:hover { text-decoration: underline; }
+
+.tx-counterparty-none {
+  color: var(--tx-text-muted);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.tx-detail-secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-block-start: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--tx-text-muted);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.tx-local-account,
+.tx-hash {
+  color: var(--tx-text-muted);
+  text-decoration: none;
+}
+
+.tx-local-account:hover,
+.tx-hash:hover { text-decoration: underline; }
+
+.tx-amount {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tx-amount-in { color: var(--tx-green); }
+.tx-amount-out { color: var(--tx-red); }
+
+.tx-unit {
+  margin-inline-start: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--tx-text-muted);
+}
+
+/* ---------- Stacked layout for narrow widths ---------- */
+
+/* Reached when the table itself is narrow, not when the viewport is. The
+   columns become labelled cards so the same rows stay readable instead of
+   being hidden or squeezed into horizontal scrolling. */
+@container (width < 620px) {
+  .tx-table-grid,
+  .tx-table-grid tbody,
+  .tx-table-grid tr,
+  .tx-table-grid td {
+    display: block;
+  }
+
+  /* Removed from layout AND from the accessibility tree; each cell carries its
+     own label via ::before below. */
+  .tx-table-grid thead {
+    display: none;
+  }
+
+  .tx-table-grid {
+    --label-status: 'Status';
+    --label-detail: 'Details';
+    --label-amount: 'Amount';
+    --label-date: 'Date';
+  }
+
+  .tx-table-grid tbody tr {
+    padding: 0.75rem 0.85rem;
+    border-block-end: 1px solid var(--tx-border-soft);
+  }
+
+  .tx-table-grid tbody td {
+    padding: 0;
+    border: none;
+  }
+
+  /* The `"/ label"` form supplies the accessible name to screen readers, so the
+     injected text is announced as "Amount: 1.5" rather than trailing noise. */
+  .tx-table-grid td::before {
+    content: var(--label-status) ': ' / var(--label-status);
+    color: var(--tx-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .tx-table-grid .col-detail::before { content: var(--label-detail) ': ' / var(--label-detail); }
+  .tx-table-grid .col-amount::before { content: var(--label-amount) ': ' / var(--label-amount); }
+  .tx-table-grid .col-date::before { content: var(--label-date) ': ' / var(--label-date); }
+
+  .tx-table-grid .col-detail,
+  .tx-table-grid .col-amount,
+  .tx-table-grid .col-date {
+    inline-size: auto;
+    text-align: start;
+    white-space: normal;
+  }
+
+  .tx-table-grid .col-detail { margin-block-end: 0.3rem; }
+
+  .tx-table-grid .col-amount {
+    margin-block-start: 0.35rem;
+    font-size: 1rem;
+  }
+
+  .tx-table-grid .col-date {
+    margin-block-start: 0.15rem;
+  }
+
+  /* Column labels sit inline above their value rather than on their own line,
+     which reads better in a narrow card. */
+  .tx-table-grid td {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: 0.5rem;
+    align-items: baseline;
+  }
+}
+
+/* Very narrow: the amount columns no longer need a label column of their own. */
+@container (width < 380px) {
+  .tx-table-grid td {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}

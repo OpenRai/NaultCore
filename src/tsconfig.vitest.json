@@ -23,6 +23,9 @@
     "app/services/recovery-import.service.spec.ts",
     "app/services/pow-routing.service.spec.ts",
     "app/services/notification.service.spec.ts",
+    "app/models/transaction.model.spec.ts",
+    "app/services/transaction-history.service.spec.ts",
+    "app/services/audio-feedback.service.spec.ts",
     "app/services/app-settings.service.spec.ts",
     "app/services/recovery-verification.service.spec.ts",
     "app/services/wallet.service.spec.ts",
@@ -43,6 +46,7 @@
     "app/components/sweeper/sweeper.component.spec.ts",
     "app/components/send/send.component.spec.ts",
     "app/components/wallet/wallet.component.spec.ts",
+    "app/components/transaction-table/transaction-table.component.spec.ts",
     "test-setup-vitest.ts",
     "globals.d.ts",
     "../node_modules/vitest/globals.d.ts"

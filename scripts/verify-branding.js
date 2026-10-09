@@ -5,6 +5,7 @@ const root = path.resolve(__dirname, '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const required = [
   'src/assets/img/naultcore-logo.png',
+  'src/assets/img/preview.png',
   'src/assets/logo_source/naultcore-ex-3.png',
   'src/assets/favicon/favicon.ico',
   'src/assets/favicon/favicon-16x16.png',
@@ -29,6 +30,7 @@ const pngSize = (relative) => {
   return `${data.readUInt32BE(16)}x${data.readUInt32BE(20)}`;
 };
 const expectedSizes = {
+  'src/assets/img/preview.png': '1280x640',
   'src/assets/favicon/favicon-16x16.png': '16x16',
   'src/assets/favicon/favicon-32x32.png': '32x32',
   'src/assets/favicon/apple-touch-icon.png': '180x180',
@@ -49,6 +51,14 @@ for (const [name, content] of [['src/index.html', index], ['src/index.preview.ht
   for (const reference of ['assets/favicon/favicon-16x16.png', 'assets/favicon/favicon-32x32.png', 'assets/favicon/apple-touch-icon.png', 'assets/favicon/safari-pinned-tab.svg']) {
     if (!content.includes(reference)) throw new Error(`${name} is missing favicon reference: ${reference}`);
   }
+  // og:image must point to NaultCore's own domain, never the upstream nault.cc
+  if (/og:image.*nault\.cc/.test(content)) throw new Error(`${name} og:image still references nault.cc — update to NaultCore domain`);
+  // twitter:card must be present for Discord / Twitter unfurl support
+  if (!content.includes('twitter:card')) throw new Error(`${name} is missing twitter:card meta tag`);
+  if (!content.includes('twitter:image')) throw new Error(`${name} is missing twitter:image meta tag`);
+  // og:image:width / height must be present
+  if (!content.includes('og:image:width')) throw new Error(`${name} is missing og:image:width`);
+  if (!content.includes('og:image:height')) throw new Error(`${name} is missing og:image:height`);
 }
 for (const relative of ['src/app/welcome/welcome.component.html', 'src/app/components/receive/receive.component.css', 'src/less/components/dark-mode.less', 'src/less/components/nano-card.less']) {
   if (!read(relative).includes('naultcore-logo.png')) throw new Error(`${relative} does not use the canonical NaultCore logo`);

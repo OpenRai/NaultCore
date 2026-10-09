@@ -604,6 +604,9 @@ export class NanoBlockService {
   sendLedgerDeniedNotification(err = null) {
     this.notifications.sendWarning(
       (err && err.message) || `Transaction denied on Ledger device`,
+      // No identifier to allowlist on, so the flow is stalled with the user
+      // looking at the device. It has to say so.
+      { cue: { name: 'error', emphasis: 'strong' } },
     );
   }
   sendLedgerNotification() {

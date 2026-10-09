@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, ElementRef, ViewChild, inject, ChangeDetectionStrategy } from '@angular/core';
 import {AddressBookService} from '../../services/address-book.service';
 import {WalletService, WalletStateSnapshot} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
@@ -33,6 +33,7 @@ export interface BalanceAccount {
 
 export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly branding = branding;
+  private sortableListenerAttached = false;
   private addressBookService = inject(AddressBookService);
   private walletService = inject(WalletService);
   notificationService = inject(NotificationService);
@@ -100,18 +101,27 @@ export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  ngAfterViewInit() {
-    // Listen for reordering events
-    document.getElementById('address-book-sortable').addEventListener('moved', (e) => {
-      const element = e.target as HTMLDivElement;
-      const elements = element.children;
-
-      const result = [].slice.call(elements);
-      const datas = result.map(el => el.dataset.account);
+  // Bound via a setter rather than looked up in ngAfterViewInit: the template
+  // root sits behind *transloco, so on a cold first visit the view is not in the
+  // DOM yet when AfterViewInit runs and getElementById returns null. The setter
+  // attaches as soon as the element actually appears, whenever that is.
+  @ViewChild('addressBookSortable')
+  set addressBookSortable(element: ElementRef<HTMLElement> | undefined) {
+    const host = element?.nativeElement;
+    if (!host || this.sortableListenerAttached) {
+      return;
+    }
+    this.sortableListenerAttached = true;
+    host.addEventListener('moved', (e) => {
+      const moved = e.target as HTMLDivElement;
+      const datas = [].slice.call(moved.children).map(el => (el as HTMLElement).dataset.account);
 
       this.addressBookService.setAddressBookOrder(datas);
       this.notificationService.sendSuccess(this.translocoService.translate('address-book.updated-address-book-order'));
     });
+  }
+
+  ngAfterViewInit() {
   }
 
   private applyWalletSnapshot(snapshot: WalletStateSnapshot): void {

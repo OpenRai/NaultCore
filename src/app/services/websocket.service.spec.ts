@@ -155,6 +155,24 @@ describe('WebsocketService', () => {
     expect(errors).toEqual(['Received an invalid confirmation message.']);
   });
 
+  it('requests wallet reconciliation on every socket open, not only after suspend', () => {
+    const reasons: string[] = [];
+    service.reconciliationRequested$.subscribe(event => reasons.push(event.reason));
+    openSocket();
+    expect(reasons).toEqual(['open']);
+  });
+
+  it('requests wallet reconciliation with the reconnect reason across a suspend cycle', () => {
+    const reasons: string[] = [];
+    service.reconciliationRequested$.subscribe(event => reasons.push(event.reason));
+    const first = openSocket();
+    service.pause('hidden');
+    first.close();
+    service.resume('visibility');
+    socket().open();
+    expect(reasons).toEqual(['open', 'resume', 'reconnect']);
+  });
+
   it('requires a pong after keepalive and tears down timers cleanly', () => {
       service.keepaliveTimeout = 100;
       service.pongTimeout = 100;

@@ -56,7 +56,7 @@ export class WebsocketService implements OnDestroy {
   readonly protocolErrors$ = this.protocolErrorSubject.asObservable();
 
   /** WalletService uses this as a hint to perform authoritative RPC reconciliation. */
-  readonly reconciliationRequested$ = new Subject<{ reason: 'reconnect' | 'resume' }>();
+  readonly reconciliationRequested$ = new Subject<{ reason: 'reconnect' | 'resume' | 'open' }>();
   /** Confirmations are transport hints; consumers must reconcile through WalletService/RPC. */
   readonly newTransactions$ = new Subject<NanoConfirmationMessage>();
 
@@ -134,7 +134,11 @@ export class WebsocketService implements OnDestroy {
       this.subscriptionStateSubject.next(this.desiredAccounts.size ? 'pending' : 'subscribed');
       this.reconcileSubscriptions(socketGeneration);
       this.scheduleKeepalive(socketGeneration);
-      if (this.wasOpenBeforeSuspend) this.reconciliationRequested$.next({ reason: 'reconnect' });
+      // A freshly opened socket may carry subscriptions the server dropped
+      // while we were unreachable (for example a laptop waking from sleep
+      // whose socket still reads OPEN). Reconciling on every open keeps a
+      // silently stale foreground state impossible to keep.
+      this.reconciliationRequested$.next({ reason: this.wasOpenBeforeSuspend ? 'reconnect' : 'open' });
       this.wasOpenBeforeSuspend = false;
     };
     ws.onerror = () => {

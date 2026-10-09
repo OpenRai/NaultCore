@@ -726,9 +726,26 @@ export class SendComponent implements OnInit {
       return this.notificationService.sendWarning(`Amount is invalid`);
     }
     if (from.balanceBN.minus(rawAmount).lessThan(0)) {
-      return this.notificationService.sendError(
-        `From account does not have enough XNO`,
-      );
+      // The cached on-chain balance may predate funds that arrived while the
+      // foreground was unreachable (sleep/wake with a silently dropped
+      // subscription). Re-fetch once before failing: if the node now covers
+      // the amount, an immediate whole-wallet refresh heals every stale
+      // selector as well.
+      const latest = await this.nodeApi.accountInfo(this.fromAccountID);
+      const latestBalance = new BigNumber(latest?.balance || 0);
+      if (latestBalance.gte(rawAmount)) {
+        from.balance = latest.balance;
+        from.balanceBN = latestBalance;
+        this.fromAccount = from;
+        void this.walletService.refreshWalletState('send-stale-balance').catch(() => {
+          // The send itself proceeds on the re-fetched balance; a failed
+          // background refresh must not block it.
+        });
+      } else {
+        return this.notificationService.sendError(
+          `From account does not have enough XNO`,
+        );
+      }
     }
 
     // Determine a proper raw amount to show in the UI, if a decimal was entered

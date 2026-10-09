@@ -84,6 +84,89 @@ describe('SendComponent - regular wallet balance refresh', () => {
   });
 });
 
+describe('SendComponent - stale balance re-verification', () => {
+  function createStaleSendContext(options: {
+    cachedBalance: string;
+    latestBalance: string | null;
+    amount: string;
+  }): any {
+    const fromAccountID = 'nano_source';
+    const accountInfoCalls: string[] = [];
+    return {
+      component: {
+        util: { account: { isValidAccount: () => true }, nano: { rawToMnano: (raw: any) => new BigNumber(raw).div(1e30) } },
+        validateAmount: () => true,
+        preparingTransaction: false,
+        onFromAccountChange: () => undefined,
+        getDestinationID: () => 'nano_destination',
+        getAmountBaseValue: (value: any) => new BigNumber(value).times('1000000000000000000000000000000'),
+        nodeApi: {
+          accountInfo: vi.fn((account: string) => {
+            accountInfoCalls.push(account);
+            // First call seeds the prepare step; the second is the single
+            // re-verification allowed after the cached balance falls short.
+            if (accountInfoCalls.length === 1) {
+              return Promise.resolve({ balance: options.cachedBalance, frontier: 'A'.repeat(64) });
+            }
+            return Promise.resolve(
+              options.latestBalance === null ? null : { balance: options.latestBalance, frontier: 'A'.repeat(64) },
+            );
+          }),
+        },
+        walletService: { refreshWalletState: vi.fn(() => Promise.resolve()) },
+        notificationService: new MockNotificationService(),
+        addressBookService: { getAccountName: () => null },
+        price: { price: { lastPrice: 0 } },
+        workPool: { addWorkToCache: vi.fn() },
+        fromAccountID,
+        amount: options.amount,
+        selectedAmount: { value: 'mnano', name: 'XNO' },
+        nano: 1000000000000000000000000,
+        amountExtraRaw: new BigNumber(0),
+        getAccountLabel: (_id: string, fallback: string) => fallback,
+        toAccountID: 'nano_destination',
+        sendDestinationType: 'external-address',
+        spendableAccounts: [],
+        activePanel: 'send',
+      },
+      accountInfoCalls,
+    };
+  }
+
+  it('re-fetches once and proceeds when fresh funds cover a stale MAX amount', async () => {
+    const { component, accountInfoCalls } = createStaleSendContext({
+      cachedBalance: '1071103000000000000000000000000',
+      latestBalance: '3071103000000000000000000000000',
+      amount: '2.071103',
+    });
+
+    await SendComponent.prototype.sendTransaction.call(component);
+
+    expect(component.fromAccount.balance).toBe('3071103000000000000000000000000');
+    expect(accountInfoCalls.filter(id => id === 'nano_source').length).toBe(2);
+    expect(component.activePanel).toBe('confirm');
+    expect(component.notificationService.sendError).not.toHaveBeenCalled();
+    expect(component.walletService.refreshWalletState).toHaveBeenCalledWith('send-stale-balance');
+  });
+
+  it('still reports insufficient funds when the re-fetched balance falls short', async () => {
+    const { component, accountInfoCalls } = createStaleSendContext({
+      cachedBalance: '1071103000000000000000000000000',
+      latestBalance: '1071103000000000000000000000000',
+      amount: '2.071103',
+    });
+
+    await SendComponent.prototype.sendTransaction.call(component);
+
+    expect(component.notificationService.sendError).toHaveBeenCalledWith(
+      'From account does not have enough XNO',
+    );
+    expect(accountInfoCalls.filter(id => id === 'nano_source').length).toBe(2);
+    expect(component.activePanel).toBe('send');
+    expect(component.walletService.refreshWalletState).not.toHaveBeenCalled();
+  });
+});
+
 describe('SendComponent - account selection race', () => {
   it('applies an explicit account query without replacing a user source choice', () => {
     const component: any = {

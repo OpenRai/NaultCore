@@ -213,6 +213,8 @@
     "leave-blank-to-accept-transactions-of-any-amount": "Leave blank to accept transactions of any amount",
     "leave-blank-to-use-a-recommended-one": "Leave blank to use a recommended one",
     "lock-after-inactivity": "Lock After Inactivity",
+    "play-a-sound-for-confirmed-sends-receives-and": "Play sounds for confirmed transactions and wallet actions",
+    "play-a-sound-for-confirmed-sends-receives-and": "Play sounds for confirmed transactions and wallet actions",
     "min-receive-amount": "Min. Receive Amount",
     "minimum-nano-amount-to-receive-transactions-below-this": "Minimum XNO amount to receive. Transactions below this amount will be ignored by the wallet both for receiving and in the transactions list.  Set to blank or 0 to accept all transactions.",
     "multiplier-options": {
@@ -257,6 +259,8 @@
     "receive-method": "Receive Method",
     "save-settings-to-update": "Save settings to update",
     "server-configuration": "Server Configuration",
+    "sound": "Sound",
+    "sound-description": "Play a short sound when a send or receive is confirmed, when something is copied, and when a hardware wallet is waiting for you. Validation messages and background status updates stay silent.",
     "server-settings": "Server Settings",
     "server-settings-successfully-updated": "Server settings successfully updated!",
     "storage-options": {
@@ -408,6 +412,37 @@
     "before-continuing-make-sure-you-have-saved-the-nano-seed": "Before continuing, make sure you have saved the secret recovery seed and/or mnemonic of your current wallet.",
     "you-will-not-be-able-to-recover-the-funds-without-a-backup": "YOU WILL NOT BE ABLE TO RECOVER THE FUNDS without a backup of your currently configured wallet."
   },
+  "transaction-table": {
+    "caption": "Recent transactions",
+    "status": "Status",
+    "details": "Details",
+    "amount": "Amount",
+    "date": "Date",
+    "sent": "Sent",
+    "received": "Received",
+    "pending": "Pending",
+    "search-placeholder": "Search label, address, or hash",
+    "direction": "Direction",
+    "direction-all": "All activity",
+    "account": "Account",
+    "all-accounts": "All accounts",
+    "amount-min": "Min",
+    "amount-max": "Max",
+    "clear-filters": "Clear filters",
+    "filters-toggle": "Filters",
+    "filters-active": "Active",
+    "loading": "Loading transactions...",
+    "no-activity": "No transactions yet",
+    "no-activity-desc": "Send or receive from one of your accounts and it will appear here.",
+    "no-matches": "No transactions match these filters",
+    "no-counterparty": "Unknown account",
+    "awaiting-receive": "Awaiting receive",
+    "entry-count-singular": "{{count}} transaction",
+    "entry-count-plural": "{{count}} transactions",
+    "showing-of": "Showing {{shown}} of {{total}}",
+    "today-at": "Today {{time}}",
+    "date-at": "{{day}} {{time}}"
+  },
   "welcome": {
     "a-secure-open-source-wallet-for-nano": "A secure open source wallet for nano",
     "advanced-security-features": {
@@ -467,5 +502,16 @@
       "3": "No sensitive data is ever sent across the internet.",
       "title": "Your Keys, Your Coins"
     }
+  },
+  "wallet": {
+    "total-balance": "Total Wallet Balance",
+    "across-accounts-singular": "Across {{count}} account",
+    "across-accounts-plural": "Across {{count}} accounts",
+    "accounts": "Accounts",
+    "pending": "Pending",
+    "recent-events": "Recent events",
+    "spend-from": "Spend from",
+    "recent-activity": "Recent activity",
+    "manage-accounts": "Manage accounts"
   }
 }

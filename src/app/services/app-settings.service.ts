@@ -33,6 +33,7 @@ interface AppSettings {
   identiconsStyle: string;
   useNostr: boolean;
   useOrbitDb: boolean;
+  soundEnabled: boolean;
 }
 
 @Injectable()
@@ -67,7 +68,8 @@ export class AppSettingsService {
     identiconsStyle: 'nanoidenticons',
     useNostr: true,
     useOrbitDb: false,
-  };
+    soundEnabled: true,
+  }
 
   serverOptions = [
     {
@@ -273,6 +275,7 @@ export class AppSettingsService {
       identiconsStyle: 'nanoidenticons',
       useNostr: true,
       useOrbitDb: false,
+      soundEnabled: true,
     };
   }
 

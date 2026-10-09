@@ -153,6 +153,28 @@
             <div class="uk-form-horizontal">
 
               <div class="uk-margin">
+                <label class="uk-form-label">{{ 'configure-app.sound' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.sound-description')"></span></label>
+                <div class="uk-form-controls">
+                  <label style="cursor: pointer;">
+                    <input
+                      id="sound-enabled-toggle"
+                      type="checkbox"
+                      class="uk-checkbox"
+                      [ngModel]="soundEnabled"
+                      (ngModelChange)="onSoundChange($event)"
+                      [attr.data-testid]="testIds.appSettings.soundToggle"
+                    >
+                    &nbsp; {{ 'configure-app.play-a-sound-for-confirmed-sends-receives-and' | transloco }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uk-width-1-1">
+            <div class="uk-form-horizontal">
+
+              <div class="uk-margin">
                 <label class="uk-form-label">{{ 'configure-app.lock-after-inactivity' | transloco }} <span uk-icon="icon: info;" uk-tooltip [title]="t('configure-app.change-if-your-wallet-should-be-locked-automatically-after')"></span></label>
                 <div class="uk-form-controls">
 

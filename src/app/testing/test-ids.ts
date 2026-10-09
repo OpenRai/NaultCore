@@ -78,6 +78,24 @@ export const TestIds = {
     receiveButton: 'wallet-receive-button',
     addAccountButton: 'wallet-add-account-button',
     activity: 'wallet-activity',
+    accountsLink: 'wallet-accounts-link',
+    summaryCard: 'wallet-summary-card',
+  },
+  transactionTable: {
+    root: 'transaction-table-root',
+    searchInput: 'transaction-table-search-input',
+    directionFilter: 'transaction-table-direction-filter',
+    accountFilter: 'transaction-table-account-filter',
+    amountMinInput: 'transaction-table-amount-min-input',
+    amountMaxInput: 'transaction-table-amount-max-input',
+    clearFilters: 'transaction-table-clear-filters',
+    filterToggle: 'transaction-table-filter-toggle',
+    resultCount: 'transaction-table-result-count',
+    counterpartyLink: 'transaction-table-counterparty-link',
+    hashLink: 'transaction-table-hash-link',
+    loading: 'transaction-table-loading',
+    empty: 'transaction-table-empty',
+    noMatches: 'transaction-table-no-matches',
   },
   addressBook: {
     pageRoot: 'address-book-page-root',
@@ -103,6 +121,7 @@ export const TestIds = {
   appSettings: {
     pageRoot: 'app-settings-page-root',
     saveSettingsButton: 'app-settings-save-settings-button',
+    soundToggle: 'app-settings-sound-toggle',
   },
   manageWallet: {
     pageRoot: 'manage-wallet-page-root',

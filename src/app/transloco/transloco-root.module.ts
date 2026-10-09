@@ -12,6 +12,10 @@ export class TranslocoHttpLoader implements TranslocoLoader {
 }
 
 @NgModule({
+  // Imported as well as exported: re-exporting a module the host never imports
+  // leaves TranslocoPipe out of this module's own compilation scope, which
+  // breaks any TestBed that declares a component using the pipe.
+  imports: [ TranslocoModule ],
   exports: [ TranslocoModule ],
   providers: [
     provideTransloco({

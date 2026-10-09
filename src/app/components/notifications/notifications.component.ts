@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
-import {NotificationService} from '../../services/notification.service';
+import {DEFAULT_NOTIFICATION_LENGTH, NotificationService} from '../../services/notification.service';
 
 @Component({
   standalone: false,
@@ -12,7 +12,7 @@ export class NotificationsComponent implements OnInit {
   private notificationService = inject(NotificationService);
 
 
-  notificationLength = 5000;
+  notificationLength = DEFAULT_NOTIFICATION_LENGTH;
 
   notifications: any[] = [];
 
@@ -23,17 +23,12 @@ export class NotificationsComponent implements OnInit {
       }
 
       // Check the options
-      const length = notification.options.hasOwnProperty('length') ? notification.options.length : this.notificationLength;
+      const length = notification.options.length ?? this.notificationLength;
       const identifier = notification.options.identifier || null;
 
-      // Stop duplicates
-      if (identifier) {
-        const existingNotification = this.notifications.find(n => n.identifier === identifier);
-        if (existingNotification) {
-          return;
-        }
-      }
-
+      // Duplicate suppression lives in NotificationService, which drops repeats
+      // before emitting so nothing downstream reacts to a toast the user never
+      // sees. Everything reaching here is safe to render.
       const newNotification = {
         type: notification.type,
         message: notification.message,

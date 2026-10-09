@@ -1,6 +1,7 @@
 import { Component, OnInit, Renderer2, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
+import {AudioFeedbackService} from '../../services/audio-feedback.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {PriceService} from '../../services/price.service';
 import {WorkPoolService} from '../../services/work-pool.service';
@@ -30,6 +31,7 @@ export class ConfigureAppComponent implements OnInit {
   private walletService = inject(WalletService);
   private notifications = inject(NotificationService);
   private appSettings = inject(AppSettingsService);
+  private audio = inject(AudioFeedbackService);
   private addressBook = inject(AddressBookService);
   private powRouting = inject(PowRoutingService);
   private api = inject(ApiService);
@@ -128,6 +130,7 @@ export class ConfigureAppComponent implements OnInit {
     { name: 'configure-app.identicon-options.x-hours', value: 360, params: { hours: 6 } },
   ];
   selectedInactivityMinutes = this.inactivityOptions[4].value;
+  soundEnabled = this.appSettings.settings.soundEnabled !== false;
 
   powOptions: Array<{ name: string; value: PowPolicy }> = [
     { name: 'configure-app.pow-options.auto', value: 'auto' },
@@ -303,6 +306,7 @@ export class ConfigureAppComponent implements OnInit {
 
     this.useNostr = settings.useNostr !== undefined ? settings.useNostr : true;
     this.useOrbitDb = settings.useOrbitDb || false;
+    this.soundEnabled = settings.soundEnabled !== false;
 
     const matchingStorage = this.storageOptions.find(d => d.value === settings.walletStore);
     this.selectedStorage = matchingStorage.value || this.storageOptions[0].value;
@@ -427,6 +431,14 @@ export class ConfigureAppComponent implements OnInit {
   }
 
   // --- Wallet Settings Autosave ---
+  onSoundChange(enabled: boolean) {
+    this.soundEnabled = enabled;
+    this.appSettings.setAppSetting('soundEnabled', enabled);
+    // Apply immediately so the toggle takes effect without a reload.
+    this.audio.setEnabled(enabled);
+    this.showSavedIndicator('wallet');
+  }
+
   onInactivityChange(minutes: number | string) {
     const num = Number(minutes);
     this.selectedInactivityMinutes = num;

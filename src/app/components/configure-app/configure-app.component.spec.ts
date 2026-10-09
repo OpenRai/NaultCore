@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { ConfigureAppComponent } from './configure-app.component';
 import { WalletService } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
+import { AudioFeedbackService } from '../../services/audio-feedback.service';
 import { AppSettingsService } from '../../services/app-settings.service';
 import { AddressBookService } from '../../services/address-book.service';
 import { PowRoutingService } from '../../services/pow-routing.service';
@@ -24,6 +25,7 @@ describe('ConfigureAppComponent', () => {
   let fixture: ComponentFixture<ConfigureAppComponent>;
   let mockWalletService: any;
   let mockNotifications: any;
+  let mockAudioFeedback: any;
   let mockAppSettings: any;
   let mockPowRouting: any;
   let mockApi: any;
@@ -52,6 +54,12 @@ describe('ConfigureAppComponent', () => {
       sendSuccess: vi.fn(),
       sendWarning: vi.fn(),
       sendInfo: vi.fn(),
+    };
+
+    mockAudioFeedback = {
+      setEnabled: vi.fn(),
+      isEnabled: vi.fn(() => true),
+      syncPreference: vi.fn(),
     };
 
     mockAppSettings = {
@@ -182,6 +190,7 @@ describe('ConfigureAppComponent', () => {
       providers: [
         { provide: WalletService, useValue: mockWalletService },
         { provide: NotificationService, useValue: mockNotifications },
+        { provide: AudioFeedbackService, useValue: mockAudioFeedback },
         { provide: AppSettingsService, useValue: mockAppSettings },
         { provide: AddressBookService, useValue: { clearAddressBook: vi.fn() } },
         { provide: PowRoutingService, useValue: mockPowRouting },

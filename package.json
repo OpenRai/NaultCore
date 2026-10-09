@@ -91,6 +91,7 @@
     "buffer": "^6.0.3",
     "core-js": "^3.6.5",
     "crypto-js": "^4.2.0",
+    "cuelume": "^0.2.4",
     "electron-log": "^4.3.1",
     "electron-settings": "^4.0.2",
     "electron-updater": "^4.3.5",

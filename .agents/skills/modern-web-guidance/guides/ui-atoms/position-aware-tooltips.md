@@ -1,3 +1,5 @@
+# Position Aware Tooltips
+
 When building tooltips or popovers with CSS Anchor Positioning, the browser can automatically "flip" the element to a fallback position if it would otherwise overflow the viewport. When this happens, you may want to adjust the style of the positioned content, for instance to reposition an arrow that points from the positioned content to the anchor.
 
 **Anchored Container Queries** solve this by allowing you to query the active positioning state of an element and apply styles accordingly.
@@ -101,7 +103,7 @@ If you need to change properties on the container itself (like `margin` or `back
 
 ## Fallback strategies
 
-Anchor position container queries has limited availability.
+Browser support for Anchor position container queries: Limited availability.
 Supported by: Chrome 143 (Dec 2025) and Edge 143 (Dec 2025).
 Unsupported in: Firefox and Safari.
 

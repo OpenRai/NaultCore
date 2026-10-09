@@ -1,3 +1,5 @@
+# Scroll Snap Real-Time Feedback
+
 ## Overview
 Users expect immediate visual feedback when interacting with UI elements like carousels or galleries. Traditional scroll snap only provides feedback *after* the scroll gesture completes and the element settles. By using Scroll Snap Events, specifically `scrollsnapchanging`, you can provide real-time feedback during the scroll gesture, highlighting the pending snap target before the user releases their touch or mouse.
 
@@ -93,9 +95,10 @@ if (document.readyState === 'complete') {
 ```
 
 ### Fallback strategies
-Scroll snap events has limited availability.
+Browser support for Scroll snap events: Limited availability.
 Supported by: Chrome 129 (Sep 2024) and Edge 129 (Sep 2024).
 Unsupported in: Firefox and Safari.
+
 Baseline status for Scroll snap: Widely available. It's been Baseline since 2020-01-15.
 Supported by: Chrome 69 (Sep 2018), Edge 79 (Jan 2020), Firefox 68 (Jul 2019), and Safari 11 (Sep 2017).
 

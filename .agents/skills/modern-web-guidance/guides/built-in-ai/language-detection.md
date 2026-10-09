@@ -1,3 +1,5 @@
+# Language Detection
+
 The **Language Detector API** is a client-side web API designed to identify the language of a given text string. By performing detection locally in the browser, it enhances user privacy and reduces the need for heavy external libraries or costly server-side calls.
 
 ## Key Use Cases
@@ -70,7 +72,7 @@ Avoid using the detector on very short phrases or single words, as accuracy drop
 
 ## Fallback Strategy
 
-Language detector has limited availability.
+Browser support for Language detector: Limited availability.
 Supported by: Chrome 138 (Jun 2025) and Edge 148 (May 2026).
 Unsupported in: Firefox and Safari.
 

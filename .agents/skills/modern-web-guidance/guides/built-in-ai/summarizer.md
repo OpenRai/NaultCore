@@ -1,3 +1,5 @@
+# Summarizer
+
 The **Summarizer API** allows web developers to offer local, AI-powered text distillation directly within the browser using **Gemini Nano in Chrome or Phi in Edge**. This API supports various formats, including key points, headlines, and TL;DRs, while operating entirely on-device to ensure user privacy.
 
 ---
@@ -130,7 +132,7 @@ for await (const chunk of stream) {
 
 ## Fallback Strategy
 
-Summarizer has limited availability.
+Browser support for Summarizer: Limited availability.
 Supported by: Chrome 138 (Jun 2025) and Edge 138 (Jun 2025).
 Unsupported in: Firefox and Safari.
 

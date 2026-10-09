@@ -1,3 +1,5 @@
+# Move DOM Element Without Losing State
+
 When reparenting DOM elements using traditional methods like `appendChild()` or `insertBefore()`, the browser implicitly removes the element from the DOM and then inserts it into its new location. This "remove and insert" operation resets many internal states, causing `<iframe>` elements to reload, CSS animations to restart, and input fields to lose focus.
 
 To move an element while preserving its state, use the `moveBefore()` API. This method performs an atomic move, completely bypassing the removal and insertion steps.
@@ -36,7 +38,7 @@ class MyCustomElement extends HTMLElement {
 
 ### Fallback strategies
 
-moveBefore() has limited availability.
+Browser support for moveBefore(): Limited availability.
 Supported by: Chrome 133 (Feb 2025), Edge 133 (Feb 2025), and Firefox 144 (Oct 2025).
 Unsupported in: Safari.
 

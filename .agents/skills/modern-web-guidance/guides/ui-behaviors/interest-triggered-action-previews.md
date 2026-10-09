@@ -1,3 +1,5 @@
+# Interest Triggered Action Previews
+
 It can be beneficial to provide users a preview of their actions before they commit to them. Interest invokers are an experimental web platform feature that provides a declarative-based way of creating interest relationships between an interest source (i.e. a button or a link) and an interest target. Once the declarative relationship has been established there are a number of methods a developer can respond to based on interest and loss of interest using both CSS and JavaScript. For this use case, we can leverage the `interest` and `loseinterest` events to preview various effects for an interest target.
 
 ## How to implement
@@ -47,7 +49,7 @@ The start and end delay for an interest invoker (i.e. the element with the `inte
 
 ### Fallback strategies
 
-Interest invokers has limited availability.
+Browser support for Interest invokers: Limited availability.
 Supported by: Chrome 142 (Oct 2025) and Edge 142 (Oct 2025).
 Unsupported in: Firefox and Safari.
 

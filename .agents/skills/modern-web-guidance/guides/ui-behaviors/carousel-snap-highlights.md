@@ -1,3 +1,5 @@
+# Carousel Snap Highlights
+
 Scroll-state container queries allow you to style elements based on their current scroll state, such as whether an element is "stuck" (via sticky positioning) or "snapped" (via scroll snapping). This enables carousel or gallery experiences where the active item can be visually distinguished without relying on JavaScript intersection observers or scroll event listeners.
 
 ### Core implementation
@@ -96,7 +98,7 @@ Snapping occurs due to scrolling, which does not move keyboard focus. However, k
 
 ## Fallback strategies
 
-Container scroll-state queries has limited availability.
+Browser support for Container scroll-state queries: Limited availability.
 Supported by: Chrome 133 (Feb 2025) and Edge 133 (Feb 2025).
 Unsupported in: Firefox and Safari.
 

@@ -1,3 +1,5 @@
+# Cross-Document Transitions
+
 Cross-document view transitions allow you to create smooth, app-like transitions between different pages of a Multi-Page Application (MPA). By default, the browser performs a cross-fade, but you can customize this to match your site's aesthetic.
 
 ### Implementation Steps
@@ -99,7 +101,7 @@ Then, use the `:active-view-transition-type()` pseudo selector to apply the diff
 Baseline status for View transitions: Newly available. It's been Baseline since 2025-10-14.
 Supported by: Chrome 111 (Mar 2023), Edge 111 (Mar 2023), Firefox 144 (Oct 2025), and Safari 18 (Sep 2024).
 
-Cross-document view transitions has limited availability.
+Browser support for Cross-document view transitions: Limited availability.
 Supported by: Chrome 126 (Jun 2024), Edge 126 (Jun 2024), and Safari 18.2 (Dec 2024).
 Unsupported in: Firefox.
 

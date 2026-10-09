@@ -679,6 +679,33 @@
 	}
 }
 
+// Wallet owns Accounts. The child is permanently visible rather than a
+// uk-parent accordion, so the divider under the group has to come from the
+// child list alone - otherwise Wallet and Accounts each draw a rule and the
+// group looks like two separate entries.
+.left-nav .wallet-nav-group {
+	> a {
+		border-bottom-color: transparent;
+	}
+
+	.uk-nav-sub {
+		// The parent's own left band is transparent until hover/active, so a
+		// solid bar here would read as a divider between the two levels.
+		border-left-color: transparent;
+
+		// Read as subordinate to Wallet without shrinking the tap target.
+		font-size: 15px;
+	}
+
+	// Either child counts as being inside the Wallet group, so the accent runs
+	// down the spine in both cases and the active state matches every other
+	// nav entry rather than showing colour on the text alone.
+	&:has(> a.active) .uk-nav-sub,
+	&:has(> .uk-nav-sub > li > a.active) .uk-nav-sub {
+		border-left-color: @global-primary-background;
+	}
+}
+
 .nav-search {
 	background: rgba(56, 56, 76, 0.3);
 	padding: 3px 12px 3px 8px;

@@ -7,6 +7,7 @@ import {WebsocketService} from './services/websocket.service';
 import {PriceService} from './services/price.service';
 import {UtilService} from './services/util.service';
 import {NotificationService} from './services/notification.service';
+import {AudioFeedbackService} from './services/audio-feedback.service';
 import {WorkPoolService} from './services/work-pool.service';
 import {Router} from '@angular/router';
 import {SwUpdate, VersionReadyEvent, VersionInstallationFailedEvent} from '@angular/service-worker';
@@ -39,6 +40,7 @@ export class AppComponent implements OnInit {
   settings = inject(AppSettingsService);
   private websocket = inject(WebsocketService);
   private notifications = inject(NotificationService);
+  private audio = inject(AudioFeedbackService);
   nodeService = inject(NodeService);
   private representative = inject(RepresentativeService);
   private router = inject(Router);
@@ -131,6 +133,7 @@ export class AppComponent implements OnInit {
 
     await this.startup.runPhase('settings', async () => {
       this.settings.loadAppSettings();
+      this.audio.syncPreference();
       this.powRouting.syncFromSettings();
       await this.powRouting.resolveRoute().catch((error) => {
         console.debug('PoW route resolution failed:', error);

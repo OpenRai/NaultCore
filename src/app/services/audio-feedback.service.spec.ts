@@ -49,6 +49,7 @@ describe('AudioFeedbackService', () => {
 
   const cueFor = () => play.mock.calls[0]?.[0];
   const emphasisFor = () => play.mock.calls[0]?.[1]?.emphasis;
+  const lastCueFor = () => play.mock.calls[play.mock.calls.length - 1]?.[0];
 
   describe('allowlist', () => {
     it('plays a strong chord when a send is confirmed', () => {
@@ -57,10 +58,15 @@ describe('AudioFeedbackService', () => {
       expect(emphasisFor()).toBe('strong');
     });
 
-    it('plays a strong chord when a receive is confirmed', () => {
+    it('announces confirmed receives with a different cue than sends', () => {
       service.playForNotification('success', 'success-receive', {});
-      expect(cueFor()).toBe('success');
+      expect(cueFor()).toBe('ready');
       expect(emphasisFor()).toBe('strong');
+    });
+
+    it('treats incoming funds that need action as a blocked state', () => {
+      service.playForNotification('warning', 'pending-locked', {});
+      expect(cueFor()).toBe('attention');
     });
 
     it('plays subtly when something is copied', () => {
@@ -72,6 +78,28 @@ describe('AudioFeedbackService', () => {
     it('uses attention while the wallet waits on a Ledger', () => {
       service.playForNotification('info', 'ledger-sign', {});
       expect(cueFor()).toBe('attention');
+    });
+
+    it('sounds the wallet latch open and closed as counterparts', () => {
+      service.playForNotification('success', 'wallet-unlocked', {});
+      expect(cueFor()).toBe('open');
+      vi.setSystemTime(10_000);
+      service.playForNotification('success', 'wallet-locked', {});
+      expect(lastCueFor()).toBe('close');
+      expect(play).toHaveBeenCalledTimes(2);
+    });
+
+    it('answers a refused unlock with an error rather than silence', () => {
+      service.playForNotification('error', 'wrong-password', {});
+      expect(cueFor()).toBe('error');
+    });
+
+    it('stays silent for lock and unlock toasts that carry no identifier', () => {
+      // Guards the call sites: an un-identified notification cannot be mapped to
+      // a cue, which is how lock and unlock were silent in the first place.
+      service.playForNotification('success', undefined, {});
+      service.playForNotification('error', undefined, {});
+      expect(play).not.toHaveBeenCalled();
     });
 
     it('plays an error when a Ledger signing step cannot continue', () => {
@@ -117,7 +145,19 @@ describe('AudioFeedbackService', () => {
     it('speaks up when the tab is hidden', () => {
       vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
       service.playForNotification('success', 'success-receive-nanonym', {});
-      expect(cueFor()).toBe('success');
+      expect(cueFor()).toBe('ready');
+      vi.restoreAllMocks();
+    });
+
+    it('announces a spotted stealth payment only while hidden', () => {
+      vi.spyOn(document, 'hidden', 'get').mockReturnValue(false);
+      service.playForNotification('info', 'incoming-nanonym-payment', {});
+      expect(play).not.toHaveBeenCalled();
+      vi.restoreAllMocks();
+      vi.setSystemTime(10_000);
+      vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+      service.playForNotification('info', 'incoming-nanonym-payment', {});
+      expect(cueFor()).toBe('attention');
       vi.restoreAllMocks();
     });
 

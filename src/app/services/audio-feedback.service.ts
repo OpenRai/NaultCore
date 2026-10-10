@@ -17,14 +17,38 @@ export type NotificationType = 'info'|'success'|'warning'|'error';
  * mapping would turn all of that into noise.
  */
 const CUES: Record<string, { cue: SoundName; emphasis: Emphasis; backgroundOnly?: boolean }> = {
-  // Money moved. Rare and high consequence, so these carry weight.
+  // Per cuelume, cues are picked by the job and never reused across jobs:
+  // money confirmed out (success), money arrived or waiting (ready), wallet
+  // blocked on the user (attention). Received funds are the one event the
+  // user is most likely to hear while looking elsewhere, so sends and
+  // receives must never share a cue.
   'success:success-send': { cue: 'success', emphasis: 'strong' },
-  'success:success-receive': { cue: 'success', emphasis: 'strong' },
+  // Funds landed and the wallet claimed them: a result is there, nothing
+  // more the user must do, so this is `ready`, not `success`.
+  'success:success-receive': { cue: 'ready', emphasis: 'strong' },
   // Stealth opens are driven by incoming Nostr/OrbitDB notifications, so this
   // is usually a background arrival. Only speak up when the tab is hidden.
-  'success:success-receive-nanonym': { cue: 'success', emphasis: 'strong', backgroundOnly: true },
+  'success:success-receive-nanonym': { cue: 'ready', emphasis: 'strong', backgroundOnly: true },
+  // Incoming funds that still need action: the wallet is locked so the
+  // receive cannot be processed, or receives are manual. Blocked until the
+  // user answers, so this is `attention`: one high glass bell.
+  'warning:pending-locked': { cue: 'attention', emphasis: 'normal' },
+  // A stealth payment was spotted but its receive still has to run. Same job
+  // as pending-locked: money waiting on the user, announced while hidden.
+  'info:incoming-nanonym-payment': { cue: 'attention', emphasis: 'normal', backgroundOnly: true },
   // Frequent but meaningful: confirms the tap actually registered.
   'success:success-copied': { cue: 'success', emphasis: 'subtle' },
+  // The wallet latch. `open` and `close` are cuelume's designed counterparts
+  // (air rising over a light mallet note / air falling shut over a low damped
+  // one), so unlocking and locking are audibly opposite and neither collides
+  // with the glass or mallet outcomes above.
+  'success:wallet-unlocked': { cue: 'open', emphasis: 'normal' },
+  'success:wallet-locked': { cue: 'close', emphasis: 'normal' },
+  // A refused unlock and a failed lock are both failures to act, which is
+  // cuelume's `error` job, so a wrong password is no longer silent while a
+  // correct one answers.
+  'error:wrong-password': { cue: 'error', emphasis: 'normal' },
+  'error:wallet-lock-failed': { cue: 'error', emphasis: 'normal' },
   // The wallet is stalled waiting on a device the user may not be looking at.
   'info:ledger-sign': { cue: 'attention', emphasis: 'normal' },
   // A Ledger signing step cannot continue.

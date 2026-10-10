@@ -78,9 +78,9 @@ export class WalletWidgetComponent implements OnInit {
     }
     const locked = await this.walletService.lockWallet();
     if (locked) {
-      this.notificationService.sendSuccess(`Wallet locked`);
+      this.notificationService.sendSuccess(`Wallet locked`, { identifier: 'wallet-locked' });
     } else {
-      this.notificationService.sendError(`Unable to lock wallet`);
+      this.notificationService.sendError(`Unable to lock wallet`, { identifier: 'wallet-lock-failed' });
     }
   }
 
@@ -130,7 +130,7 @@ export class WalletWidgetComponent implements OnInit {
     const unlocked = await this.walletService.unlockWallet(this.unlockPassword);
 
     if (unlocked) {
-      this.notificationService.sendSuccess(`Wallet unlocked`);
+      this.notificationService.sendSuccess(`Wallet unlocked`, { identifier: 'wallet-unlocked' });
       this.modal.hide();
       if (this.unlockPassword.length < 6) {
 
@@ -144,7 +144,7 @@ export class WalletWidgetComponent implements OnInit {
 
       this.allowUnlock({ focusInputElement: false });
     } else {
-      this.notificationService.sendError(`Incorrect password, please try again!`);
+      this.notificationService.sendError(`Incorrect password, please try again!`, { identifier: 'wrong-password' });
     }
   }
 

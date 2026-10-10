@@ -1,4 +1,8 @@
-.uk-button:not(.uk-button-secondary):not(.uk-button-default) {
+// White text is only legible on the variants that fill a background. Text
+// buttons are transparent, so letting them fall into this rule rendered their
+// label white-on-white - invisible in light mode, and visible only as the hover
+// underline.
+.uk-button:not(.uk-button-secondary):not(.uk-button-default):not(.uk-button-text) {
 	color: #fff;
 }
 

@@ -21,7 +21,7 @@
     }
 
     <!-- Mobile top bar -->
-    <div uk-grid class="mobile-top-bar uk-background-primary">
+    <div uk-grid class="mobile-top-bar">
       <div class="uk-width-1-2 button-column">
         <button
           type="button"
@@ -353,20 +353,50 @@
             </div>
             <div class="section-caption">Community</div>
           </div>
-          <div class="uk-width-1-3 uk-text-center dark-mode-column">
-            <div [class]="{'dark-mode-click-area': true, 'enabled': !settings.settings.lightModeEnabled}" (click)="toggleLightMode()">
-              <div class="dark-mode-area">
-                <div class="dark-mode-switch">
-                  <svg width="16" height="16" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-                    <g fill="#EEE" stroke="#EEE" stroke-linejoin="round" stroke-width="2">
-                      <path d="m145.54 108.99c-5.5673 25.239-34.67 39.667-62.22 39.667-37.888 0-68.603-30.714-68.603-68.603-1e-6 -37.888 30.714-68.603 68.603-68.603 9.8615 0 19.237 2.0808 27.712 5.8272-105.27 26.034-34.024 146.53 34.508 91.711z" stop-color="#000000"/>
-                      <path transform="matrix(.69599 .69599 -.69599 .69599 66.459 -75.221)" d="m120.54 62.862c-2.3901-1e-6 -9.2713 6.4507-10.961 4.7607s4.7607-8.5712 4.7607-10.961c0-2.3901-6.4507-9.2713-4.7607-10.961s8.5712 4.7607 10.961 4.7607 9.2712-6.4507 10.961-4.7607c1.69 1.6901-4.7607 8.5712-4.7607 10.961 0 2.3901 6.4507 9.2713 4.7607 10.961-1.6901 1.6901-8.5712-4.7607-10.961-4.7607z" stop-color="#000000"/>
-                    </g>
-                  </svg>
-                </div>
-              </div>
-              <div class="section-caption">Night Mode</div>
-            </div>
+          <div class="uk-width-1-3 uk-text-center appearance-column">
+            <!--
+              The appearance switch is the only appearance control: it cycles
+              light -> dark -> auto. In auto the switch disables itself and shows
+              an Auto overlay instead, so the state is never ambiguous. The
+              overlay is a sibling button rather than a child so the control stays
+              a single tab stop - a natively disabled button could not be focused
+              at all, which would strand keyboard users in auto with no way out.
+            -->
+            <button
+              type="button"
+              class="appearance-switch"
+              [class.is-active]="theme.resolved === 'dark'"
+              [attr.aria-pressed]="theme.resolved === 'dark'"
+              [attr.aria-label]="appearanceSwitchLabel"
+              [attr.aria-disabled]="theme.followingSystem"
+              [attr.tabindex]="theme.followingSystem ? -1 : null"
+              [attr.data-testid]="testIds.app.appearanceSwitch"
+              (click)="cycleAppearanceMode()"
+            >
+              <span class="appearance-track">
+                <span class="appearance-knob" aria-hidden="true">
+                  @if (theme.resolved === 'light') {
+                    <svg width="16" height="16" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor"><path d="M160 96a64 64 0 1 1-64-64 51 51 0 0 0 64 64Z"/></g></svg>
+                  } @else {
+                    <svg width="16" height="16" version="1.1" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg"><g fill="currentColor" stroke="currentColor" stroke-linejoin="round" stroke-width="2"><path d="m145.54 108.99c-5.5673 25.239-34.67 39.667-62.22 39.667-37.888 0-68.603-30.714-68.603-68.603-1e-6-37.888 30.714-68.603 68.603-68.603 9.8615 0 19.237 2.0808 27.712 5.8272-105.27 26.034-34.024 146.53 34.508 91.711z"/></g></svg>
+                  }
+                </span>
+              </span>
+            </button>
+            @if (theme.followingSystem) {
+              <button
+                type="button"
+                class="appearance-auto"
+                [attr.data-testid]="testIds.app.appearanceAuto"
+                [attr.aria-label]="appearanceAutoLabel"
+                uk-tooltip
+                title="Following your system appearance. Click to switch to light."
+                (click)="resumeFromAuto()"
+              >
+                Auto
+              </button>
+            }
+            <div class="section-caption">Theme</div>
           </div>
         </div>
         <div class="footer footer-attribution uk-margin-remove-top" uk-grid>

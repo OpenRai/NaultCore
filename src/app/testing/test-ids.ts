@@ -9,6 +9,8 @@ export const TestIds = {
     pendingUnlockAction: 'pending-unlock-action',
     quickReceiveButton: 'quick-receive-button',
     quickReceiveMenu: 'quick-receive-menu',
+    appearanceSwitch: 'appearance-switch',
+    appearanceAuto: 'appearance-auto',
   },
   welcome: {
     pageRoot: 'welcome-page-root',

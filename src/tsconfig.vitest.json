@@ -36,6 +36,7 @@
     "app/services/work-pool.service.ts",
     "app/services/util.service.spec.ts",
     "app/services/util.service.ts",
+    "app/services/theme.service.spec.ts",
     "app/services/websocket.service.spec.ts",
     "app/services/qr-modal.service.spec.ts",
     "app/services/deeplink.service.spec.ts",

@@ -1,4 +1,4 @@
-import { Component, OnInit, Renderer2, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {WalletService} from '../../services/wallet.service';
 import {NotificationService} from '../../services/notification.service';
 import {AudioFeedbackService} from '../../services/audio-feedback.service';
@@ -42,7 +42,6 @@ export class ConfigureAppComponent implements OnInit {
   private util = inject(UtilService);
   private price = inject(PriceService);
   private ninja = inject(NinjaService);
-  private renderer = inject(Renderer2);
   private qrModalService = inject(QrModalService);
   private translocoService = inject(TranslocoService);
   private nanonymManager = inject(NanoNymManagerService);
@@ -103,12 +102,6 @@ export class ConfigureAppComponent implements OnInit {
     { name: 'ZAR - South African Rand', value: 'ZAR' },
   ];
   selectedCurrency = this.currencies[0].value;
-
-  nightModeOptions = [
-    { name: 'configure-app.night-mode-options.enabled', value: 'enabled' },
-    { name: 'configure-app.night-mode-options.disabled', value: 'disabled' },
-  ];
-  selectedNightModeOption = this.nightModeOptions[0].value;
 
   identiconOptions = [
     { name: 'configure-app.identicon-options.none', value: 'none' },
@@ -297,10 +290,6 @@ export class ConfigureAppComponent implements OnInit {
     const matchingCurrency = this.currencies.find(d => d.value === settings.displayCurrency);
     this.selectedCurrency = matchingCurrency.value || this.currencies[0].value;
 
-    const nightModeOptionString = (settings.lightModeEnabled === true) ? 'disabled' : 'enabled';
-    const matchingNightModeOption = this.nightModeOptions.find(d => d.value === nightModeOptionString);
-    this.selectedNightModeOption = matchingNightModeOption.value || this.nightModeOptions[0].value;
-
     const matchingIdenticonOptions = this.identiconOptions.find(d => d.value === settings.identiconsStyle);
     this.selectedIdenticonOption = matchingIdenticonOptions.value || this.identiconOptions[0].value;
 
@@ -380,26 +369,6 @@ export class ConfigureAppComponent implements OnInit {
     this.showSavedIndicator('display');
   }
 
-  onNightModeChange(newMode: string) {
-    this.selectedNightModeOption = newMode;
-    const lightMode = newMode === 'disabled';
-    if (lightMode) {
-      this.renderer.addClass(document.body, 'light-mode');
-      this.renderer.removeClass(document.body, 'dark-mode');
-      this.appSettings.setAppSetting('lightModeEnabled', true);
-    } else {
-      this.renderer.addClass(document.body, 'dark-mode');
-      this.renderer.removeClass(document.body, 'light-mode');
-      this.appSettings.setAppSetting('lightModeEnabled', false);
-    }
-    // Sync Safari / Chrome PWA chrome bar to the actual in-app theme.
-    const themeColor = lightMode ? '#f8f8f8' : '#22222A';
-    document.querySelectorAll('meta[name="theme-color"]').forEach(el => {
-      el.setAttribute('content', themeColor);
-    });
-    this.showSavedIndicator('display');
-  }
-
   onIdenticonChange(newIdenticon: string) {
     this.selectedIdenticonOption = newIdenticon;
     this.appSettings.setAppSetting('identiconsStyle', newIdenticon);
@@ -413,7 +382,6 @@ export class ConfigureAppComponent implements OnInit {
   }
 
   async updateDisplaySettings() {
-    this.onNightModeChange(this.selectedNightModeOption);
     this.onIdenticonChange(this.selectedIdenticonOption);
     this.appSettings.setAppSetting('useNostr', this.useNostr);
     this.appSettings.setAppSetting('useOrbitDb', this.useOrbitDb);

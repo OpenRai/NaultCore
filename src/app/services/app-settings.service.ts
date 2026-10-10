@@ -6,6 +6,10 @@ export type WalletStore = 'localStorage'|'none';
 // be migrated to the simpler Auto/Local/Remote policy at the next save.
 export type PoWSource = 'auto'|'local'|'remote'|'server'|'clientCPU'|'clientWebGL'|'best'|'custom';
 export type LedgerConnectionType = 'usb'|'bluetooth';
+// 'auto' follows prefers-color-scheme; the explicit choices override the OS.
+export type AppearanceMode = 'auto'|'light'|'dark';
+export type ResolvedTheme = 'light'|'dark';
+export const APPEARANCE_MODES: AppearanceMode[] = ['auto', 'light', 'dark'];
 
 interface AppSettings {
   language: string;
@@ -29,7 +33,7 @@ interface AppSettings {
   serverAuth: string | null;
   minimumReceive: string | null;
   walletVersion: number | null;
-  lightModeEnabled: boolean;
+  appearanceMode: AppearanceMode;
   identiconsStyle: string;
   useNostr: boolean;
   useOrbitDb: boolean;
@@ -64,7 +68,7 @@ export class AppSettingsService {
     serverAuth: null,
     minimumReceive: '0.000001',
     walletVersion: 1,
-    lightModeEnabled: false,
+    appearanceMode: 'auto',
     identiconsStyle: 'nanoidenticons',
     useNostr: true,
     useOrbitDb: false,
@@ -171,6 +175,12 @@ export class AppSettingsService {
     }
     this.settings = Object.assign(this.settings, settings);
 
+    // An unrecognised appearanceMode would leave the theme unapplied, so fall
+    // back to the default rather than trusting whatever storage contained.
+    if (APPEARANCE_MODES.indexOf(this.settings.appearanceMode) === -1) {
+      this.settings.appearanceMode = 'auto';
+    }
+
     // Force NanoNym-dependent settings off when feature is disabled
     if (!FEATURE_NANONYMS) {
       this.settings.useNostr = false;
@@ -271,7 +281,7 @@ export class AppSettingsService {
       serverAuth: null,
       minimumReceive: '0.000001',
       walletVersion: 1,
-      lightModeEnabled: false,
+      appearanceMode: 'auto',
       identiconsStyle: 'nanoidenticons',
       useNostr: true,
       useOrbitDb: false,

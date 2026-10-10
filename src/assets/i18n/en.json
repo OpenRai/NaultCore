@@ -220,11 +220,6 @@
     "multiplier-options": {
       "default-1x-or-1-64x": "Default (1x or 1/64x)"
     },
-    "night-mode": "Night Mode",
-    "night-mode-options": {
-      "disabled": "Disabled",
-      "enabled": "Enabled"
-    },
     "node-stats": "Node Stats",
     "note-since-this-server-only-notifies-about-new-transactions": "Note: Since this server only notifies about new transactions, most of the wallet functions fine without it.",
     "optional-increased-work-for-transaction-priority-during": "Optional increased work for transaction priority during network saturation. Overrides both default SEND 1x and RECEIVE 1/64x difficulties.",

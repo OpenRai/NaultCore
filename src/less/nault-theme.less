@@ -37,6 +37,35 @@ html:has(body.light-mode) {
 	background-color: #f8f8f8;
 }
 
+// Sidebar theme tokens.
+//
+// These are the light values, so the sidebar follows the light-first base
+// stylesheet. body.dark-mode re-declares them with the dark palette in
+// dark-mode.less; nothing else in the app needs to know which theme is active.
+//
+// Dark is unchanged from what the sidebar used to hardcode. The light values are
+// measured against --nav-bg for WCAG AA: text 4.5:1, icons and rules 3:1.
+// --nav-text 16.8:1, --nav-text-muted 6.7:1, --nav-text-faint 4.7:1,
+// --nav-hover 5.5:1, --nav-link-hover 5.8:1. The dividers are decorative rules
+// rather than meaningful boundaries, so they sit below 3:1 by design.
+body {
+	--nav-bg: #FFFFFF;
+	--nav-border: #E4E4EA;
+	--nav-text: #1D1D22;
+	--nav-text-muted: #5B5B6B;
+	--nav-text-faint: #727281;
+	--nav-hover: #1268C7;
+	--nav-link-hover: #0B63C4;
+	--nav-surface: #FFFFFF;
+	--nav-search-bg: #F2F3F7;
+	--nav-divider: #D5D5DE;
+	--nav-shadow: rgba(0, 0, 0, 0.12);
+	--nav-control-track: #B9B9C2;
+	--nav-health-good: #0F7B52;
+	--nav-health-warn: #9A5800;
+	--nav-health-bad: #C0243C;
+}
+
 app-root {
 	display: block;
 	inline-size: 100%;
@@ -227,9 +256,9 @@ input[type=number] {
 .mobile-top-bar {
 	display: none;
 	height: @mobile-top-bar-height - 1px;
-	color: #FFF;
-	background-color: #22222A;
-	border-bottom: 1px solid #16161B;
+	color: var(--nav-text);
+	background-color: var(--nav-bg);
+	border-bottom: 1px solid var(--nav-border);
 
 	> .button-column {
 		padding-left: 0;
@@ -247,7 +276,7 @@ input[type=number] {
 
 			> .uk-icon {
 				margin-right: 10px;
-				color: #5F5F77;
+				color: var(--nav-text-faint);
 			}
 
 			> .app-name {

@@ -298,6 +298,7 @@
               "src/app/services/wallet-context.service.spec.ts",
               "src/app/services/work-pool.service.spec.ts",
               "src/app/services/util.service.spec.ts",
+              "src/app/services/theme.service.spec.ts",
               "src/app/services/websocket.service.spec.ts",
               "src/app/services/qr-modal.service.spec.ts",
               "src/app/services/deeplink.service.spec.ts",

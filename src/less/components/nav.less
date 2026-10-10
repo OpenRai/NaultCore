@@ -6,18 +6,27 @@
 @nav-sublist-padding-vertical:                  10px;
 @nav-sublist-item-padding-vertical:             8px;
 
-@nav-background-color:                          #1F1F24;
-@nav-scrollbar-color:                           #4E4E5A;
-@nav-border-color:                              #16161B;
-@nav-half-muted-color:                          #B6BED5;
+// The sidebar used to hardcode these dark values as build-time LESS variables,
+// which a runtime theme switch cannot reach - so the sidebar stayed dark in
+// every theme. They are runtime custom properties now: light values declared on
+// <body>, dark values overridden under body.dark-mode. Adding a new sidebar
+// element means referencing a token, never a literal.
+@nav-background-color:                          var(--nav-bg);
+@nav-scrollbar-color:                           var(--nav-divider);
+@nav-border-color:                              var(--nav-border);
+@nav-half-muted-color:                          var(--nav-text-muted);
+@nav-tooltip-color-background:                  var(--nav-surface);
+@nav-item-text-color:                           var(--nav-text);
+@nav-item-text-hover-color:                     var(--nav-hover);
+@nav-item-text-faint-color:                     var(--nav-text-faint);
+@nav-sublist-divider-color:                     var(--nav-divider);
+@nav-search-background:                         var(--nav-search-bg);
 
-@nav-tooltip-color-background:                  #2c2d39;
-
-@nav-default-item-color:                        #FFF;
+@nav-default-item-color:                        var(--nav-text);
 @nav-default-item-hover-color:                  @global-link-color;
 @nav-default-item-active-color:                 @global-link-color;
 
-@nav-default-sublist-item-color:                #FFF;
+@nav-default-sublist-item-color:                var(--nav-text);
 @nav-default-sublist-item-hover-color:          @global-link-color;
 
 @keyframes move-up-down {
@@ -35,7 +44,7 @@
 	display: flex;
 	flex-direction: column;
 	background: @nav-background-color;
-	color: #868AB0;
+	color: var(--nav-hover);
 	padding-left: 0;
 	min-width: 360px;
 	height: 100vh;
@@ -157,7 +166,7 @@
 	min-width: 300px;
 	max-width: 600px;
 	max-height: 400px;
-	border: 2px solid #8F8FAB;
+	border: 2px solid var(--nav-text-faint);
 	background: @nav-tooltip-color-background;
 	border-radius: 10px;
 	z-index: 2;
@@ -165,7 +174,7 @@
 	overscroll-behavior: contain;
 	-webkit-overflow-scrolling: touch;
 	line-height: 1;
-	box-shadow: 1px 1px 2px 2px rgba(0, 0, 0, 0.15);
+	box-shadow: 1px 1px 2px 2px var(--nav-shadow);
 	opacity: 0;
 	transition: opacity 200ms ease-in-out;
 	pointer-events: none;
@@ -197,7 +206,7 @@
 		display: flex;
 		justify-content: space-between;
 		background: @nav-tooltip-color-background;
-		border-bottom: 1px solid #1C1F28;
+		border-bottom: 1px solid var(--nav-border);
 		min-height: 32px;
 		padding: 8px 8px 6px 8px;
 		cursor: pointer;
@@ -267,7 +276,7 @@
 						margin-right: 3px;
 						vertical-align: 1px;
 						text-transform: uppercase;
-						color: #FFF;
+						color: var(--nav-text);
 
 						> .text-full {
 							display: none;
@@ -323,7 +332,7 @@
 
 		&:hover > .representative-name-row > .name {
 			border-bottom-style: dotted;
-			border-color: #868AB0;
+			border-color: var(--nav-hover);
 
 			&.no-interact {
 				border-color: transparent;
@@ -346,7 +355,7 @@
 		margin-bottom: 8px;
 
 		> .name {
-			color: #FFF;
+			color: var(--nav-text);
 			font-weight: 600;
 			font-size: 18px;
 			margin-right: 6px;
@@ -360,7 +369,7 @@
 
 			&:hover {
 				border-bottom-style: solid;
-				border-color: #FFF;
+				border-color: var(--nav-text);
 			}
 
 			&.no-interact {
@@ -372,7 +381,7 @@
 
 		> .weight-total {
 			min-width: 40px;
-			color: #FFF;
+			color: var(--nav-text);
 			font-weight: 400;
 			font-size: 17px;
 		}
@@ -385,22 +394,22 @@
 		margin-bottom: 15px;
 
 		&.health-green {
-			@health-state-color: #32D296;
+			@health-state-color: var(--nav-health-good);
 			.health-state-apply-colors();
 		}
 
 		&.health-yellow {
-			@health-state-color: #FAA05A;
+			@health-state-color: var(--nav-health-warn);
 			.health-state-apply-colors();
 		}
 
 		&.health-red {
-			@health-state-color: #F0506E;
+			@health-state-color: var(--nav-health-bad);
 			.health-state-apply-colors();
 		}
 
 		&.health-unknown {
-			@health-state-color: #868AB0;
+			@health-state-color: var(--nav-hover);
 			.health-state-apply-colors();
 		}
 
@@ -507,11 +516,11 @@
 
 		&:hover > .status-labels {
 			> .label.uk-text-success {
-				border-color: #32D296;
+				border-color: var(--nav-health-good);
 			}
 
 			> .label.uk-text-warning {
-				border-color: #FAA05A;
+				border-color: var(--nav-health-warn);
 			}
 
 			> .label.half-muted {
@@ -546,8 +555,8 @@
 				padding: 4px 0 1px 0;
 
 				&:hover {
-					color: #4A90E2;
-					border-color: #4A90E2;
+					color: var(--nav-link-hover);
+					border-color: var(--nav-link-hover);
 				}
 			}
 		}
@@ -575,7 +584,7 @@
 	> li {
 		font-size: 16px;
 		font-weight: 500;
-		color: #FFF;
+		color: var(--nav-text);
 		padding: 0;
 
 		&.uk-parent > a::after {
@@ -584,13 +593,13 @@
 
 		&.uk-parent.uk-open > a {
 			border-bottom: none;
-			border-left-color: #868AB0;
-			color: #868AB0;
+			border-left-color: var(--nav-hover);
+			color: var(--nav-hover);
 		}
 
 		> a {
 			text-decoration: none;
-			color: #FFF;
+			color: var(--nav-text);
 			padding-left: 20px;
 			border-left: 4px solid transparent;
 			border-top: 1px solid transparent;
@@ -598,12 +607,12 @@
 			transition: color 100ms ease-in-out, border-left-color 100ms ease-in-out;
 
 			&:focus {
-				color: #FFF;
+				color: var(--nav-text);
 			}
 
 			&:hover {
-				border-left-color: #868AB0;
-				color: #868AB0;
+				border-left-color: var(--nav-hover);
+				color: var(--nav-hover);
 			}
 
 			&.active {
@@ -629,7 +638,7 @@
 		}
 
 		.uk-nav-sub {
-			border-left: 4px solid #868AB0;
+			border-left: 4px solid var(--nav-hover);
 			border-bottom: 1px solid @nav-border-color;
 			padding: 0 0 5px 40px;
 			font-weight: 400;
@@ -641,7 +650,7 @@
 				display: block;
 				position: absolute;
 				height: calc(100% - 23px);
-				background: #484854;
+				background: var(--nav-divider);
 				width: 1px;
 				top: 0;
 				left: 20px;
@@ -652,7 +661,7 @@
 
 				&::after {
 					content: '';
-					background-color: #484854;
+					background-color: var(--nav-divider);
 					display: block;
 					width: 8px;
 					height: 1px;
@@ -663,11 +672,11 @@
 
 				> a {
 					padding: 6px 0;
-					color: #FFF;
+					color: var(--nav-text);
 					transition: color 100ms ease-in-out;
 
 					&:hover {
-						color: #868AB0;
+						color: var(--nav-hover);
 					}
 
 					&.active {
@@ -707,7 +716,7 @@
 }
 
 .nav-search {
-	background: rgba(56, 56, 76, 0.3);
+	background: var(--nav-search-bg);
 	padding: 3px 12px 3px 8px;
 	font-size: 14px;
 	border-radius: 10px;
@@ -716,7 +725,7 @@
 	.uk-search-icon {
 		width: 30px;
 		margin-right: -8px;
-		color: #8F8FAB;
+		color: var(--nav-text-faint);
 	}
 
 	input {
@@ -724,7 +733,7 @@
 		border: 0 !important;
 
 		&::placeholder {
-			color: #8F8FAB;
+			color: var(--nav-text-faint);
 		}
 	}
 }
@@ -756,7 +765,7 @@
 		padding-top: 0;
 
 		> .attribution {
-			color: #777;
+			color: var(--nav-text-faint);
 			font-size: 13px;
 			margin-top: 15px;
 
@@ -765,17 +774,17 @@
 				padding-bottom: 2px;
 				border-bottom: 2px solid transparent;
 				transition: border-color 100ms ease-in-out;
-				color: #BBB;
+				color: var(--nav-text-muted);
 
 				&:hover {
-					border-color: #BBB;
+					border-color: var(--nav-text-muted);
 				}
 			}
 		}
 	}
 
 	.footer-link {
-		color: #FFF;
+		color: var(--nav-text);
 
 		&.discord-icon {
 			margin: 0 1px;
@@ -785,7 +794,7 @@
 
 	.section-caption {
 		display: block;
-		color: #777;
+		color: var(--nav-text-faint);
 		text-transform: uppercase;
 		font-size: 10px;
 		margin-top: 4px;
@@ -817,8 +826,8 @@
 				background: @global-primary-background;
 
 				> .donation-icon svg path {
-					stroke: #FFF;
-					fill: #FFF;
+					stroke: var(--nav-text);
+					fill: var(--nav-text);
 				}
 			}
 
@@ -851,76 +860,126 @@
 		}
 	}
 
-	.dark-mode-column {
+	.appearance-column {
+		position: relative;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		padding: 6px 8px;
 
-		> .dark-mode-click-area {
+		> .appearance-switch {
 			display: flex;
-			flex-direction: column;
 			align-items: center;
-			justify-content: center;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			font: inherit;
 			cursor: pointer;
-			padding: 6px 8px;
 
-			&:hover {
-				> .dark-mode-area > .dark-mode-switch {
-					background: #8F8F92;
-				}
-
-				> .section-caption {
-					border-bottom-color: #8F8F92;
-				}
+			// Auto owns the control in that state, so the switch is presentational
+			// only. It stays focusable-free rather than natively disabled so the
+			// overlay beside it remains the single tab stop.
+			&[aria-disabled="true"] {
+				cursor: default;
+				opacity: 0.55;
 			}
 
-			&.enabled {
-				&:hover {
-					> .dark-mode-area > .dark-mode-switch {
-						background: @global-primary-background;
-					}
-
-					> .section-caption {
-						border-bottom-color: @global-primary-background;
-					}
-				}
-
-				> .dark-mode-area {
-					border-color: @global-primary-background;
-
-					> .dark-mode-switch {
-						border-color: @global-primary-background;
-						left: 25px;
-					}
-				}
-
-				> .section-caption {
-					color: @global-primary-background;
-				}
+			:focus-visible {
+				outline: 2px solid var(--nav-hover);
+				outline-offset: 3px;
+				border-radius: 28px;
 			}
 
-			> .dark-mode-area {
+			> .appearance-track {
+				// border-box so the declared size is the drawn size. As a
+				// content-box span the 2px border made it 55x32, which is why
+				// the Auto overlay drawn against 51x28 sat proud of the track.
+				box-sizing: border-box;
 				width: 51px;
 				height: 28px;
 				border-radius: 28px;
 				position: relative;
-				border: 2px solid #8F8F92;
+				border: 2px solid var(--nav-control-track);
 				transition: border-color 100ms ease-in-out;
-
-				> .dark-mode-switch {
-					border: 2px solid #8F8F92;
-					width: 20px;
-					height: 20px;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					border-radius: 100%;
-					position: absolute;
-					top: 2px;
-					left: 2px;
-					transition: left 100ms ease-in-out;
-				}
+				display: block;
 			}
+
+			&.is-active > .appearance-track {
+				border-color: @global-primary-background;
+			}
+
+			> .appearance-track > .appearance-knob {
+				position: absolute;
+				top: 2px;
+				left: 2px;
+				box-sizing: border-box;
+				width: 20px;
+				height: 20px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				border-radius: 100%;
+				border: 2px solid var(--nav-control-track);
+				color: var(--nav-text-muted);
+				background: var(--nav-bg);
+				transition: left 100ms ease-in-out, border-color 100ms ease-in-out;
+			}
+
+			&.is-active > .appearance-track > .appearance-knob {
+				left: 25px;
+				border-color: @global-primary-background;
+				color: @global-primary-background;
+			}
+		}
+
+		// Sits directly over the switch in auto. Clicking it is the only way
+		// back out of auto, so it is a real button with its own accessible name.
+		// It mirrors .appearance-track exactly - same size, radius and origin -
+		// so it reads as the track filled in rather than a badge floating on it.
+		// It spells out "Auto" because a glyph for it was not legible as
+		// "following the system"; the caption above is a static "Theme", so the
+		// word here names the state instead of repeating the label.
+		> .appearance-auto {
+			position: absolute;
+			top: 6px;
+			left: 50%;
+			transform: translateX(-50%);
+			box-sizing: border-box;
+			width: 51px;
+			height: 28px;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 2px solid @global-primary-background;
+			border-radius: 28px;
+			background: @global-primary-background;
+			color: #FFF;
+			font-family: @global-secondary-font-family;
+			font-size: 12px;
+			font-weight: 600;
+			letter-spacing: 0.02em;
+			cursor: pointer;
+
+			&:focus-visible {
+				outline: 2px solid var(--nav-text);
+				outline-offset: 2px;
+			}
+		}
+
+		> .section-caption {
+			display: flex;
+			color: @global-primary-background;
+		}
+
+		&:hover:not(:has(.appearance-switch[aria-disabled="true"])) > .appearance-switch > .appearance-track {
+			border-color: var(--nav-hover);
+		}
+
+		&:hover:has(.appearance-switch[aria-disabled="true"]) > .appearance-auto {
+			background: var(--nav-link-hover);
+			border-color: var(--nav-link-hover);
 		}
 	}
 }

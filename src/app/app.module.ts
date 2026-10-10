@@ -28,6 +28,7 @@ import {ManageWalletComponent} from './components/manage-wallet/manage-wallet.co
 import {WorkPoolService} from './services/work-pool.service';
 import {ConfigureAppComponent} from './components/configure-app/configure-app.component';
 import {AppSettingsService} from './services/app-settings.service';
+import {ThemeService} from './services/theme.service';
 import {WebsocketService} from './services/websocket.service';
 import {NanoBlockService} from './services/nano-block.service';
 import { AccountDetailsComponent } from './components/account-details/account-details.component';
@@ -151,6 +152,7 @@ import { TransactionHistoryService } from './services/transaction-history.servic
     ModalService,
     WorkPoolService,
     AppSettingsService,
+    ThemeService,
     WebsocketService,
     NanoBlockService,
     PriceService,

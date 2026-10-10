@@ -66,7 +66,7 @@ describe('ConfigureAppComponent', () => {
       settings: {
         language: 'en',
         displayCurrency: 'USD',
-        lightModeEnabled: false,
+        appearanceMode: 'auto',
         identiconsStyle: 'none',
         useNostr: true,
         useOrbitDb: false,
@@ -230,14 +230,6 @@ describe('ConfigureAppComponent', () => {
       expect(mockAppSettings.setAppSetting).toHaveBeenCalledWith('displayCurrency', 'EUR');
       expect(mockPrice.getPrice).toHaveBeenCalledWith('EUR');
       expect(mockWalletService.reloadFiatBalances).toHaveBeenCalled();
-      expect(component.savedSection).toBe('display');
-    });
-
-    it('autosaves night mode appearance changes', () => {
-      component.onNightModeChange('enabled');
-
-      expect(component.selectedNightModeOption).toBe('enabled');
-      expect(mockAppSettings.setAppSetting).toHaveBeenCalledWith('lightModeEnabled', false);
       expect(component.savedSection).toBe('display');
     });
 

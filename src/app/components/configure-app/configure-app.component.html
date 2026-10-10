@@ -64,23 +64,6 @@
             <div class="uk-form-horizontal">
 
               <div class="uk-margin">
-                <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.night-mode' | transloco }}</label>
-                <div class="uk-form-controls">
-                  <select class="uk-select" [ngModel]="selectedNightModeOption" (ngModelChange)="onNightModeChange($event)" id="form-horizontal-select">
-                    @for (nightModeOption of nightModeOptions; track nightModeOption) {
-                      <option [value]="nightModeOption.value">{{ nightModeOption.name | transloco }}</option>
-                    }
-                  </select>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <div class="uk-width-1-1">
-            <div class="uk-form-horizontal">
-
-              <div class="uk-margin">
                 <label class="uk-form-label" for="form-horizontal-select">{{ 'configure-app.identicons' | transloco }}</label>
                 <div class="uk-form-controls">
                   <select class="uk-select" [ngModel]="selectedIdenticonOption" (ngModelChange)="onIdenticonChange($event)" id="form-horizontal-select">

@@ -2,12 +2,13 @@ import { Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Inje
 import {Title} from '@angular/platform-browser';
 import {WalletService} from './services/wallet.service';
 import {AddressBookService} from './services/address-book.service';
-import {AppSettingsService} from './services/app-settings.service';
+import {AppSettingsService, AppearanceMode} from './services/app-settings.service';
 import {WebsocketService} from './services/websocket.service';
 import {PriceService} from './services/price.service';
 import {UtilService} from './services/util.service';
 import {NotificationService} from './services/notification.service';
 import {AudioFeedbackService} from './services/audio-feedback.service';
+import {ThemeService} from './services/theme.service';
 import {WorkPoolService} from './services/work-pool.service';
 import {Router} from '@angular/router';
 import {SwUpdate, VersionReadyEvent, VersionInstallationFailedEvent} from '@angular/service-worker';
@@ -47,6 +48,7 @@ export class AppComponent implements OnInit {
   updates = inject(SwUpdate);
   private workPool = inject(WorkPoolService);
   private powRouting = inject(PowRoutingService);
+  theme = inject(ThemeService);
   readonly startup = inject(StartupService);
   private startupAdapters = inject(STARTUP_RUNTIME_ADAPTERS);
   private walletContext = inject(WalletContextService);
@@ -92,8 +94,28 @@ export class AppComponent implements OnInit {
   innerHeightWithoutMobileBar = 0;
   navExpanded = false;
   navAnimating = false;
-  showAccountsDropdown = false;
-  canToggleLightMode = true;
+showAccountsDropdown = false;
+
+/**
+   * The switch's accessible name. It carries no text of its own - the knob and
+   * the caption beside it name the control - so this is the only thing telling
+   * a screen reader which theme is active and what the control will do.
+   */
+get appearanceSwitchLabel(): string {
+    const current = this.theme.resolved === 'dark' ? 'Dark' : 'Light';
+    const next = this.theme.resolved === 'dark' ? 'Light' : 'Dark';
+    return `Theme: ${current}. Switch to ${next}.`;
+  }
+
+  /**
+   * The Auto badge shows the word rather than a glyph: a monitor icon read as
+   * "a screen", not "follow the system", and the caption above no longer
+   * repeats the state, so there is nothing left for the badge to be redundant
+   * with.
+   */
+get appearanceAutoLabel(): string {
+    return 'Auto: following your system appearance. Activate to switch to light.';
+  }
   searchData = '';
   isConfigured = this.walletService.isConfigured;
   donationAccount = environment.donationAddress;
@@ -139,7 +161,7 @@ export class AppComponent implements OnInit {
         console.debug('PoW route resolution failed:', error);
       });
       this.checkTestnetParameter();
-      this.updateAppTheme();
+      this.theme.start();
       await this.patchXrbToNanoPrefixData();
       this.translate.setActiveLang(this.settings.settings.language);
     });
@@ -262,7 +284,7 @@ export class AppComponent implements OnInit {
         if (!this.settings.settings.lockInactivityMinutes || this.walletService.isLocked() || !this.walletService.hasPassword()) return;
         if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {
           this.walletService.lockWallet();
-          this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`);
+          this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`, { identifier: 'wallet-locked' });
         }
       }, 1000);
 
@@ -333,33 +355,29 @@ export class AppComponent implements OnInit {
     setTimeout(() => { this.navAnimating = false; }, 350);
   }
 
-  toggleLightMode() {
-    if (this.canToggleLightMode === false) {
+  /**
+   * Advances the appearance preference: light -> dark -> auto -> light.
+   *
+   * `aria-disabled` keeps the switch focusable-by-assistive-tech conventions
+   * intact but does not stop a click, so auto is refused here. Without this the
+   * switch would look inert and still change the theme, and the Auto overlay
+   * would not be the single way out of auto.
+   */
+  cycleAppearanceMode() {
+    if (this.theme.followingSystem) {
       return;
     }
-
-    this.canToggleLightMode = false;
-    setTimeout(() => { this.canToggleLightMode = true; }, 300);
-
-    this.settings.setAppSetting('lightModeEnabled', !this.settings.settings.lightModeEnabled);
-    this.updateAppTheme();
+    const cycle: Record<AppearanceMode, AppearanceMode> = {
+      light: 'dark',
+      dark: 'auto',
+      auto: 'light',
+    };
+    this.theme.setMode(cycle[this.theme.mode]);
   }
 
-  updateAppTheme() {
-    const lightMode = this.settings.settings.lightModeEnabled;
-    if (lightMode) {
-      this.renderer.addClass(document.body, 'light-mode');
-      this.renderer.removeClass(document.body, 'dark-mode');
-    } else {
-      this.renderer.addClass(document.body, 'dark-mode');
-      this.renderer.removeClass(document.body, 'light-mode');
-    }
-    // Sync Safari / Chrome PWA chrome bar to actual in-app theme,
-    // regardless of the OS-level prefers-color-scheme preference.
-    const themeColor = lightMode ? '#f8f8f8' : '#22222A';
-    document.querySelectorAll('meta[name="theme-color"]').forEach(el => {
-      el.setAttribute('content', themeColor);
-    });
+  /** Leaves Auto and resumes the cycle at light. Bound to the Auto overlay. */
+  resumeFromAuto() {
+    this.theme.setMode('light');
   }
 
   toggleAccountsDropdown() {

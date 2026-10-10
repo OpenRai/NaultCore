@@ -12,6 +12,9 @@
   --tx-red: #d0342c;
   --tx-amber: #d97706;
   --tx-blue: #1e87f0;
+  /* Interactive link colour for controls on this surface. UIkit's #4a90e2 is
+     only 3.3:1 on the card, under the 4.5:1 text minimum; this is 5.8:1. */
+  --tx-link: #0b63c4;
 
   /* Lets the disclosure below animate to `height: auto`. Chrome-only today;
      other engines toggle instantly with the same markup. */
@@ -33,6 +36,8 @@
   --tx-red: #ff6b6b;
   --tx-amber: #fbbf24;
   --tx-blue: #4a90e2;
+  /* #4a90e2 is 5.3:1 on the dark card, so the standard blue already passes. */
+  --tx-link: #4a90e2;
 }
 
 .tx-table {
@@ -189,7 +194,15 @@
 
 .tx-clear {
   margin-inline-start: auto;
+  /* UIkit paints text buttons with the global link blue, which this rule lifts
+     to keep the label legible on the card in both themes. */
+  color: var(--tx-link);
 }
+
+.tx-clear:hover,
+.tx-clear:focus-visible { color: var(--tx-link); }
+
+.tx-clear::before { border-bottom-color: var(--tx-link); }
 
 /* ---------- Summary ---------- */
 
@@ -304,9 +317,14 @@
 
 .tx-detail-primary {
   font-weight: 600;
-  /* Long labels and addresses must wrap or ellipsize, never force the page wide. */
+  /* Full text by default. The address is 65 characters of base32, so it is
+     ellipsized only when the column genuinely cannot fit it - never by a fixed
+     prefix that would truncate a wide layout too. min-inline-size:0 lets the
+     cell shrink inside the table's sizing instead of forcing it wider. */
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tx-counterparty-label,
@@ -332,7 +350,22 @@
   font-size: 0.78rem;
   color: var(--tx-text-muted);
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+}
+
+/* The hash takes whatever width is left and ellipsizes only if that is still
+   not enough; the account label keeps its intrinsic size so the hash is the
+   only thing that ever loses characters. */
+.tx-detail-secondary > .tx-hash {
+  min-inline-size: 0;
+  flex: 0 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-detail-secondary > .tx-local-account,
+.tx-detail-secondary > .tx-dot {
+  flex: 0 0 auto;
 }
 
 .tx-local-account,
@@ -418,6 +451,29 @@
   }
 
   .tx-table-grid .col-detail { margin-block-end: 0.3rem; }
+
+  /* A card has the full panel width to itself, so wrapping shows the entire
+     address and hash instead of hiding the tail behind an ellipsis. */
+  .tx-detail-primary {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+  }
+
+  .tx-detail-secondary {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .tx-detail-secondary > .tx-hash {
+    /* Fill the row rather than shrink to its first line, or a wrapping flex
+       item collapses to a 72px sliver and stacks the hash one character per
+       line. */
+    flex: 1 1 auto;
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 
   .tx-table-grid .col-amount {
     margin-block-start: 0.35rem;

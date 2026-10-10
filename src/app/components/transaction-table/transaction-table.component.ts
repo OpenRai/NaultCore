@@ -217,17 +217,6 @@ export class TransactionTableComponent {
     return this.amountPipe.transform(amount, 'mnano,true');
   }
 
-  /**
-   * Addresses are 65 characters of dense base32. Truncate for the cell and keep
-   * the full value in `title` so it stays copyable and readable on hover rather
-   * than forcing the table to scroll sideways.
-   */
-  truncateAddress(address: string | null): string {
-    if (!address) return '';
-    if (address.length <= 20) return address;
-    return `${address.slice(0, 10)}…${address.slice(-8)}`;
-  }
-
   formatDate(timestamp: number | null): string {
     if (timestamp === null) return this.translate.translate('transaction-table.awaiting-receive');
     const date = new Date(timestamp * 1000);

@@ -178,9 +178,10 @@
 
               <td class="col-detail">
                 <div class="tx-detail-primary">
-                  <!-- Show the label when we have one, the truncated address
-                       otherwise. Never both: an address alone is unreadable and
-                       a label alone is unverified. -->
+                  <!-- Show the label when we have one, the address otherwise.
+                       Never both: an address alone is unreadable and a label
+                       alone is unverified. The address is rendered in full and
+                       only ellipsizes if the column genuinely cannot fit it. -->
                   @if (tx.counterpartyLabel) {
                     <a class="tx-counterparty-label" [routerLink]="'/account/' + tx.counterparty">{{ tx.counterpartyLabel }}</a>
                   } @else if (tx.counterparty) {
@@ -189,7 +190,7 @@
                       [routerLink]="'/account/' + tx.counterparty"
                       [title]="tx.counterparty"
                       [attr.data-testid]="testIds.transactionTable.counterpartyLink"
-                    >{{ truncateAddress(tx.counterparty) }}</a>
+                    >{{ tx.counterparty }}</a>
                   } @else {
                     <span class="tx-counterparty-none">{{ labels.noCounterparty }}</span>
                   }
@@ -206,7 +207,7 @@
                     [routerLink]="'/transaction/' + tx.hash"
                     [title]="tx.hash"
                     [attr.data-testid]="testIds.transactionTable.hashLink"
-                  >{{ tx.hash.slice(0, 12) }}…</a>
+                  >{{ tx.hash }}</a>
                 </div>
               </td>
 

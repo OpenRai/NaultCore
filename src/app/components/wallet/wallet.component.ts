@@ -66,19 +66,23 @@ export class WalletComponent implements OnInit, OnDestroy {
 
   walletState: WalletStateSnapshot = this.walletService.walletState;
   transactions: WalletTransaction[] = [];
-  activityLoading = false;
+  activityLoading = true;
   private walletStateSubscription: Subscription | null = null;
   private loadToken = 0;
-  private lastLoadedAccountsKey = '';
+  private lastLoadedAccountsKey: string | null = null;
+  private previousSyncStatus: string | null = null;
 
   ngOnInit(): void {
     this.walletStateSubscription = this.walletState$.subscribe(snapshot => {
       this.walletState = snapshot;
-      // Only reload when the account set actually changes; balance updates on
-      // their own must not re-fetch history.
       const key = snapshot.accounts.map(a => a.id).sort().join(',');
-      if (key !== this.lastLoadedAccountsKey) {
+      const accountsChanged = key !== this.lastLoadedAccountsKey;
+      const syncCompleted = snapshot.sync.status === 'ready' && this.previousSyncStatus === 'loading';
+      this.previousSyncStatus = snapshot.sync.status;
+      if (accountsChanged) {
         this.lastLoadedAccountsKey = key;
+      }
+      if (accountsChanged || syncCompleted) {
         queueMicrotask(() => void this.loadTransactions());
       }
     });
@@ -108,6 +112,12 @@ export class WalletComponent implements OnInit, OnDestroy {
 
   get hasAccounts(): boolean {
     return this.walletState.accounts.length > 0;
+  }
+
+  /** Avoid presenting startup's zero-filled snapshot as a real balance. */
+  get walletDataStatus(): string | null {
+    if (!this.walletState.lifecycle.configured || this.walletState.sync.status === 'ready') return null;
+    return this.walletState.sync.status === 'error' ? 'Unavailable' : 'Loading…';
   }
 
   getAccountLabel(account: WalletAccountSnapshot): string {
@@ -166,30 +176,30 @@ export class WalletComponent implements OnInit, OnDestroy {
     const accounts = this.walletState.accounts;
     if (!accounts.length) {
       this.transactions = [];
-      this.activityLoading = false;
+      const walletHydrating = this.walletState.lifecycle.configured
+        && this.walletState.sync.status !== 'ready'
+        && this.walletState.sync.status !== 'error';
+      this.activityLoading = walletHydrating;
       this.cdr.markForCheck();
       return;
     }
 
     this.activityLoading = true;
     this.cdr.markForCheck();
+    const accountIds = accounts.map(a => a.id);
+    const cachedRows = this.history.cachedRowsForAccounts(accountIds);
+    const freshRows = this.history.rowsForAccounts(accountIds);
+    void cachedRows.then(rowsByAccount => {
+      if (token !== this.loadToken || !Array.from(rowsByAccount.values()).some(rows => rows.length > 0)) return;
+      this.applyTransactionRows(rowsByAccount);
+      this.activityLoading = false;
+      this.cdr.markForCheck();
+    }).catch(() => undefined);
+
     try {
-      const rowsByAccount = await this.history.rowsForAccounts(accounts.map(a => a.id));
+      const rowsByAccount = await freshRows;
       if (token !== this.loadToken) return;
-
-      const merged: WalletTransaction[] = [];
-      for (const account of accounts) {
-        merged.push(
-          ...this.history.toTransactions(
-            rowsByAccount.get(account.id) ?? [],
-            account.id,
-            this.getAccountLabel(account),
-            this.allPendingBlocks,
-          ),
-        );
-      }
-
-      this.transactions = sortTransactions(merged).slice(0, WALLET_ENTRY_CAP);
+      this.applyTransactionRows(rowsByAccount);
     } catch {
       if (token === this.loadToken) this.transactions = [];
     } finally {
@@ -198,5 +208,20 @@ export class WalletComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }
     }
+  }
+
+  private applyTransactionRows(rowsByAccount: Map<string, any[]>): void {
+    const merged: WalletTransaction[] = [];
+    for (const account of this.walletState.accounts) {
+      merged.push(
+        ...this.history.toTransactions(
+          rowsByAccount.get(account.id) ?? [],
+          account.id,
+          this.getAccountLabel(account),
+          this.allPendingBlocks,
+        ),
+      );
+    }
+    this.transactions = sortTransactions(merged).slice(0, WALLET_ENTRY_CAP);
   }
 }

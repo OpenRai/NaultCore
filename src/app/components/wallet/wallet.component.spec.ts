@@ -62,6 +62,11 @@ function makeHistoryStub() {
       for (const id of ids) map.set(id, historyRowsFor[id] ?? []);
       return map;
     }),
+    cachedRowsForAccounts: vi.fn(async (ids: string[]) => {
+      const map = new Map<string, any[]>();
+      for (const id of ids) map.set(id, historyRowsFor[id] ?? []);
+      return map;
+    }),
     toTransactions: vi.fn((rows: any[], accountId: string, label: string) =>
       rows.map((row: any) => toTransaction(row, accountId, label))),
   };
@@ -212,6 +217,53 @@ describe('WalletComponent', () => {
     expect(component.transactions[0].hash).toBe('hash1');
     expect(component.transactions[0].direction).toBe('sent');
     expect(component.transactions[0].accountLabel).toBe('Primary');
+  });
+
+  it('refreshes history after wallet reconciliation completes without an account change', async () => {
+    const history = component['history'] as any;
+    const initialCalls = history.rowsForAccounts.mock.calls.length;
+
+    walletState$.next({ ...createState(), sync: { status: 'loading', reason: 'websocket-confirmation' } });
+    walletState$.next({ ...createState(), sync: { status: 'ready', reason: 'websocket-confirmation' } });
+    await fixture.whenStable();
+
+    expect(history.rowsForAccounts).toHaveBeenCalledTimes(initialCalls + 1);
+  });
+
+  it('shows cached activity while the fresh node history request is still pending', async () => {
+    let resolveFresh!: (rows: Map<string, any[]>) => void;
+    const history = component['history'] as any;
+    history.cachedRowsForAccounts = vi.fn(async () => new Map([[account.id, [{
+      hash: 'cached-hash',
+      subtype: 'receive',
+      amount: '1000000',
+    }]]));
+    history.rowsForAccounts = vi.fn(() => new Promise<Map<string, any[]>>(resolve => {
+      resolveFresh = resolve;
+    }));
+
+    const loading = component.loadTransactions();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(component.transactions.map(transaction => transaction.hash)).toEqual(['cached-hash']);
+    expect(component.activityLoading).toBe(false);
+
+    resolveFresh(new Map([[account.id, [{
+      hash: 'fresh-hash',
+      subtype: 'receive',
+      amount: '2000000',
+    }]]));
+    await loading;
+    expect(component.transactions.map(transaction => transaction.hash)).toEqual(['fresh-hash']);
+  });
+
+  it('does not show a configured wallet as zero while startup reconciliation is loading', () => {
+    walletState$.next({ ...createState(), balance: new BigNumber(0), sync: { status: 'loading', reason: 'startup' } });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.balance-display').textContent).toContain('Loading…');
+    expect(fixture.nativeElement.querySelector('.balance-unit')).toBeFalsy();
   });
 
   it('caps the merged wallet list at 25 entries', async () => {

@@ -1,5 +1,6 @@
 export const TestIds = {
   app: {
+    walletDashboardLink: 'wallet-dashboard-link',
     root: 'app-root',
     totalBalanceXnoDropdown: 'total-balance-xno-dropdown',
     totalBalanceFiatDropdown: 'total-balance-fiat-dropdown',

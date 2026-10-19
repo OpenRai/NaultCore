@@ -16,6 +16,24 @@
 	}
 
 	&.is-wallet {
+		> .wallet-dashboard-link {
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			border-radius: inherit;
+			&:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5); }
+			&:focus-visible { outline: 3px solid #FFF; outline-offset: -4px; }
+		}
+
+		> .card-contents {
+			z-index: auto;
+			> .account-name-container > .select-button {
+				position: relative;
+				z-index: 3;
+				background: transparent;
+				&:focus-visible { outline: 2px solid #FFF; outline-offset: 2px; }
+			}
+		}
 		@wallet-card-background-color: #2F3241;
 		background: @wallet-card-background-color;
 

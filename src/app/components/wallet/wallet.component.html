@@ -36,14 +36,18 @@
         <span class="card-kicker">{{ labels.totalBalance }}</span>
         <div class="balance-display-wrap">
           <div class="balance-display">
-            <span class="balance-int">{{ formatAmount(walletState.balance).split('.')[0] }}</span>
-            @if (formatAmount(walletState.balance).includes('.')) {
-              <span class="balance-dec">.{{ formatAmount(walletState.balance).split('.')[1] }}</span>
+            @if (walletDataStatus) {
+              <span class="balance-int" role="status">{{ walletDataStatus }}</span>
+            } @else {
+              <span class="balance-int">{{ formatAmount(walletState.balance).split('.')[0] }}</span>
+              @if (formatAmount(walletState.balance).includes('.')) {
+                <span class="balance-dec">.{{ formatAmount(walletState.balance).split('.')[1] }}</span>
+              }
+              <span class="balance-unit">XNO</span>
             }
-            <span class="balance-unit">XNO</span>
           </div>
         </div>
-        @if (settings.settings.displayCurrency && walletState.balanceFiat && walletState.balanceFiat > 0) {
+        @if (!walletDataStatus && settings.settings.displayCurrency && walletState.balanceFiat && walletState.balanceFiat > 0) {
           <div class="balance-fiat">
             ~{{ formatFiat(walletState.balanceFiat, settings.settings.displayCurrency) }}
           </div>
@@ -67,7 +71,9 @@
         <div class="summary-stat">
           <dt>{{ labels.pending }}</dt>
           <dd>
-            @if (walletState.pending && !walletState.pending.isZero()) {
+            @if (walletDataStatus) {
+              <span class="stat-none">—</span>
+            } @else if (walletState.pending && !walletState.pending.isZero()) {
               <span class="stat-pending">{{ formatAmount(walletState.pending) }} XNO</span>
             } @else {
               <span class="stat-none">—</span>
@@ -76,7 +82,7 @@
         </div>
         <div class="summary-stat">
           <dt>{{ labels.recentEvents }}</dt>
-          <dd>{{ transactions.length }}</dd>
+          <dd>{{ activityLoading ? '…' : transactions.length }}</dd>
         </div>
       </dl>
     </div>

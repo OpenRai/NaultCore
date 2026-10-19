@@ -34,6 +34,37 @@ describe('SendComponent', () => {
   });
 });
 
+describe('SendComponent - Nano URI amount parsing', () => {
+  it('prefills raw URI amounts on repeated destination input events', async () => {
+    const updateQueries = vi.fn();
+    const component: any = {
+      toAccountID: 'nano:nano_1recipient?amount=1000000000000000000000000000000',
+      addressAliasMatch: '',
+      addressBookMatch: '',
+      offerLookupIfDestinationIsAlias: vi.fn(),
+      searchAddressBook: vi.fn(),
+      util: {
+        account: { isValidAccount: vi.fn(() => true) },
+      },
+      updateQueries,
+    };
+
+    SendComponent.prototype.onDestinationAddressInput.call(component);
+    SendComponent.prototype.onDestinationAddressInput.call(component);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(updateQueries).toHaveBeenCalledTimes(2);
+    expect(updateQueries).toHaveBeenNthCalledWith(1, {
+      to: 'nano_1recipient',
+      amount: '1',
+    });
+    expect(updateQueries).toHaveBeenNthCalledWith(2, {
+      to: 'nano_1recipient',
+      amount: '1',
+    });
+  });
+});
+
 describe('SendComponent - regular wallet balance refresh', () => {
   function createRegularSendContext(refreshWalletState: () => Promise<void>): any {
     const walletAccount = { id: 'nano_source' };

@@ -92,6 +92,15 @@ export class TransactionHistoryService {
     return new Map(results);
   }
 
+  /** Reads persisted history without waiting for the node refresh to finish. */
+  async cachedRowsForAccounts(accountIds: ReadonlyArray<string>): Promise<Map<string, StoredRow[]>> {
+    const unique = Array.from(new Set(accountIds.filter(Boolean)));
+    const results = await Promise.all(
+      unique.map(async id => [id, await this.readCache(id)] as const),
+    );
+    return new Map(results);
+  }
+
   /** Normalizes stored rows plus pending blocks into one table-ready list. */
   toTransactions(
     rows: ReadonlyArray<StoredRow>,

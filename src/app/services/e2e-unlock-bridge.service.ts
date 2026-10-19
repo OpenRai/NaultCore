@@ -6,6 +6,7 @@ declare global {
   interface Window {
     __NAULTCORE_E2E__?: {
       unlock(password: string): boolean;
+      refreshWallet(): Promise<void>;
     };
   }
 }
@@ -19,6 +20,9 @@ export class E2eUnlockBridgeService {
       window.__NAULTCORE_E2E__ = {
         unlock: (password: string): boolean =>
           typeof password === 'string' && this.walletService.unlockWallet(password),
+        refreshWallet: async (): Promise<void> => {
+          await this.walletService.refreshWalletState('e2e-test');
+        },
       };
     }
   }

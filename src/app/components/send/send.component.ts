@@ -305,7 +305,7 @@ export class SendComponent implements OnInit {
 
     const destinationAddress = this.toAccountID || "";
 
-    const nanoURIScheme = /^nano:.+$/g;
+    const nanoURIScheme = /^nano:.+$/;
     const isNanoURI = nanoURIScheme.test(destinationAddress);
 
     if (isNanoURI === true) {

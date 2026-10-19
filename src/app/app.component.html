@@ -113,6 +113,7 @@
             <div class="uk-width-expand">
 
               <div class="nano-card is-wallet" style="position: relative;">
+                <a class="wallet-dashboard-link" routerLink="/wallet" aria-label="Wallet dashboard" title="Wallet dashboard" [attr.data-testid]="testIds.app.walletDashboardLink"></a>
                 <div class="logo"></div>
                 <!-- "Technical Preview" Sticker -->
                 @if (featureNanonyms) {
@@ -124,16 +125,12 @@
                 }
                 <div class="card-contents">
                   <div class="account-name-container">
-                    <a
-                      routerLink="/accounts"
-                      [queryParams]="{ compact: '1' }"
-                      class="name"
-                      >Total Balance</a>
-                    <div #selectButton [class]="[ 'select-button', showAccountsDropdown ? 'open' : 'closed' ]" (click)="toggleAccountsDropdown()" [attr.data-testid]="testIds.app.quickReceiveButton">
-                      <div class="circle"></div>
-                      <div class="circle"></div>
-                      <div class="circle"></div>
-                    </div>
+                    <span class="name">Total Balance</span>
+                    <button type="button" aria-label="Quick Receive" [attr.aria-expanded]="showAccountsDropdown" #selectButton [class]="[ 'select-button', showAccountsDropdown ? 'open' : 'closed' ]" (click)="toggleAccountsDropdown()" [attr.data-testid]="testIds.app.quickReceiveButton">
+                      <span class="circle"></span>
+                      <span class="circle"></span>
+                      <span class="circle"></span>
+                    </button>
                   </div>
                   <div class="account-balances">
                     @if (( ( node.status && (walletState.sync.status !== 'idle') ) || !isConfigured() )) {
@@ -290,15 +287,7 @@
 
         <nav aria-label="Main">
           <ul class="uk-nav uk-nav-default uk-nav-parent-icon left-nav" uk-nav>
-          <li class="wallet-nav-group">
-            <a routerLink="/wallet" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"><div class="label">Wallet</div></a>
-            <!-- A wallet contains accounts, so Accounts sits one level under Wallet.
-                 Deliberately not a uk-parent: unlike Settings and Advanced Tools this
-                 group never collapses, so both destinations stay one tap away. -->
-            <ul class="uk-nav-sub">
-              <li><a routerLink="/accounts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"><div class="label">{{ 'general.accounts' | transloco }}</div></a></li>
-            </ul>
-          </li>
+          <li><a routerLink="/accounts" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"><div class="label">{{ 'general.accounts' | transloco }}</div></a></li>
           <li><a routerLink="/address-book" routerLinkActive="active"><div class="label">{{ 'general.address-book' | transloco }}</div></a></li>
           <li><a routerLink="/qr-scan" routerLinkActive="active"><div class="label">{{ 'general.scan-qr-code' | transloco }}</div></a></li>
           <li class="uk-parent">

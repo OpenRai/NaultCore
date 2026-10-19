@@ -53,15 +53,12 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
       test.slow();
 
-      // Use the fixture's deterministic account mapping instead of relying on
-      // account-row ordering, which can change while balances hydrate.
-      await seededPage.locator('a[href="/accounts"]').click();
-      const accountRows = seededPage.locator('[data-testid="accounts-row"]');
+      // Use the wallet's explicit Send action; transaction actions live on the
+      // dashboard rather than in the primary navigation.
+      await seededPage.goto('/wallet');
+      await unlockWalletThroughBridge(seededPage);
       const destinationAccount = testWallet.accounts[0];
-      await expect(seededPage.locator(`[data-testid="accounts-row"][data-account-id="${destinationAccount}"]`)).toBeVisible({ timeout: 15000 });
-
-      // Navigate to Send
-      await seededPage.locator('a[href="/send"]').click();
+      await seededPage.getByTestId('wallet-send-button').click();
       await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
       const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
       await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
@@ -82,7 +79,9 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
       test.slow();
 
-      await seededPage.locator('a[href="/send"]').click();
+      await seededPage.goto('/wallet');
+      await unlockWalletThroughBridge(seededPage);
+      await seededPage.getByTestId('wallet-send-button').click();
       await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
       const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
       await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });

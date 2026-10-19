@@ -91,8 +91,8 @@ test('the Wallet workspace exposes a mobile-safe unlock response for receivable 
 
   const unlockReceivable = page.getByTestId('wallet-unlock-receivable-button');
   await expect(unlockReceivable).toBeVisible({ timeout: 15000 });
-  await expect(unlockReceivable).toContainText('Confirmed funds are ready to receive');
-  await expect(unlockReceivable).toContainText('Unlock to receive');
+  await expect(unlockReceivable).toContainText('Confirmed funds ready to receive');
+  await expect(unlockReceivable).toContainText('Unlock to sign the receive block and claim incoming Nano.');
   await unlockReceivable.press('Enter');
 
   const unlockModal = page.locator('#unlock-wallet-modal');

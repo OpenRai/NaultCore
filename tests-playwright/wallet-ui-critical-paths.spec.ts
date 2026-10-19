@@ -44,14 +44,15 @@ test('opens the Wallet workspace and keeps actions scoped to the selected accoun
   await unlockWalletThroughBridge(seededPage);
   await expect(seededPage).toHaveURL(/\/wallet$/);
   await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
-  await expect(seededPage.getByTestId('wallet-total-balance')).toContainText('Across 3 accounts');
+  await expect(seededPage.getByTestId('wallet-summary-card')).toBeVisible();
+  await expect(seededPage.locator('.wallet-summary-card .card-kicker')).toHaveText('Total Wallet Balance');
+  await expect(seededPage.locator('.wallet-activity-section h3')).toBeVisible();
 
   const accountSelector = seededPage.getByTestId('wallet-account-selector');
-  await expect(accountSelector).toHaveValue('');
+  await expect(accountSelector).toHaveValue(testWallet.accounts[0]);
   await accountSelector.selectOption(testWallet.accounts[1]);
 
-  await expect(seededPage.getByTestId('wallet-selected-account')).toContainText(testWallet.accounts[1]);
-  await expect(seededPage.getByTestId('wallet-activity')).toContainText('Account #1');
+  await expect(seededPage.locator('.action-context-addr')).toContainText(testWallet.accounts[1].slice(0, 10));
   await expect(seededPage.getByTestId('wallet-send-button')).toBeVisible();
   await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
 
@@ -140,9 +141,10 @@ test('shows the selected account receive address', async ({ seededPage, testWall
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[0]);
 });
 
-test('keeps the sidebar card wallet-scoped and routes Quick Receive to the chosen account', async ({ seededPage, testWallet }) => {
+test('opens the wallet dashboard from its balance card and routes Quick Receive to the chosen account', async ({ seededPage, testWallet }) => {
   await expect(seededPage.getByTestId('total-balance-xno-card')).toBeVisible();
   await expect(seededPage.getByTestId('total-balance-xno-card')).toHaveText(/\d/);
+  await expect(seededPage.getByTestId('wallet-dashboard-link')).toBeVisible();
 
   await seededPage.getByTestId('quick-receive-button').click();
   await expect(seededPage.getByTestId('quick-receive-menu')).toContainText('Quick Receive');
@@ -151,7 +153,7 @@ test('keeps the sidebar card wallet-scoped and routes Quick Receive to the chose
   await seededPage.locator('.accounts-dropdown .account').filter({ hasText: testWallet.accounts[1] }).click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}`));
   await expect(seededPage.getByRole('combobox', { name: 'Account' })).toHaveValue(testWallet.accounts[1]);
-  await expect(seededPage.getByTestId('total-balance-xno-card')).toBeVisible();
+  await expect(seededPage.getByTestId('wallet-dashboard-link')).toBeVisible();
 });
 
 test('keeps representative information out of primary wallet status', async ({ seededPage }) => {

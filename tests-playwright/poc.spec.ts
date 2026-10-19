@@ -26,8 +26,9 @@ test('keeps navigation destinations separate from transaction actions', async ({
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(navigation).not.toHaveAttribute('aria-hidden', 'true');
-  await expect(primaryNavigation.getByRole('link', { name: 'Wallet', exact: true })).toBeVisible();
-  await expect(primaryNavigation.getByRole('link', { name: 'Accounts', exact: true })).toBeVisible();
+  await expect(primaryNavigation.locator('ul.left-nav > li').first().getByRole('link')).toHaveText('Accounts');
+  await expect(primaryNavigation.locator('a[href="/wallet"]')).toHaveCount(0);
+  await expect(page.getByTestId('wallet-dashboard-link')).toBeVisible();
   await expect(primaryNavigation.getByRole('link', { name: 'Send', exact: true })).toHaveCount(0);
   await expect(primaryNavigation.getByRole('link', { name: 'Receive', exact: true })).toHaveCount(0);
 

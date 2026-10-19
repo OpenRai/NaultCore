@@ -57,13 +57,14 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       // dashboard rather than in the primary navigation.
       await seededPage.goto('/wallet');
       await unlockWalletThroughBridge(seededPage);
-      const destinationAccount = testWallet.accounts[0];
+      const sourceAccount = testWallet.accounts[0];
+      const destinationAccount = testWallet.accounts[1];
       await seededPage.getByTestId('wallet-send-button').click();
       await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
       const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
-      await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
-      await sourceSelect.selectOption(testWallet.accounts[1]);
-      await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
+      await expect(sourceSelect.locator(`option[value="${sourceAccount}"]`)).toHaveCount(1, { timeout: 15000 });
+      await sourceSelect.selectOption(sourceAccount);
+      await expect(sourceSelect).toHaveValue(sourceAccount);
 
       await seededPage.locator('[data-testid="send-address-input"]').fill(destinationAccount);
       await seededPage.locator('[data-testid="send-amount-input"]').fill('0.0001');
@@ -84,9 +85,10 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       await seededPage.getByTestId('wallet-send-button').click();
       await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
       const sourceSelect = seededPage.locator('[data-testid="send-source-account-input"]');
-      await expect(sourceSelect.locator(`option[value="${testWallet.accounts[1]}"]`)).toHaveCount(1, { timeout: 15000 });
-      await sourceSelect.selectOption(testWallet.accounts[1]);
-      await expect(sourceSelect).toHaveValue(testWallet.accounts[1]);
+      const sourceAccount = testWallet.accounts[0];
+      await expect(sourceSelect.locator(`option[value="${sourceAccount}"]`)).toHaveCount(1, { timeout: 15000 });
+      await sourceSelect.selectOption(sourceAccount);
+      await expect(sourceSelect).toHaveValue(sourceAccount);
 
       // Switch to "Transfer between own accounts" tab
       await seededPage.locator('text=Transfer between own accounts').click();
@@ -97,7 +99,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       // Wait for destination options to load (accounts are fetched from node)
       await expect(toSelect.locator('option')).not.toHaveCount(1, { timeout: 15000 });
 
-      const destinationAccount = testWallet.accounts[0];
+      const destinationAccount = testWallet.accounts[1];
       await expect(toSelect.locator(`option[value="${destinationAccount}"]`)).toHaveCount(1, { timeout: 15000 });
       await toSelect.selectOption(destinationAccount);
       await expect(toSelect).toHaveValue(destinationAccount);

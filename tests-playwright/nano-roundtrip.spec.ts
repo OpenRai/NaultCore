@@ -52,7 +52,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
     test('should send XNO to second account via external address', async ({ seededPage, testWallet }) => {
       test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
       test.slow();
-      test.setTimeout(360000);
+      test.setTimeout(180000);
 
       // Use the wallet's explicit Send action; transaction actions live on the
       // dashboard rather than in the primary navigation.
@@ -74,13 +74,13 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
       await expect(confirmButton).toBeVisible({ timeout: 15000 });
       await confirmButton.click();
-      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 300000 });
+      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 90000 });
     });
 
     test('should transfer XNO between own accounts', async ({ seededPage, testWallet }) => {
       test.skip(skipOnchain, 'SKIP_ONCHAIN_E2E=true skips fund-moving tests');
       test.slow();
-      test.setTimeout(360000);
+      test.setTimeout(180000);
 
       await seededPage.goto('/wallet');
       await unlockWalletThroughBridge(seededPage);
@@ -112,7 +112,7 @@ test.describe('nano_ roundtrip: send between own accounts', () => {
       const confirmButton = seededPage.locator('button:has-text("Confirm & Send")');
       await expect(confirmButton).toBeVisible({ timeout: 15000 });
       await confirmButton.click();
-      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 300000 });
+      await expect(seededPage.locator('.wallet-notification').filter({ hasText: 'Successfully sent' })).toBeVisible({ timeout: 90000 });
     });
   });
 });

@@ -49,7 +49,7 @@ jobs:
     name: Playwright E2E Tests
     runs-on: ubuntu-latest
     needs: unit-tests
-    timeout-minutes: 25
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -89,6 +89,9 @@ jobs:
       - name: Run Playwright tests
         env:
           NANO_TEST_SEED: ${{ secrets.NANO_TEST_SEED }}
+          # Keep the funded wallet fixture for UI coverage; live sends require
+          # CPU-bound Nano PoW that can stall for minutes on hosted runners.
+          SKIP_ONCHAIN_E2E: 'true'
           CI: 'true'
         run: pnpm exec playwright test --reporter=html
 

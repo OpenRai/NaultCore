@@ -61,7 +61,8 @@
             "optimization": false,
             "namedChunks": true,
             "define": {
-              "FEATURE_NANONYMS": "false"
+              "FEATURE_NANONYMS": "false",
+              "WEBAUTHN_RP_ID": "'localhost'"
             }
           },
           "configurations": {

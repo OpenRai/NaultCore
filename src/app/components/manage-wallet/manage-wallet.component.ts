@@ -52,6 +52,40 @@ export class ManageWalletComponent implements OnInit {
   ];
   selectedOrder = this.orderOptions[0].value;
   exportEnabled = true;
+  passkeyActionInProgress = false;
+
+  get canManagePasskeys(): boolean {
+    return this.walletService.canEnrollPasskey && this.walletService.hasPassword() && !this.walletService.isLocked();
+  }
+
+  get passkeyCredentials() {
+    return this.walletService.getPasskeyCredentials();
+  }
+
+  async addPasskey() {
+    if (this.passkeyActionInProgress || !this.canManagePasskeys) return;
+    this.passkeyActionInProgress = true;
+    try {
+      if (await this.walletService.enablePasskeyUnlock()) this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
+      else this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+    } catch {
+      this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+    } finally {
+      this.passkeyActionInProgress = false;
+    }
+  }
+
+  async removePasskey(credentialId: string) {
+    if (this.passkeyActionInProgress || !this.canManagePasskeys) return;
+    if (!window.confirm('Remove this passkey from this wallet on this browser? The credential itself may remain in your device or password manager.')) return;
+    this.passkeyActionInProgress = true;
+    try {
+      if (await this.walletService.removePasskeyUnlock(credentialId)) this.notifications.sendSuccess('Passkey unlock removed from this wallet on this browser.');
+      else this.notifications.sendError('Unable to remove passkey unlock.');
+    } finally {
+      this.passkeyActionInProgress = false;
+    }
+  }
 
   async ngOnInit() {
     this.walletService.walletState$.subscribe(snapshot => {

@@ -47,6 +47,7 @@ export class ConfigureWalletComponent implements OnInit {
   readonly testIds = TestIds;
   panels = panels;
   activePanel = panels.landing;
+  passkeySetupInProgress = false;
   isConfigured = this.walletService.isConfigured;
   isNewWallet = true;
   hasConfirmedBackup = false;
@@ -353,6 +354,20 @@ export class ConfigureWalletComponent implements OnInit {
     this.walletService.saveWalletExport();
 
     this.notifications.sendSuccess(`Successfully created new wallet! Do not lose the secret recovery seed/mnemonic!`);
+  }
+
+  async enablePasskeyUnlock() {
+    if (this.passkeySetupInProgress) return;
+    this.passkeySetupInProgress = true;
+    try {
+      if (await this.walletService.enablePasskeyUnlock()) {
+        this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
+      } else {
+        this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+      }
+    } finally {
+      this.passkeySetupInProgress = false;
+    }
   }
 
   setPanel(panel) {

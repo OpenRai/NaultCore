@@ -13,6 +13,7 @@ import { TranslocoRootModule } from '../../transloco/transloco-root.module';
 import { AppSettingsService } from '../../services/app-settings.service';
 import { WalletContextService } from '../../services/wallet-context.service';
 import { WalletService } from '../../services/wallet.service';
+import { NotificationService } from '../../services/notification.service';
 import { TransactionHistoryService } from '../../services/transaction-history.service';
 import { WalletComponent } from './wallet.component';
 import { TransactionTableComponent } from '../transaction-table/transaction-table.component';
@@ -116,6 +117,10 @@ describe('WalletComponent', () => {
       saveWalletExport: vi.fn(),
       isLocked: vi.fn(() => false),
       requestWalletUnlock: vi.fn(),
+      hasPassword: vi.fn(() => false),
+      canEnrollPasskey: false,
+      getPasskeyCredentials: vi.fn(() => []),
+      enablePasskeyUnlock: vi.fn(async () => false),
     };
 
     await TestBed.configureTestingModule({
@@ -123,6 +128,7 @@ describe('WalletComponent', () => {
       imports: [WalletTestModule],
       providers: [
         { provide: WalletService, useValue: wallet },
+        { provide: NotificationService, useValue: { sendSuccess: vi.fn(), sendWarning: vi.fn() } },
         WalletContextService,
         { provide: TransactionHistoryService, useValue: makeHistoryStub() },
         { provide: AppSettingsService, useValue: { settings: { displayCurrency: 'USD' } } },

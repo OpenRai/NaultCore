@@ -89,15 +89,30 @@
     </div>
     <div class="uk-modal-body">
       <p class="unlock-explanation">Unlocking permits NaultCore to sign a receive block for confirmed funds and spend funds from this wallet.</p>
+      @if (walletService.canUsePasskeyUnlock) {
+        @if (passkeyUnlockInProgress) {
+          <p class="uk-text-meta" role="status" aria-live="polite">Waiting for device authentication…</p>
+        } @else if (passkeyFallbackVisible) {
+          <p class="uk-text-meta" role="status" aria-live="polite">Device authentication did not unlock the wallet. Try again or use your wallet password.</p>
+          <button class="uk-button uk-button-secondary uk-width-1-1 uk-margin-small-bottom" type="button"
+            (click)="unlockWithPasskey()" [attr.data-testid]="testIds.walletWidget.passkeyUnlockButton">
+            Try device authentication again
+          </button>
+        }
+      }
+      @if (passkeyFallbackVisible || !walletService.canUsePasskeyUnlock) {
       <input #passwordInput autofocus type="password" [(ngModel)]="unlockPassword" (keyup.enter)="unlockWallet()"
         [class]="{ 'uk-input': true, 'password-input': true, 'uk-form-danger': !mayAttemptUnlock }"
         [placeholder]="( mayAttemptUnlock ? 'Enter wallet password' : 'Incorrect password' )"
         [disabled]="!mayAttemptUnlock"
         >
+      }
     </div>
     <div class="uk-modal-footer uk-text-right nlt-button-group">
       <button class="uk-button uk-button-default uk-modal-close" type="button" [attr.data-testid]="testIds.walletWidget.cancelButton">Cancel</button>
+      @if (passkeyFallbackVisible || !walletService.canUsePasskeyUnlock) {
       <button class="uk-button uk-button-primary" type="button" (click)="unlockWallet()" [disabled]="!mayAttemptUnlock" [attr.data-testid]="testIds.walletWidget.unlockButton">Unlock</button>
+      }
     </div>
   </div>
 </div>

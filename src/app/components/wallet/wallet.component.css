@@ -75,6 +75,27 @@
 
 /* ---------- Receivable banner ---------- */
 
+.passkey-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-inline-start: 4px solid var(--status-info, var(--status-warning));
+  border-radius: 10px;
+  background: var(--surface-subtle);
+}
+
+.passkey-offer h3,
+.passkey-offer p { margin: 0; }
+.passkey-offer p { margin-block-start: 0.2rem; color: var(--text-muted); font-size: 0.85rem; }
+.passkey-offer-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+@container (max-width: 520px) {
+  .passkey-offer { align-items: stretch; flex-direction: column; }
+}
+
 .receivable-unlock-banner {
   display: flex;
   align-items: center;

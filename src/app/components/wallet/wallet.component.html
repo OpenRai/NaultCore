@@ -27,6 +27,19 @@
     </button>
   }
 
+  @if (showPasskeyOffer) {
+    <section class="passkey-offer" aria-labelledby="wallet-passkey-offer-title">
+      <div>
+        <h3 id="wallet-passkey-offer-title">Set up passkey unlock?</h3>
+        <p>Use your device authentication, such as a fingerprint, face, or PIN. Keep your wallet password and recovery backup.</p>
+      </div>
+      <div class="passkey-offer-actions">
+        <button class="uk-button uk-button-primary uk-button-small" type="button" (click)="setupPasskey()" [disabled]="passkeySetupInProgress">Set up passkey</button>
+        <button class="uk-button uk-button-default uk-button-small" type="button" (click)="dismissPasskeyOffer()">Not now</button>
+      </div>
+    </section>
+  }
+
   <!-- Wallet summary. No account list: the Accounts page owns that. -->
   <section class="wallet-summary-card" [attr.data-testid]="testIds.wallet.summaryCard">
     <div class="summary-grid">

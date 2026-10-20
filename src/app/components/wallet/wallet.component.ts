@@ -4,6 +4,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { Subscription } from 'rxjs';
 import { WalletContextService } from '../../services/wallet-context.service';
 import { WalletAccountSnapshot, WalletService, WalletStateSnapshot } from '../../services/wallet.service';
+import { NotificationService } from '../../services/notification.service';
 import { TransactionHistoryService } from '../../services/transaction-history.service';
 import { AppSettingsService } from '../../services/app-settings.service';
 import { TestIds } from '../../testing/test-ids';
@@ -24,6 +25,7 @@ const WALLET_ENTRY_CAP = 25;
 })
 export class WalletComponent implements OnInit, OnDestroy {
   private readonly walletService = inject(WalletService);
+  private readonly notifications = inject(NotificationService);
   private readonly walletContext = inject(WalletContextService);
   private readonly history = inject(TransactionHistoryService);
   private readonly router = inject(Router);
@@ -71,6 +73,32 @@ export class WalletComponent implements OnInit, OnDestroy {
   private loadToken = 0;
   private lastLoadedAccountsKey: string | null = null;
   private previousSyncStatus: string | null = null;
+  passkeyOfferDismissed = false;
+  passkeySetupInProgress = false;
+
+  get showPasskeyOffer(): boolean {
+    return !this.passkeyOfferDismissed && this.walletState.lifecycle.kind === 'unlocked'
+      && this.walletService.hasPassword() && this.walletService.canEnrollPasskey
+      && this.walletService.getPasskeyCredentials().length === 0;
+  }
+
+  dismissPasskeyOffer(): void {
+    this.passkeyOfferDismissed = true;
+  }
+
+  async setupPasskey(): Promise<void> {
+    if (!this.showPasskeyOffer || this.passkeySetupInProgress) return;
+    this.passkeySetupInProgress = true;
+    try {
+      const enabled = await this.walletService.enablePasskeyUnlock();
+      if (enabled) this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
+      else this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+    } catch {
+      this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+    } finally {
+      this.passkeySetupInProgress = false;
+    }
+  }
 
   ngOnInit(): void {
     this.walletStateSubscription = this.walletState$.subscribe(snapshot => {

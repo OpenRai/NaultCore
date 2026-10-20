@@ -19,6 +19,7 @@ import { SpendableAccount, RegularAccount, NanoNymAccount } from '../types/spend
 import { combineLatest, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
+import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './passkey-unlock.service';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -27,7 +28,7 @@ type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
 type WalletLifecycleState =
   | { kind: 'empty' }
   | { kind: 'locked'; type: SoftwareWalletType; encryptedSecret: string }
-  | { kind: 'unlocked'; type: SoftwareWalletType; secret: string; secretBytes: Uint8Array; password: string }
+  | { kind: 'unlocked'; type: SoftwareWalletType; secret: string; secretBytes: Uint8Array; password: string; encryptedSecret: string }
   | { kind: 'ledger' };
 
 export interface WalletLifecycleSnapshot {
@@ -159,11 +160,15 @@ export class WalletService {
   private notifications = inject(NotificationService);
   private nanoNymStorage = inject(NanoNymStorageService);
   private injector = inject(Injector);
+  private passkeys = inject(PasskeyUnlockService);
 
   nano = 1000000000000000000000000;
   storeKey = `nanovault-wallet`;
 
   private lifecycleState: WalletLifecycleState = { kind: 'empty' };
+  private lifecycleGeneration = 0;
+  private localWalletId: string|null = null;
+  private passkeyUnlockRecord: PasskeyUnlockRecord|null = null;
   private readonly lifecycleSubject = new BehaviorSubject<WalletLifecycleSnapshot>(this.lifecycleSnapshot());
   readonly lifecycle$: Observable<WalletLifecycleSnapshot> = this.lifecycleSubject.asObservable();
 
@@ -205,6 +210,7 @@ export class WalletService {
   }
 
   private commitLifecycle(state: WalletLifecycleState, publish = true): void {
+    this.lifecycleGeneration++;
     this.lifecycleState = state;
     this.lifecycleSubject.next(this.lifecycleSnapshot(state));
     if (publish) this.publishWalletState();
@@ -619,6 +625,9 @@ export class WalletService {
     if (!walletData) return this.wallet;
 
     const walletJson = JSON.parse(walletData);
+    this.localWalletId = typeof walletJson.localWalletId === 'string' ? walletJson.localWalletId : null;
+    this.passkeyUnlockRecord = this.isValidPasskeyRecord(walletJson.passkeyUnlock, this.localWalletId)
+      ? walletJson.passkeyUnlock : null;
     const walletType: WalletType = walletJson.type || 'seed';
     if (walletType === 'seed' || walletType === 'privateKey' || walletType === 'expandedKey') {
       this.commitLifecycle({ kind: 'locked', type: walletType, encryptedSecret: walletJson.seed });
@@ -663,7 +672,9 @@ export class WalletService {
     }
 
     if (walletType !== 'seed' && walletType !== 'privateKey' && walletType !== 'expandedKey') return false;
-    this.commitLifecycle({ kind: 'unlocked', type: walletType, secret: seed, secretBytes: this.util.hex.toUint8(seed), password });
+    this.localWalletId = this.passkeys.newWalletId();
+    this.passkeyUnlockRecord = null;
+    this.commitLifecycle({ kind: 'unlocked', type: walletType, secret: seed, secretBytes: this.util.hex.toUint8(seed), password, encryptedSecret: '' });
 
     if (walletType === 'seed') {
       // Old method
@@ -686,6 +697,7 @@ export class WalletService {
     if (this.wallet.accounts.length) {
       this.websocket.subscribeAccounts(this.wallet.accounts.map(a => a.id));
     }
+    this.saveWalletExport();
 
     return true;
   }
@@ -696,7 +708,9 @@ export class WalletService {
     };
     let secret = '';
     if (this.lifecycleState.kind === 'locked') secret = this.lifecycleState.encryptedSecret;
-    if (this.lifecycleState.kind === 'unlocked') secret = CryptoJS.AES.encrypt(this.lifecycleState.secret, this.lifecycleState.password).toString();
+    if (this.lifecycleState.kind === 'unlocked') secret = this.lifecycleState.password
+      ? CryptoJS.AES.encrypt(this.lifecycleState.secret, this.lifecycleState.password).toString()
+      : this.lifecycleState.encryptedSecret;
 
     if (this.softwareType() === 'seed') {
       exportData.seed = secret;
@@ -718,8 +732,9 @@ export class WalletService {
 
   lockWallet() {
     const state = this.unlockedState();
-    if (!state || !state.secret || !state.password) return false;
-    const encryptedSecret = CryptoJS.AES.encrypt(state.secret, state.password).toString();
+    if (!state || !state.secret) return false;
+    const encryptedSecret = state.password ? CryptoJS.AES.encrypt(state.secret, state.password).toString() : state.encryptedSecret;
+    if (!encryptedSecret) return false;
 
     this.wallet.accounts.forEach(a => {
       this.clearBytes(a.secret instanceof Uint8Array ? a.secret : null);
@@ -743,62 +758,155 @@ export class WalletService {
       const decryptedSeed = decryptedBytes.toString(CryptoJS.enc.Utf8);
       if (!/^[0-9a-f]{64}$/i.test(decryptedSeed)) return false;
       const secretBytes = this.util.hex.toUint8(decryptedSeed);
-      const credentials = this.wallet.accounts.map(a => {
-        let secret: Uint8Array;
-        let keyPair: any;
-        if (locked.type !== 'seed') {
-          secret = secretBytes;
-          keyPair = this.util.account.generateAccountKeyPair(secret, locked.type === 'expandedKey');
-          return { account: a, secret, keyPair, nonStandardIndex: a.nonStandardIndex };
-        }
-
-        if (this.util.account.isNonStandardAccountIndex(a.index)) {
-          secret = this.util.account.generateAccountSecretKeyBytes(secretBytes, a.index, true);
-          keyPair = this.util.account.generateAccountKeyPair(secret);
-          const derivedAddress = this.util.account.getPublicAccountID(keyPair.publicKey);
-          if (derivedAddress !== a.id) {
-            console.error(`[Migration] Non-standard account index ${a.index}: derived address ${derivedAddress} does not match stored ${a.id}`);
-          } else {
-            console.warn(`[Migration] Account at non-standard index ${a.index} verified — derived address matches. Consider migrating funds to a standard index.`);
-          }
-        } else {
-          secret = this.util.account.generateAccountSecretKeyBytes(secretBytes, a.index);
-          keyPair = this.util.account.generateAccountKeyPair(secret);
-        }
-        return { account: a, secret, keyPair, nonStandardIndex: this.util.account.isNonStandardAccountIndex(a.index) || a.nonStandardIndex };
-      });
+      const credentials = this.prepareAccountCredentials(locked.type, secretBytes);
 
       credentials.forEach(({ account, secret, keyPair, nonStandardIndex }) => {
         account.secret = secret;
         account.keyPair = keyPair;
         account.nonStandardIndex = nonStandardIndex;
       });
-      this.commitLifecycle({ kind: 'unlocked', type: locked.type, secret: decryptedSeed, secretBytes, password });
+      this.commitLifecycle({ kind: 'unlocked', type: locked.type, secret: decryptedSeed, secretBytes, password, encryptedSecret: locked.encryptedSecret });
 
-      const nonStandardCount = this.wallet.accounts.filter(acct => acct.nonStandardIndex).length;
-      if (nonStandardCount > 0) {
-        this.notifications.sendWarning(
-          `${nonStandardCount} account(s) use non-standard derivation indices. ` +
-          `Please send their funds to standard accounts and remove them.`,
-          { length: 0, identifier: 'non-standard-index' }
-        );
-        // Publish the lifecycle/account metadata change through the snapshot.
-        this.publishWalletState();
-      }
-
-      this.notifications.removeNotification('pending-locked'); // If there is a notification to unlock, remove it
-
-      // Process any pending blocks
-      this.processPendingBlocks();
-
+      this.finishWalletUnlock();
       return true;
     } catch (err) {
       return false;
     }
   }
 
+  async unlockWalletWithPasskey(signal?: AbortSignal): Promise<boolean> {
+    const locked = this.lifecycleState;
+    const record = this.passkeyUnlockRecord;
+    if (locked.kind !== 'locked' || !record || !this.localWalletId || record.walletId !== this.localWalletId) return false;
+    const generation = this.lifecycleGeneration;
+    const result = await this.passkeys.unlock(record, locked.type, signal);
+    if (!result.ok || signal?.aborted || generation !== this.lifecycleGeneration || this.lifecycleState !== locked) return false;
+    const secret = result.value.secret;
+    if (!/^[0-9a-f]{64}$/i.test(secret)) return false;
+    const secretBytes = this.util.hex.toUint8(secret);
+    let credentials: ReturnType<WalletService['prepareAccountCredentials']>;
+    try {
+      credentials = this.prepareAccountCredentials(locked.type, secretBytes);
+      if (!credentials.every(({ account, keyPair }) => this.util.account.getPublicAccountID(keyPair.publicKey) === account.id)) {
+        credentials.forEach(({ secret: accountSecret }) => this.clearBytes(accountSecret));
+        this.clearBytes(secretBytes);
+        return false;
+      }
+    } catch {
+      this.clearBytes(secretBytes);
+      return false;
+    }
+    credentials.forEach(({ account, secret: accountSecret, keyPair, nonStandardIndex }) => {
+      account.secret = accountSecret;
+      account.keyPair = keyPair;
+      account.nonStandardIndex = nonStandardIndex;
+    });
+    this.commitLifecycle({ kind: 'unlocked', type: locked.type, secret, secretBytes, password: '', encryptedSecret: locked.encryptedSecret });
+    this.finishWalletUnlock();
+    return true;
+  }
+
+  async enablePasskeyUnlock(): Promise<boolean> {
+    const state = this.unlockedState();
+    if (!state?.password || this.appSettings.settings.walletStore !== 'localStorage' || !this.passkeys.isAvailable()) return false;
+    const generation = this.lifecycleGeneration;
+    const walletId = this.localWalletId || this.passkeys.newWalletId();
+    const result = await this.passkeys.enroll(walletId, state.type, state.secret, this.passkeyUnlockRecord);
+    if (!result.ok || generation !== this.lifecycleGeneration || this.lifecycleState !== state) return false;
+    const previousWalletId = this.localWalletId;
+    const previousRecord = this.passkeyUnlockRecord;
+    this.localWalletId = walletId;
+    this.passkeyUnlockRecord = result.value;
+    try {
+      this.persistWalletExport(this.generateWalletExport());
+      return true;
+    } catch {
+      this.localWalletId = previousWalletId;
+      this.passkeyUnlockRecord = previousRecord;
+      return false;
+    }
+  }
+
+  async removePasskeyUnlock(credentialId: string): Promise<boolean> {
+    const state = this.unlockedState();
+    const record = this.passkeyUnlockRecord;
+    if (!state?.password || !record || !record.credentials.some(item => item.credentialId === credentialId)) return false;
+    const generation = this.lifecycleGeneration;
+    const updated = await this.passkeys.remove(record, credentialId);
+    if (generation !== this.lifecycleGeneration || this.lifecycleState !== state) return false;
+    this.passkeyUnlockRecord = updated;
+    try {
+      this.persistWalletExport(this.generateWalletExport());
+      return true;
+    } catch {
+      this.passkeyUnlockRecord = record;
+      return false;
+    }
+  }
+
+  get canUsePasskeyUnlock(): boolean {
+    return this.passkeys.isAvailable() && !!this.passkeyUnlockRecord?.credentials.length && this.passkeyUnlockRecord.rpId === this.passkeys.rpId;
+  }
+
+  get canEnrollPasskey(): boolean {
+    return this.passkeys.isAvailable() && this.appSettings.settings.walletStore === 'localStorage';
+  }
+
+  getPasskeyCredentials(): ReadonlyArray<Pick<PasskeyEnvelope, 'credentialId'|'label'|'createdAt'>> {
+    return (this.passkeyUnlockRecord?.credentials || []).map(({ credentialId, label, createdAt }) => ({ credentialId, label, createdAt }));
+  }
+
+  private prepareAccountCredentials(type: SoftwareWalletType, secretBytes: Uint8Array) {
+    return this.wallet.accounts.map(account => {
+        let secret: Uint8Array;
+        let keyPair: any;
+        if (type !== 'seed') {
+          secret = secretBytes;
+          keyPair = this.util.account.generateAccountKeyPair(secret, type === 'expandedKey');
+          return { account, secret, keyPair, nonStandardIndex: account.nonStandardIndex };
+        }
+
+        if (this.util.account.isNonStandardAccountIndex(account.index)) {
+          secret = this.util.account.generateAccountSecretKeyBytes(secretBytes, account.index, true);
+          keyPair = this.util.account.generateAccountKeyPair(secret);
+          const derivedAddress = this.util.account.getPublicAccountID(keyPair.publicKey);
+          if (derivedAddress !== account.id) {
+            console.error(`[Migration] Non-standard account index ${account.index}: derived address ${derivedAddress} does not match stored ${account.id}`);
+          } else {
+            console.warn(`[Migration] Account at non-standard index ${account.index} verified — derived address matches. Consider migrating funds to a standard index.`);
+          }
+        } else {
+          secret = this.util.account.generateAccountSecretKeyBytes(secretBytes, account.index);
+          keyPair = this.util.account.generateAccountKeyPair(secret);
+        }
+        return { account, secret, keyPair, nonStandardIndex: this.util.account.isNonStandardAccountIndex(account.index) || account.nonStandardIndex };
+      });
+  }
+
+  private finishWalletUnlock(): void {
+    const nonStandardCount = this.wallet.accounts.filter(acct => acct.nonStandardIndex).length;
+    if (nonStandardCount > 0) {
+      this.notifications.sendWarning(
+        `${nonStandardCount} account(s) use non-standard derivation indices. ` +
+        `Please send their funds to standard accounts and remove them.`,
+        { length: 0, identifier: 'non-standard-index' }
+      );
+      this.publishWalletState();
+    }
+    this.notifications.removeNotification('pending-locked');
+    this.processPendingBlocks();
+  }
+
+  private isValidPasskeyRecord(value: any, walletId: string|null): value is PasskeyUnlockRecord {
+    return !!walletId && !!value && value.walletId === walletId && value.rpId === this.passkeys.rpId && Array.isArray(value.credentials)
+      && value.credentials.every((credential: any) => credential.version === 1 && typeof credential.credentialId === 'string'
+        && typeof credential.salt === 'string' && typeof credential.iv === 'string' && typeof credential.ciphertext === 'string');
+  }
+
   async createWalletFromSeed(seed: string) {
     this.resetWallet();
+    this.localWalletId = this.passkeys.newWalletId();
+    this.passkeyUnlockRecord = null;
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
     if (FEATURE_NANONYMS) {
@@ -810,7 +918,7 @@ export class WalletService {
       }
     }
 
-    this.commitLifecycle({ kind: 'unlocked', type: 'seed', secret: seed, secretBytes: this.util.hex.toUint8(seed), password: '' });
+    this.commitLifecycle({ kind: 'unlocked', type: 'seed', secret: seed, secretBytes: this.util.hex.toUint8(seed), password: '', encryptedSecret: '' });
 
     await this.scanAccounts();
   }
@@ -888,6 +996,8 @@ export class WalletService {
 
   async createNewWallet(seed: string) {
     this.resetWallet();
+    this.localWalletId = this.passkeys.newWalletId();
+    this.passkeyUnlockRecord = null;
 
     // Clear NanoNym data (must happen before wallet seed is cleared)
     if (FEATURE_NANONYMS) {
@@ -899,7 +1009,7 @@ export class WalletService {
       }
     }
 
-    this.commitLifecycle({ kind: 'unlocked', type: 'seed', secret: seed, secretBytes: this.util.hex.toUint8(seed), password: '' });
+    this.commitLifecycle({ kind: 'unlocked', type: 'seed', secret: seed, secretBytes: this.util.hex.toUint8(seed), password: '', encryptedSecret: '' });
     await this.addWalletAccount();
     return seed;
   }
@@ -938,7 +1048,9 @@ export class WalletService {
       }
     }
 
-    this.commitLifecycle({ kind: 'unlocked', type: expanded ? 'expandedKey' : 'privateKey', secret: key, secretBytes: this.util.hex.toUint8(key), password: '' });
+    this.localWalletId = this.passkeys.newWalletId();
+    this.passkeyUnlockRecord = null;
+    this.commitLifecycle({ kind: 'unlocked', type: expanded ? 'expandedKey' : 'privateKey', secret: key, secretBytes: this.util.hex.toUint8(key), password: '', encryptedSecret: '' });
 
     this.wallet.accounts.push(this.createSingleKeyAccount(expanded));
     await this.refreshWalletState('single-key-wallet');
@@ -1015,6 +1127,7 @@ export class WalletService {
    * Reset wallet to a base state, without changing reference to the main object
    */
   resetWallet() {
+    this.lifecycleGeneration++;
     if (this.wallet.accounts.length) {
       this.websocket.unsubscribeAccounts(this.wallet.accounts.map(a => a.id)); // Unsubscribe from old accounts
       this.wallet.accounts.forEach(account => {
@@ -1027,6 +1140,8 @@ export class WalletService {
     const state = this.unlockedState();
     if (state) this.clearBytes(state.secretBytes);
     this.commitLifecycle({ kind: 'empty' }, false);
+    this.localWalletId = null;
+    this.passkeyUnlockRecord = null;
     this.wallet.accounts = [];
     this.wallet.balance = new BigNumber(0);
     this.wallet.pending = new BigNumber(0);
@@ -1060,12 +1175,18 @@ export class WalletService {
 
   getWalletType(): WalletType|null { return this.lifecycleSnapshot().type; }
   hasPassword(): boolean { return this.unlockedState()?.password.length > 0; }
+  hasPasswordProtectedWallet(): boolean {
+    const state = this.lifecycleState;
+    return state.kind === 'locked'
+      ? !!state.encryptedSecret
+      : state.kind === 'unlocked' && (!!state.password || !!state.encryptedSecret);
+  }
   getRecoverySecret(): string|null { return this.unlockedState()?.secret || null; }
 
   changePassword(password: string): boolean {
     const state = this.unlockedState();
     if (!state || !password) return false;
-    const candidate = { ...state, password };
+    const candidate = { ...state, password, encryptedSecret: CryptoJS.AES.encrypt(state.secret, password).toString() };
     try {
       this.persistWalletExport(this.generateWalletExportFor(candidate));
     } catch (error) {
@@ -1414,7 +1535,7 @@ export class WalletService {
   }
 
   saveWalletExport() {
-    if (this.lifecycleState.kind === 'unlocked' && !this.lifecycleState.password) return;
+    if (this.lifecycleState.kind === 'unlocked' && !this.lifecycleState.password && !this.lifecycleState.encryptedSecret) return;
     this.persistWalletExport(this.generateWalletExport());
   }
 
@@ -1426,7 +1547,11 @@ export class WalletService {
         break;
       default:
       case 'localStorage':
-        localStorage.setItem(this.storeKey, JSON.stringify(exportData));
+        localStorage.setItem(this.storeKey, JSON.stringify({
+          ...exportData,
+          ...(this.localWalletId ? { localWalletId: this.localWalletId } : {}),
+          ...(this.passkeyUnlockRecord ? { passkeyUnlock: this.passkeyUnlockRecord } : {}),
+        }));
         break;
     }
   }
@@ -1460,7 +1585,7 @@ export class WalletService {
 
     if (state.kind === 'ledger') {
     } else {
-      if (state.kind === 'unlocked') data.seed = CryptoJS.AES.encrypt(state.secret, state.password).toString();
+      if (state.kind === 'unlocked') data.seed = state.password ? CryptoJS.AES.encrypt(state.secret, state.password).toString() : state.encryptedSecret;
       if (state.kind === 'locked') data.seed = state.encryptedSecret;
       data.locked = true;
     }

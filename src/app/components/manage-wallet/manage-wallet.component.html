@@ -6,6 +6,51 @@
     @if (!walletService.isLedgerWallet()) {
       <div class="uk-card uk-card-default uk-margin">
         <div class="uk-card-header">
+          <h3 class="uk-card-title">Passkey / Device Authentication</h3>
+        </div>
+        <div class="uk-card-body">
+          <p>Use your device authentication to unlock this wallet. A device may ask for a fingerprint, face recognition, PIN, or another unlock method. Your wallet password and recovery backup remain important.</p>
+          @if (!walletService.canEnrollPasskey) {
+            <p>Passkey setup is unavailable in this browser or wallet storage mode.</p>
+          }
+          @if (walletService.canEnrollPasskey && !canManagePasskeys) {
+            @if (walletService.isLocked()) {
+              <p>Unlock with your wallet password before adding or removing passkeys.</p>
+            } @else if (walletService.hasPasswordProtectedWallet()) {
+              <p>For passkey management, lock this wallet and unlock it with your wallet password.</p>
+            } @else {
+              <p>Set a wallet password <a href="#change-wallet-password">below</a> before enabling passkey unlock.</p>
+            }
+          }
+          @if (passkeyCredentials.length) {
+            <ul class="uk-list uk-list-divider">
+              @for (credential of passkeyCredentials; track credential.credentialId) {
+                <li class="uk-flex uk-flex-between uk-flex-middle">
+                  <span>{{ credential.label }} · Added {{ credential.createdAt | date:'mediumDate' }}</span>
+                  <button class="uk-button uk-button-default uk-button-small" type="button"
+                    (click)="removePasskey(credential.credentialId)" [disabled]="!canManagePasskeys || passkeyActionInProgress">
+                    Remove from this wallet
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p>No passkey is enrolled for this wallet on this browser.</p>
+          }
+        </div>
+        @if (walletService.canEnrollPasskey) {
+          <div class="uk-card-footer uk-text-right">
+            <button class="uk-button uk-button-primary" type="button" (click)="addPasskey()" [disabled]="!canManagePasskeys || passkeyActionInProgress">
+              {{ passkeyCredentials.length ? 'Add another passkey' : 'Enable passkey unlock' }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    @if (!walletService.isLedgerWallet()) {
+      <div id="change-wallet-password" class="uk-card uk-card-default uk-margin">
+        <div class="uk-card-header">
           <h3 class="uk-card-title">Change Wallet Password</h3>
         </div>
         <div class="uk-card-body">

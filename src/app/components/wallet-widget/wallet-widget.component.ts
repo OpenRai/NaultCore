@@ -31,6 +31,9 @@ export class WalletWidgetComponent implements OnInit {
 
   modal: any = null;
   mayAttemptUnlock = true;
+  passkeyUnlockInProgress = false;
+  passkeyFallbackVisible = false;
+  private passkeyAbortController: AbortController|null = null;
   timeoutIdAllowingUnlock: any = null;
 
   @ViewChild('passwordInput') passwordInput: ElementRef;
@@ -61,10 +64,19 @@ export class WalletWidgetComponent implements OnInit {
 
   showModal() {
     this.unlockPassword = '';
+    this.passkeyFallbackVisible = !this.walletService.canUsePasskeyUnlock;
+    this.mayAttemptUnlock = true;
     this.modal.show();
+    if (this.walletService.canUsePasskeyUnlock) {
+      void this.unlockWithPasskey();
+    }
   }
 
   onModalHidden() {
+    this.passkeyAbortController?.abort();
+    this.passkeyAbortController = null;
+    this.passkeyUnlockInProgress = false;
+    this.passkeyFallbackVisible = false;
     this.unlockPassword = '';
     this.walletService.cancelWalletUnlockRequest();
   }
@@ -73,7 +85,7 @@ export class WalletWidgetComponent implements OnInit {
     if (this.walletService.isLedgerWallet()) {
       return; // No need to lock a ledger wallet, no password saved
     }
-    if (!this.walletService.hasPassword()) {
+    if (!this.walletService.hasPasswordProtectedWallet()) {
       return this.notificationService.sendWarning(`You must set a password on your wallet - it is currently blank!`);
     }
     const locked = await this.walletService.lockWallet();
@@ -146,6 +158,34 @@ export class WalletWidgetComponent implements OnInit {
     } else {
       this.notificationService.sendError(`Incorrect password, please try again!`, { identifier: 'wrong-password' });
     }
+  }
+
+  async unlockWithPasskey() {
+    if (this.passkeyUnlockInProgress || !this.walletService.canUsePasskeyUnlock) return;
+    this.passkeyAbortController?.abort();
+    const abortController = new AbortController();
+    this.passkeyAbortController = abortController;
+    this.passkeyUnlockInProgress = true;
+    this.passkeyFallbackVisible = false;
+    let unlocked = false;
+    try {
+      unlocked = await this.walletService.unlockWalletWithPasskey(abortController.signal);
+    } catch {
+      unlocked = false;
+    } finally {
+      if (this.passkeyAbortController === abortController) {
+        this.passkeyUnlockInProgress = false;
+        this.passkeyAbortController = null;
+      }
+    }
+    if (abortController.signal.aborted) return;
+    if (unlocked) {
+      this.notificationService.sendSuccess(`Wallet unlocked`, { identifier: 'wallet-unlocked' });
+      this.modal.hide();
+      return;
+    }
+    this.passkeyFallbackVisible = true;
+    this.mayAttemptUnlock = true;
   }
 
   cancelPow() {

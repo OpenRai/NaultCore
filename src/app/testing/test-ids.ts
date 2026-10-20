@@ -163,6 +163,7 @@ export const TestIds = {
   },
   walletWidget: {
     unlockButton: 'wallet-widget-unlock-button',
+    passkeyUnlockButton: 'wallet-widget-passkey-unlock-button',
     cancelButton: 'wallet-widget-cancel-button',
   },
   keyGenerator: {

@@ -663,6 +663,16 @@
               Your wallet has been created and you are ready to send and receive nano!<br>
               It will lock after a certain amount of inactivity which can be changed in the <a routerLink="/configure-app" routerLinkActive="active">app settings</a>.
             </p>
+            @if (walletService.canEnrollPasskey) {
+              <div class="uk-alert-primary" role="status">
+                <strong>Set up passkey unlock?</strong>
+                <p>Unlock with your device authentication, such as a fingerprint, face, or PIN. Keep your wallet password and recovery backup.</p>
+                <button type="button" class="uk-button uk-button-secondary" (click)="enablePasskeyUnlock()" [disabled]="passkeySetupInProgress">
+                  {{ passkeySetupInProgress ? 'Waiting for device…' : 'Set up passkey unlock' }}
+                </button>
+                <a class="uk-margin-left" routerLink="/manage-wallet">Skip for now</a>
+              </div>
+            }
           </div>
           <div class="uk-card-footer uk-text-right">
             <button routerLink="/accounts" class="uk-button uk-button-primary uk-width-auto@s uk-width-1-1" [attr.data-testid]="testIds.configureWallet.viewAccountsButton">View Accounts</button>

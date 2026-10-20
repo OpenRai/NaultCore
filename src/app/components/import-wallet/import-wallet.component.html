@@ -56,6 +56,16 @@
         </div>
         <div class="uk-card-body">
           <p>Your wallet has been successfully imported!</p>
+          @if (walletService.canEnrollPasskey) {
+            <div class="uk-alert-primary" role="status">
+              <strong>Set up passkey unlock?</strong>
+              <p>Unlock with your device authentication, such as a fingerprint, face, or PIN. Keep your wallet password and recovery backup.</p>
+              <button type="button" class="uk-button uk-button-secondary" (click)="enablePasskeyUnlock()" [disabled]="passkeySetupInProgress">
+                {{ passkeySetupInProgress ? 'Waiting for device…' : 'Set up passkey unlock' }}
+              </button>
+              <a class="uk-margin-left" routerLink="/accounts">Skip for now</a>
+            </div>
+          }
         </div>
         <div class="uk-card-footer uk-text-right">
           <button routerLink="/accounts" class="uk-button uk-button-secondary" [attr.data-testid]="testIds.importWallet.viewAccountsButton">View Accounts</button>

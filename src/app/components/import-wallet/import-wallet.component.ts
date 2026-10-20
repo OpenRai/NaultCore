@@ -29,6 +29,7 @@ export class ImportWalletComponent implements OnInit {
   validImportData = false;
   importData: any = null;
   hostname = '';
+  passkeySetupInProgress = false;
 
   ngOnInit() {
     const importData = this.route.snapshot.fragment;
@@ -56,6 +57,20 @@ export class ImportWalletComponent implements OnInit {
   importDataError(message) {
     this.activePanel = 'error';
     return this.notifications.sendError(message);
+  }
+
+  async enablePasskeyUnlock() {
+    if (this.passkeySetupInProgress) return;
+    this.passkeySetupInProgress = true;
+    try {
+      if (await this.walletService.enablePasskeyUnlock()) {
+        this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
+      } else {
+        this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+      }
+    } finally {
+      this.passkeySetupInProgress = false;
+    }
   }
 
   async decryptWallet() {
@@ -90,6 +105,7 @@ export class ImportWalletComponent implements OnInit {
       if (await this.walletService.loadImportedWallet(decryptedSecret, this.walletPassword,
         this.importData.accountsIndex || 0, this.importData.indexes || null, walletType)) {
           this.notifications.sendSuccess(`Successfully imported the wallet!`, {length: 10000});
+          this.activePanel = 'imported';
       } else {
         return this.notifications.sendError(`Failed importing the wallet. Invalid data!`);
       }

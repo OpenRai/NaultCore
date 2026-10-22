@@ -25,6 +25,7 @@ import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymAccountSelectionService } from "../../services/nanonym-account-selection.service";
 import { OrbitdbNotificationService } from "../../services/orbitdb-notification.service";
 import { WalletContextService } from "../../services/wallet-context.service";
+import { formatSmallRawAmountForToast } from "../../utils/transaction-toast-amount";
 
 const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
@@ -819,8 +820,10 @@ export class SendComponent implements OnInit {
         }
 
         this.notificationService.removeNotification("success-send");
+        const smallRawAmount = formatSmallRawAmountForToast(new BigNumber(this.rawAmount));
+        const sentAmountLabel = smallRawAmount || `${this.amount} ${this.selectedAmount.shortName}`;
         this.notificationService.sendSuccess(
-          `Successfully sent ${this.amount} ${this.selectedAmount.shortName}!`,
+          `Successfully sent ${sentAmountLabel}!`,
           { identifier: "success-send" },
         );
         this.resetForm();
@@ -1088,10 +1091,12 @@ export class SendComponent implements OnInit {
       }
 
       if (successCount > 0) {
+        const smallRawAmount = formatSmallRawAmountForToast(totalSent);
         const sentXNO = this.util.nano.rawToMnano(totalSent).toFixed(6);
+        const sentAmountLabel = smallRawAmount || `${sentXNO} XNO`;
         this.notificationService.removeNotification("success-send");
         this.notificationService.sendSuccess(
-          `Successfully sent ${sentXNO} XNO from ${successCount} stealth account${successCount > 1 ? 's' : ''}!`,
+          `Successfully sent ${sentAmountLabel} from ${successCount} stealth account${successCount > 1 ? 's' : ''}!`,
           { identifier: "success-send" }
         );
 

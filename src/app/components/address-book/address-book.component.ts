@@ -125,7 +125,7 @@ export class AddressBookComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private applyWalletSnapshot(snapshot: WalletStateSnapshot): void {
-    this.loadingBalances = snapshot.sync.status === 'loading';
+    this.loadingBalances = snapshot.sync.status === 'loading' && !snapshot.sync.hasSnapshot;
     for (const entry of this.addressBookService.addressBook) {
       if (!entry.trackBalance || !this.accounts[entry.account]) continue;
       const walletAccount = snapshot.accounts.find(account => account.id === entry.account);

@@ -169,7 +169,6 @@ export class TransactionTableComponent {
       amountMin: this.t('transaction-table.amount-min'),
       amountMax: this.t('transaction-table.amount-max'),
       searchPlaceholder: this.t('transaction-table.search-placeholder'),
-      clearFilters: this.t('transaction-table.clear-filters'),
       filtersToggle: this.t('transaction-table.filters-toggle'),
       filtersActive: this.t('transaction-table.filters-active'),
       loading: this.t('transaction-table.loading'),
@@ -234,6 +233,11 @@ export class TransactionTableComponent {
   }
 
   trackByHash(_index: number, transaction: WalletTransaction): string {
-    return `${transaction.accountId}:${transaction.hash}`;
+    return `${transaction.accountId}:${transaction.sourceHash ?? transaction.hash}`;
+  }
+
+  viewTransitionName(transaction: WalletTransaction): string {
+    const stableId = `${transaction.accountId}-${transaction.sourceHash ?? transaction.hash}`;
+    return `wallet-activity-${stableId.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
   }
 }

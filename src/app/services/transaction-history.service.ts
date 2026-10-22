@@ -26,6 +26,8 @@ interface StoredRow {
   amount: string;
   account: string | null;
   link_as_account: string | null;
+  /** Nano block link: for receives this is the source send block hash. */
+  link?: string | null;
   local_timestamp: string | null;
   height: string | null;
 }
@@ -121,6 +123,7 @@ export class TransactionHistoryService {
       const counterparty = row.link_as_account ?? row.account;
       return {
         hash: row.hash,
+        ...(row.subtype === 'receive' && row.link ? { sourceHash: row.link } : {}),
         accountId,
         accountLabel,
         direction: isSend ? 'sent' : 'received',
@@ -139,6 +142,7 @@ export class TransactionHistoryService {
       .filter(block => block.account === accountId)
       .map(block => ({
         hash: block.hash,
+        sourceHash: block.hash,
         accountId,
         accountLabel,
         direction: 'received' as const,
@@ -151,7 +155,7 @@ export class TransactionHistoryService {
       }));
 
     // A block that is pending here may already be confirmed in a row we hold.
-    const confirmedHashes = new Set(confirmed.map(t => t.hash));
+    const confirmedHashes = new Set(confirmed.flatMap(t => [t.hash, t.sourceHash].filter((hash): hash is string => !!hash)));
     return sortTransactions([
       ...pending.filter(t => !confirmedHashes.has(t.hash)),
       ...confirmed,
@@ -171,6 +175,7 @@ export class TransactionHistoryService {
         amount: String(entry.amount ?? 0),
         account: entry.account ?? null,
         link_as_account: entry.link_as_account ?? null,
+        link: entry.link ?? null,
         local_timestamp: entry.local_timestamp ? String(entry.local_timestamp) : null,
         height: entry.height != null ? String(entry.height) : null,
       })).filter(row => !!row.hash);

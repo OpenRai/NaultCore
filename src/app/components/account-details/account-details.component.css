@@ -267,6 +267,17 @@
     height: 180px;
     border-radius: 6px;
 }
+.qr-modal-address-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    inline-size: 100%;
+    min-inline-size: 0;
+}
+.qr-modal-address-copy {
+    flex: 0 0 auto;
+}
 @media (max-width: 1199px) {
     .uk-modal-body .qr-code-placeholder, .uk-modal-body .qr-code {
         min-width: 180px;

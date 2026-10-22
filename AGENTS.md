@@ -108,6 +108,10 @@ nvm exec pnpm --recursive --filter @nanonyms/* publish -- --access public --tag 
   subscriber to ensure all notifications are processed.
   ```
 
+### 7. Pull Request Policy
+
+- **Do not open pull requests against our own project (`OpenRai/NaultCore`); we own it, so doing so is pointless.**
+
 ---
 
 ## Documentation

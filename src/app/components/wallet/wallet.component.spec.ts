@@ -163,6 +163,47 @@ describe('WalletComponent', () => {
     expect(fixture.nativeElement.querySelector('.wallet-tabs-bar')).toBeFalsy();
   });
 
+  // Guards the design system itself. This page used to carry its own --w-*
+  // palette, its own heading weight, colour, and size, and a 14px card radius,
+  // and drifted into looking like a different product from Accounts next door.
+  // Nothing prevented that then, so assert the primitives that make the two
+  // pages look like one app.
+  it('renders on design-system primitives instead of bespoke chrome', () => {
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    // uk-card supplies the app-wide 10px card radius.
+    const card = el.querySelector('.uk-card');
+    expect(card).toBeTruthy();
+    expect(el.querySelector('[data-testid="wallet-summary-card"]')?.classList.contains('uk-card')).toBe(true);
+
+    // uk-heading-divider supplies the hairline rule; the heading spec supplies
+    // the Montserrat weight, colour, and 27.2px size. The page must not set any
+    // of those itself.
+    const title = el.querySelector('h2.wallet-title');
+    expect(title).toBeTruthy();
+    expect(title?.classList.contains('uk-heading-divider')).toBe(true);
+    expect(title?.getAttribute('style')).toBeNull();
+  });
+
+  // The eyebrows and labels that only this page had. Removing them is what makes
+  // the page read as the same app as Accounts, so keep them removed.
+  it('does not carry a bespoke eyebrow above the page title', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.eyebrow')).toBeFalsy();
+  });
+
+  // The Montserrat and muted-copy treatment comes from these classes, not from
+  // a per-component font declaration.
+  it('labels its kickers through the shared form-label treatment', () => {
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('.card-kicker')?.classList.contains('uk-form-label')).toBe(true);
+    expect(el.querySelector('.action-context-label')?.classList.contains('uk-form-label')).toBe(true);
+    expect(el.querySelector('.summary-stat dt')?.classList.contains('uk-form-label')).toBe(true);
+  });
+
   it('keeps the account selector in the action bar for Send and Receive context', () => {
     fixture.detectChanges();
     const selector = fixture.nativeElement.querySelector('[data-testid="wallet-account-selector"]');
@@ -236,7 +277,20 @@ describe('WalletComponent', () => {
     expect(history.rowsForAccounts).toHaveBeenCalledTimes(initialCalls + 1);
   });
 
-  it('shows cached activity while the fresh node history request is still pending', async () => {
+  it('keeps current activity visible instead of flashing stale cache during refresh', async () => {
+    const previous = {
+      hash: 'previous-hash',
+      accountId: account.id,
+      accountLabel: 'Primary',
+      direction: 'received' as const,
+      amount: new BigNumber('500000'),
+      counterparty: null,
+      counterpartyLabel: null,
+      timestamp: 1600000000,
+      status: 'confirmed' as const,
+      height: null,
+    };
+    component.transactions = [previous];
     let resolveFresh!: (rows: Map<string, any[]>) => void;
     const history = component['history'] as any;
     history.cachedRowsForAccounts = vi.fn(async () => new Map([[account.id, [{
@@ -252,7 +306,7 @@ describe('WalletComponent', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(component.transactions.map(transaction => transaction.hash)).toEqual(['cached-hash']);
+    expect(component.transactions.map(transaction => transaction.hash)).toEqual(['previous-hash']);
     expect(component.activityLoading).toBe(false);
 
     resolveFresh(new Map([[account.id, [{
@@ -270,6 +324,14 @@ describe('WalletComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.balance-display').textContent).toContain('Loading…');
     expect(fixture.nativeElement.querySelector('.balance-unit')).toBeFalsy();
+  });
+
+  it('keeps the last wallet values available while a background refresh is loading', () => {
+    walletState$.next({ ...createState(), sync: { status: 'loading', hasSnapshot: true, reason: 'background-refresh' } });
+    fixture.detectChanges();
+
+    expect(component.walletDataStatus).toBeNull();
+    expect(fixture.nativeElement.querySelector('.balance-display').textContent).not.toContain('Loading');
   });
 
   it('caps the merged wallet list at 25 entries', async () => {

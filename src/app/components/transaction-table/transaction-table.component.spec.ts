@@ -101,6 +101,16 @@ describe('TransactionTableComponent', () => {
     expect(byTestId('transaction-table-clear-filters')).toBeTruthy();
   });
 
+  it('uses equal-width Reset secondary buttons for active filters with no matches', () => {
+    component.setFilter({ search: 'no-such-transaction' });
+    fixture.detectChanges();
+
+    const buttons = Array.from(fixture.nativeElement.querySelectorAll('button.tx-reset-button')) as HTMLButtonElement[];
+    expect(buttons).toHaveLength(2);
+    expect(buttons.map(button => button.textContent.trim())).toEqual(['Reset', 'Reset']);
+    expect(buttons[0].className.replace(' tx-reset-button-inline', '')).toBe(buttons[1].className);
+  });
+
   it('collapses again once the only active filter is cleared', () => {
     component.setFilter({ direction: 'sent' });
     fixture.detectChanges();

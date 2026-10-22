@@ -1,49 +1,22 @@
 :host {
-  /* Same palette tokens as the Wallet page so the two read as one surface. */
-  --tx-card-bg: #ffffff;
-  --tx-border: rgba(0, 0, 0, 0.08);
-  --tx-border-soft: rgba(0, 0, 0, 0.05);
-  --tx-text: #1d1d22;
-  --tx-text-muted: #6e6e80;
-  --tx-subtle-bg: #f7f7fa;
-  --tx-hover-bg: #f4f4f8;
-  --tx-head-bg: #f2f3f7;
-  --tx-green: #2fb344;
-  --tx-red: #d0342c;
-  --tx-amber: #d97706;
-  --tx-blue: #1e87f0;
-  /* Interactive link colour for controls on this surface. UIkit's #4a90e2 is
-     only 3.3:1 on the card, under the 4.5:1 text minimum; this is 5.8:1. */
-  --tx-link: #0b63c4;
+  /* No local token namespace: --surface-*, --text-*, --border-*, and
+     --status-* are declared on <body> and re-declared under .dark-mode, so they
+     inherit into this component and theme with the rest of the app. */
 
   /* Lets the disclosure below animate to `height: auto`. Chrome-only today;
-     other engines toggle instantly with the same markup. */
+      other engines toggle instantly with the same markup. */
   interpolate-size: allow-keywords;
 
   display: block;
 }
 
-:host-context(.dark-mode) {
-  --tx-card-bg: #22222a;
-  --tx-border: rgba(255, 255, 255, 0.08);
-  --tx-border-soft: rgba(255, 255, 255, 0.05);
-  --tx-text: #f0f0f8;
-  --tx-text-muted: #8f8fab;
-  --tx-subtle-bg: #1a1a20;
-  --tx-hover-bg: rgba(255, 255, 255, 0.04);
-  --tx-head-bg: #1d1d24;
-  --tx-green: #48d262;
-  --tx-red: #ff6b6b;
-  --tx-amber: #fbbf24;
-  --tx-blue: #4a90e2;
-  /* #4a90e2 is 5.3:1 on the dark card, so the standard blue already passes. */
-  --tx-link: #4a90e2;
-}
 
 .tx-table {
-  background: var(--tx-card-bg);
-  border: 1px solid var(--tx-border);
-  border-radius: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  /* @global-border-radius-medium — the same 10px every other card in the app
+     gets from the .uk-card rule above. */
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -52,7 +25,7 @@
 /* A native <details> disclosure: collapsed by default so the transaction list
    is what the reader sees first. Free keyboard support and expanded state. */
 .tx-filters {
-  border-bottom: 1px solid var(--tx-border-soft);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .tx-filters-toggle {
@@ -64,7 +37,7 @@
   min-block-size: 2.25rem;
   cursor: pointer;
   list-style: none;
-  color: var(--tx-text);
+  color: var(--text-primary);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -79,22 +52,22 @@
 }
 
 .tx-filters-toggle:active {
-  background: var(--tx-hover-bg);
+  background: var(--surface-hover);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .tx-filters-toggle:hover {
-    background: var(--tx-subtle-bg);
+    background: var(--surface-subtle);
   }
 }
 
 .tx-filters-toggle-icon {
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
 .tx-filters-toggle-chevron {
   margin-inline-start: auto;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
 .tx-filters[open] .tx-filters-toggle-chevron {
@@ -111,8 +84,8 @@
 .tx-filters-active {
   padding: 0.1rem 0.55rem;
   border-radius: 999px;
-  background: var(--tx-subtle-bg);
-  color: var(--tx-text-muted);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -157,7 +130,7 @@
 .tx-filter-icon {
   position: absolute;
   inset-inline-start: 0.65rem;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
   pointer-events: none;
 }
 
@@ -189,20 +162,16 @@
 }
 
 .tx-range-sep {
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
-.tx-clear {
+.tx-reset-button {
+  inline-size: 6rem;
+}
+
+.tx-reset-button-inline {
   margin-inline-start: auto;
-  /* UIkit paints text buttons with the global link blue, which this rule lifts
-     to keep the label legible on the card in both themes. */
-  color: var(--tx-link);
 }
-
-.tx-clear:hover,
-.tx-clear:focus-visible { color: var(--tx-link); }
-
-.tx-clear::before { border-bottom-color: var(--tx-link); }
 
 /* ---------- Summary ---------- */
 
@@ -213,10 +182,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.55rem 1rem;
-  background: var(--tx-subtle-bg);
-  border-bottom: 1px solid var(--tx-border-soft);
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border-subtle);
   font-size: 0.82rem;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
 .tx-summary-totals {
@@ -231,8 +200,8 @@
   gap: 0.25rem;
 }
 
-.tx-total-in { color: var(--tx-green); }
-.tx-total-out { color: var(--tx-red); }
+.tx-total-in { color: var(--status-success); }
+.tx-total-out { color: var(--status-danger); }
 
 /* ---------- States ---------- */
 
@@ -243,11 +212,11 @@
   gap: 0.4rem;
   padding: 2.5rem 1rem;
   text-align: center;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
-.tx-state-icon { color: var(--tx-text-muted); opacity: 0.6; }
-.tx-state-title { margin: 0; color: var(--tx-text); font-weight: 600; }
+.tx-state-icon { color: var(--text-muted); opacity: 0.6; }
+.tx-state-title { margin: 0; color: var(--text-primary); font-weight: 600; }
 .tx-state-desc { font-size: 0.85rem; }
 
 /* ---------- Table ---------- */
@@ -274,30 +243,30 @@
   position: sticky;
   inset-block-start: 0;
   z-index: 1;
-  background: var(--tx-head-bg);
-  color: var(--tx-text-muted);
+  background: var(--surface-subtle);
+  color: var(--text-muted);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: start;
   padding: 0.6rem 0.85rem;
-  border-block-end: 1px solid var(--tx-border);
+  border-block-end: 1px solid var(--border-strong);
   white-space: nowrap;
 }
 
 .tx-table-grid tbody td {
   padding: 0.7rem 0.85rem;
-  border-block-end: 1px solid var(--tx-border-soft);
+  border-block-end: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
 
 .tx-table-grid tbody tr:last-child td { border-block-end: none; }
-.tx-table-grid tbody tr:hover { background: var(--tx-hover-bg); }
+.tx-table-grid tbody tr:hover { background: var(--surface-hover); }
 
 .col-status { inline-size: 7.5rem; }
 .col-amount { inline-size: 9rem; text-align: end; white-space: nowrap; }
-.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--tx-text-muted); font-size: 0.82rem; }
+.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--text-muted); font-size: 0.82rem; }
 
 .tx-badge {
   display: inline-flex;
@@ -309,9 +278,9 @@
   white-space: nowrap;
 }
 
-.tx-badge-received { background: rgba(47, 179, 68, 0.14); color: var(--tx-green); }
-.tx-badge-sent { background: rgba(208, 52, 44, 0.12); color: var(--tx-red); }
-.tx-badge-pending { background: rgba(217, 119, 6, 0.14); color: var(--tx-amber); }
+.tx-badge-received { background: rgba(47, 179, 68, 0.14); color: var(--status-success); }
+.tx-badge-sent { background: rgba(208, 52, 44, 0.12); color: var(--status-danger); }
+.tx-badge-pending { background: rgba(217, 119, 6, 0.14); color: var(--status-warning); }
 
 .tx-row-pending td { background: rgba(217, 119, 6, 0.05); }
 
@@ -329,7 +298,7 @@
 
 .tx-counterparty-label,
 .tx-counterparty-addr {
-  color: var(--tx-text);
+  color: var(--text-primary);
   text-decoration: none;
 }
 
@@ -337,7 +306,7 @@
 .tx-counterparty-addr:hover { text-decoration: underline; }
 
 .tx-counterparty-none {
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
   font-weight: 400;
   font-style: italic;
 }
@@ -348,7 +317,7 @@
   gap: 0.35rem;
   margin-block-start: 0.15rem;
   font-size: 0.78rem;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
   min-inline-size: 0;
 }
 
@@ -370,7 +339,7 @@
 
 .tx-local-account,
 .tx-hash {
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
   text-decoration: none;
 }
 
@@ -382,13 +351,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tx-amount-in { color: var(--tx-green); }
-.tx-amount-out { color: var(--tx-red); }
+.tx-amount-in { color: var(--status-success); }
+.tx-amount-out { color: var(--status-danger); }
 
 .tx-unit {
   margin-inline-start: 0.25rem;
   font-size: 0.75rem;
-  color: var(--tx-text-muted);
+  color: var(--text-muted);
 }
 
 /* ---------- Stacked layout for narrow widths ---------- */
@@ -419,7 +388,7 @@
 
   .tx-table-grid tbody tr {
     padding: 0.75rem 0.85rem;
-    border-block-end: 1px solid var(--tx-border-soft);
+    border-block-end: 1px solid var(--border-subtle);
   }
 
   .tx-table-grid tbody td {
@@ -431,7 +400,7 @@
      injected text is announced as "Amount: 1.5" rather than trailing noise. */
   .tx-table-grid td::before {
     content: var(--label-status) ': ' / var(--label-status);
-    color: var(--tx-text-muted);
+    color: var(--text-muted);
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.05em;

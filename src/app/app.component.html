@@ -49,7 +49,7 @@
             <div class="address nano-address-monospace">{{ walletState.selectedAccount.id }}</div>
           </div>
           <div class="balance-column">
-            @if (walletState.sync.status !== 'loading') {
+            @if (walletState.sync.hasSnapshot) {
               <div class="balance primary">
                 {{ walletState.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 0 }}{{ walletState.selectedAccount.balance | rai: 'mnano,true' | amountsplit: 1 }} XNO
               </div>
@@ -71,7 +71,7 @@
               <div class="address nano-address-monospace">{{ account.id }}</div>
             </div>
             <div class="balance-column">
-              @if (walletState.sync.status !== 'loading') {
+              @if (walletState.sync.hasSnapshot) {
                 <div class="balance primary">
                   @if (account.pending.gt(0)) {
                     <span class="incoming-label">
@@ -133,7 +133,7 @@
                     </button>
                   </div>
                   <div class="account-balances">
-                    @if (( ( node.status && (walletState.sync.status !== 'idle') ) || !isConfigured() )) {
+                    @if (walletState.sync.hasSnapshot || !isConfigured()) {
                       <div class="balance-container primary">
                         <div class="currency-name">XNO</div>
                         <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceXnoCard">

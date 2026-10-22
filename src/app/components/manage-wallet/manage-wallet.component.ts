@@ -62,12 +62,13 @@ export class ManageWalletComponent implements OnInit {
     return this.walletService.getPasskeyCredentials();
   }
 
-  async addPasskey() {
-    if (this.passkeyActionInProgress || !this.canManagePasskeys) return;
+  async enablePasskey() {
+    if (this.passkeyActionInProgress || !this.canManagePasskeys || this.passkeyCredentials.length > 0) return;
     this.passkeyActionInProgress = true;
     try {
-      if (await this.walletService.enablePasskeyUnlock()) this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
-      else this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
+      if (await this.walletService.enablePasskeyUnlock()) {
+        this.notifications.sendSuccess('Passkey unlock is ready for this wallet.');
+      } else this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
     } catch {
       this.notifications.sendWarning('Passkey setup did not finish. Your wallet password still works.');
     } finally {

@@ -1,30 +1,7 @@
-:host {
-  --w-card-bg: #ffffff;
-  --w-card-border: rgba(0, 0, 0, 0.08);
-  --w-card-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-  --w-text: #1d1d22;
-  --w-text-muted: #6e6e80;
-  --w-subtle-bg: #f7f7fa;
-  --w-subtle-border: rgba(0, 0, 0, 0.06);
-  --w-hover-bg: #f4f4f8;
-  --w-green: #2fb344;
-  --w-blue: #1e87f0;
-  --w-amber: #d97706;
-}
-
-:host-context(.dark-mode) {
-  --w-card-bg: #22222a;
-  --w-card-border: rgba(255, 255, 255, 0.08);
-  --w-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-  --w-text: #f0f0f8;
-  --w-text-muted: #8f8fab;
-  --w-subtle-bg: #1a1a20;
-  --w-subtle-border: rgba(255, 255, 255, 0.06);
-  --w-hover-bg: rgba(255, 255, 255, 0.04);
-  --w-green: #48d262;
-  --w-blue: #4a90e2;
-  --w-amber: #fbbf24;
-}
+/* No :host token namespace here. The shared set declared on <body> in
+   nault-theme.less and themed in dark-mode.less covers every role this page
+   needs, so the page reads the same surfaces and colours as Accounts without
+   inventing a parallel palette that drifts. */
 
 /* The page is the sizing container, so the balance can scale against the width
    it actually has rather than the viewport. */
@@ -45,32 +22,28 @@
   flex-wrap: wrap;
 }
 
-.wallet-header-main { min-inline-size: 0; }
+.wallet-header-main { min-inline-size: 0; flex: 1 1 auto; }
 
-.eyebrow {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--w-blue);
-}
-
+/* Colour, weight, and size come from UIkit's h2 spec and the Montserrat
+   override; only the margins are local, because the slot above this title is
+   tighter than the default's 40px. */
 .wallet-title {
   margin: 0.1rem 0 0;
-  font-size: clamp(1.6rem, 5cqi, 2.1rem);
-  font-weight: 700;
-  color: var(--w-text);
   overflow-wrap: anywhere;
 }
 
+/* A pill, not a boxed badge: this is a state flag, and the app already has a
+   pill vocabulary for those. Warning-toned because a locked wallet is the one
+   state a reader should notice. */
 .state-badge {
   padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(217, 119, 6, 0.14);
-  color: var(--w-amber);
+  border-radius: 50px;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--status-warning);
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ---------- Receivable banner ---------- */
@@ -104,10 +77,10 @@
   inline-size: 100%;
   text-align: start;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--w-card-border);
-  border-inline-start: 4px solid var(--w-amber);
+  border: 1px solid var(--border-subtle);
+  border-inline-start: 4px solid var(--status-warning);
   border-radius: 10px;
-  background: var(--w-subtle-bg);
+  background: var(--surface-subtle);
   cursor: pointer;
 }
 
@@ -116,20 +89,19 @@
   flex-direction: column;
   gap: 0.15rem;
   min-inline-size: 0;
-  color: var(--w-text-muted);
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
-.receivable-unlock-text strong { color: var(--w-text); }
+.receivable-unlock-text strong { color: var(--text-primary); }
 
 /* ---------- Summary card ---------- */
 
+/* `uk-card` above supplies the design system's 10px radius; only the surface,
+   hairline, and clipping are local. The radius is NOT re-declared here. */
 .wallet-summary-card {
-  background: var(--w-card-bg);
-  border: 1px solid var(--w-card-border);
-  border-radius: 14px;
-  box-shadow: var(--w-card-shadow);
-  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
 }
 
 /* minmax(0, ...) is the important part: it lets this column shrink below its
@@ -147,10 +119,11 @@
   min-inline-size: 0;
 }
 
+/* uk-form-label above supplies Montserrat and the muted body colour; what is
+   left is the kicker's own size and tracking. */
 .card-kicker {
   display: block;
   margin-bottom: 0.3rem;
-  color: var(--w-text-muted);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -179,7 +152,7 @@
      Only the unit is offset. */
   gap: 0;
   margin: 0;
-  color: var(--w-text);
+  color: var(--text-primary);
   font-size: clamp(1.35rem, 9cqi, 3rem);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
@@ -195,7 +168,7 @@
 .balance-dec {
   font-size: 0.55em;
   font-weight: 500;
-  color: var(--w-text-muted);
+  color: var(--text-muted);
 }
 
 .balance-unit {
@@ -203,21 +176,23 @@
   font-size: 0.3em;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: var(--w-text-muted);
+  color: var(--text-muted);
 }
 
 .balance-fiat {
   margin-top: 0.25rem;
-  color: var(--w-text-muted);
+  color: var(--text-muted);
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
+/* The app-wide #4a90e2 is 3.3:1 on white, under the 4.5:1 text minimum. The
+   sidebar already carries this lifted blue for the same reason. */
 .summary-accounts-link {
   display: inline-block;
   margin-top: 0.5rem;
-  color: var(--w-blue);
+  color: var(--text-link);
   font-size: 0.85rem;
   text-decoration: none;
 }
@@ -231,11 +206,14 @@
   margin: 0;
 }
 
+/* Kept as tiles rather than flattened into a table row: the three-up grid is
+   part of the page's shape. They now carry the shared surface and the design
+   system's 10px radius instead of bespoke ones. */
 .summary-stat {
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
-  background: var(--w-subtle-bg);
-  border: 1px solid var(--w-subtle-border);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
   min-inline-size: 0;
 }
 
@@ -245,20 +223,19 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--w-text-muted);
 }
 
 .summary-stat dd {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--w-text);
+  color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.stat-pending { color: var(--w-amber); }
-.stat-none { color: var(--w-text-muted); }
+.stat-pending { color: var(--status-warning); }
+.stat-none { color: var(--text-muted); }
 
 /* ---------- Action bar ---------- */
 
@@ -269,8 +246,8 @@
   gap: 0.75rem 1rem;
   flex-wrap: wrap;
   padding: 0.85rem 1.4rem;
-  border-top: 1px solid var(--w-subtle-border);
-  background: var(--w-subtle-bg);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-subtle);
 }
 
 .action-context {
@@ -286,7 +263,6 @@
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--w-text-muted);
 }
 
 .action-context-select {
@@ -299,7 +275,7 @@
 /* A full address must not push the Send button off the bar. */
 .action-context-addr {
   font-size: 0.78rem;
-  color: var(--w-text-muted);
+  color: var(--text-muted);
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -339,15 +315,13 @@
   flex-wrap: wrap;
 }
 
+/* The h3 spec supplies Montserrat, normal weight, and the heading colour. */
 .activity-section-title {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--w-text);
 }
 
 .activity-manage-link {
-  color: var(--w-blue);
+  color: var(--text-link);
   font-size: 0.85rem;
   text-decoration: none;
 }

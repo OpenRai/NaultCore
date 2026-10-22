@@ -1,9 +1,10 @@
-<div class="wallet-page" [attr.data-testid]="testIds.wallet.pageRoot">
-  <!-- Page Header -->
-  <header class="wallet-header">
+<div class="wallet-page uk-animation-slide-left-small" [attr.data-testid]="testIds.wallet.pageRoot">
+  <header class="wallet-header uk-margin-bottom">
     <div class="wallet-header-main">
-      <span class="eyebrow">NaultCore</span>
-      <h2 class="wallet-title">Wallet</h2>
+      <!-- No colour, weight, or size here on purpose: the design system owns the
+           h2 spec, which is Montserrat at 27.2px in the accent colour with a
+           hairline rule under it. That is what makes this match Accounts. -->
+      <h2 class="wallet-title uk-heading-divider">Wallet</h2>
     </div>
     @if (walletState.lifecycle.locked) {
       <span class="state-badge" role="status">Locked</span>
@@ -41,12 +42,12 @@
   }
 
   <!-- Wallet summary. No account list: the Accounts page owns that. -->
-  <section class="wallet-summary-card" [attr.data-testid]="testIds.wallet.summaryCard">
+  <section class="wallet-summary-card uk-card uk-overflow-hidden" [attr.data-testid]="testIds.wallet.summaryCard">
     <div class="summary-grid">
       <!-- The headline number. Wrapping is handled by the stylesheet, which
-           scales the type down instead of breaking it character by character. -->
+            scales the type down instead of breaking it character by character. -->
       <div class="summary-primary">
-        <span class="card-kicker">{{ labels.totalBalance }}</span>
+        <span class="card-kicker uk-form-label">{{ labels.totalBalance }}</span>
         <div class="balance-display-wrap">
           <div class="balance-display">
             @if (walletDataStatus) {
@@ -75,14 +76,14 @@
       </div>
 
       <!-- Secondary totals, so the summary says something even when the balance
-           is zero. -->
+            is zero. -->
       <dl class="summary-stats">
         <div class="summary-stat">
-          <dt>{{ labels.accounts }}</dt>
+          <dt class="uk-form-label">{{ labels.accounts }}</dt>
           <dd>{{ walletState.accounts.length }}</dd>
         </div>
         <div class="summary-stat">
-          <dt>{{ labels.pending }}</dt>
+          <dt class="uk-form-label">{{ labels.pending }}</dt>
           <dd>
             @if (walletDataStatus) {
               <span class="stat-none">—</span>
@@ -94,18 +95,18 @@
           </dd>
         </div>
         <div class="summary-stat">
-          <dt>{{ labels.recentEvents }}</dt>
+          <dt class="uk-form-label">{{ labels.recentEvents }}</dt>
           <dd>{{ activityLoading ? '…' : transactions.length }}</dd>
         </div>
       </dl>
     </div>
 
     <!-- Action bar. The account selector lives here, subordinate to the total,
-         because Send and Receive still need a source account but the selector
-         is not what this page is about. -->
+          because Send and Receive still need a source account but the selector
+          is not what this page is about. -->
     <div class="wallet-action-bar">
       <div class="action-context">
-        <label class="action-context-label" for="wallet-account-selector">
+        <label class="action-context-label uk-form-label" for="wallet-account-selector">
           {{ labels.spendFrom }}
         </label>
         <select
@@ -154,6 +155,8 @@
   <!-- Recent activity across every account: the reason this page exists. -->
   <section class="wallet-activity-section">
     <div class="activity-section-header">
+      <!-- Also inheriting: the h3 spec is Montserrat, normal weight, in the
+           heading colour. No bespoke size or weight here either. -->
       <h3 class="activity-section-title">{{ labels.recentActivity }}</h3>
       <a class="activity-manage-link" routerLink="/accounts" [attr.data-testid]="testIds.wallet.accountsLink">
         {{ labels.manageAccounts }}

@@ -85,12 +85,11 @@
         @if (filtered) {
           <button
             type="button"
-            class="uk-button uk-button-text tx-clear"
+            class="uk-button uk-button-secondary uk-button-small tx-reset-button tx-reset-button-inline"
             (click)="resetFilters()"
             [attr.data-testid]="testIds.transactionTable.clearFilters"
           >
-            <span uk-icon="icon: close; ratio: 0.7"></span>
-            {{ labels.clearFilters }}
+            Reset
           </button>
         }
       </div>
@@ -136,8 +135,8 @@
     <div class="tx-state" [attr.data-testid]="testIds.transactionTable.noMatches">
       <span uk-icon="icon: search; ratio: 1.5" class="tx-state-icon"></span>
       <p class="tx-state-title">{{ labels.noMatches }}</p>
-      <button type="button" class="uk-button uk-button-small" (click)="resetFilters()">
-        {{ labels.clearFilters }}
+      <button type="button" class="uk-button uk-button-secondary uk-button-small tx-reset-button" (click)="resetFilters()">
+        Reset
       </button>
     </div>
   } @else {
@@ -160,6 +159,8 @@
           @for (tx of visible; track trackByHash($index, tx)) {
             <tr
               class="tx-row"
+              [style.view-transition-name]="viewTransitionName(tx)"
+              view-transition-class="wallet-activity-row"
               [class.tx-row-received]="tx.direction === 'received'"
               [class.tx-row-sent]="tx.direction === 'sent'"
               [class.tx-row-pending]="tx.status === 'pending'"

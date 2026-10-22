@@ -7,6 +7,7 @@ function createServiceForStateTests(): any {
   const service: any = Object.create(WalletService.prototype);
   service.lifecycleState = { kind: 'empty' };
   service.walletStateRevision = 0;
+  service.authoritativeAccountKey = null;
   service.wallet = {
     balance: new BigNumber(0),
     pending: new BigNumber(0),
@@ -71,6 +72,68 @@ describe('WalletService wallet state snapshots', () => {
     service.walletStateSubject.subscribe(value => received = value);
 
     expect(received).toBe(snapshot);
+  });
+});
+
+describe('WalletService passkey lifecycle', () => {
+  function createPasskeyService(withPasskey = true) {
+    const service: any = Object.create(WalletService.prototype);
+    const state = { kind: 'unlocked', type: 'seed', secret: 'a'.repeat(64), secretBytes: new Uint8Array(32), password: 'wallet password', encryptedSecret: 'encrypted' };
+    const previousRecord = { walletId: 'wallet-id', rpId: 'localhost', credentials: [{ credentialId: 'old', version: 1 }] };
+    service.lifecycleState = state;
+    service.lifecycleGeneration = 4;
+    service.localWalletId = 'wallet-id';
+    service.passkeyUnlockRecord = withPasskey ? previousRecord : null;
+    service.appSettings = { settings: { walletStore: 'localStorage' } };
+    service.passkeys = {
+      isAvailable: () => true,
+      newWalletId: () => 'new-wallet-id',
+      enroll: vi.fn(),
+      remove: vi.fn(),
+    };
+    service.generateWalletExport = vi.fn(() => ({}));
+    service.persistWalletExport = vi.fn();
+    return { service, previousRecord };
+  }
+
+  it('enrolls only one credential when this wallet has none', async () => {
+    const { service } = createPasskeyService(false);
+    service.passkeys.enroll.mockResolvedValue({
+      ok: true,
+      value: { walletId: 'wallet-id', rpId: 'localhost', credentials: [{ credentialId: 'new', version: 1 }, { credentialId: 'unexpected-extra', version: 1 }] },
+    });
+
+    expect(await service.enablePasskeyUnlock()).toBe(true);
+    expect(service.passkeys.enroll).toHaveBeenCalledWith('wallet-id', 'seed', 'a'.repeat(64));
+    expect(service.passkeyUnlockRecord.credentials.map((item: any) => item.credentialId)).toEqual(['unexpected-extra']);
+    expect(service.persistWalletExport).toHaveBeenCalledOnce();
+  });
+
+  it('does not offer a second enrollment while one is configured', async () => {
+    const { service, previousRecord } = createPasskeyService();
+
+    expect(await service.enablePasskeyUnlock()).toBe(false);
+    expect(service.passkeyUnlockRecord).toBe(previousRecord);
+    expect(service.passkeys.enroll).not.toHaveBeenCalled();
+  });
+
+  it('removes the wallet enrollment without deleting the provider credential', async () => {
+    const { service, previousRecord } = createPasskeyService();
+    service.passkeys.remove.mockResolvedValue(null);
+
+    expect(await service.removePasskeyUnlock('old')).toBe(true);
+    expect(service.passkeyUnlockRecord).toBeNull();
+    expect(service.passkeys.remove).toHaveBeenCalledWith(previousRecord, 'old');
+    expect(service.persistWalletExport).toHaveBeenCalledOnce();
+  });
+
+  it('restores the enrollment if removal cannot be persisted', async () => {
+    const { service, previousRecord } = createPasskeyService();
+    service.passkeys.remove.mockResolvedValue(null);
+    service.persistWalletExport.mockImplementation(() => { throw new Error('storage unavailable'); });
+
+    expect(await service.removePasskeyUnlock('old')).toBe(false);
+    expect(service.passkeyUnlockRecord).toBe(previousRecord);
   });
 });
 
@@ -139,6 +202,28 @@ describe('WalletService wallet-owned mutations', () => {
 });
 
 describe('WalletService reconciliation coordination', () => {
+  it('marks the first authoritative snapshot and retains it during later refreshes', async () => {
+    const startupService = createServiceForStateTests();
+    expect(startupService.walletState.sync.hasSnapshot).toBe(false);
+    startupService.reloadBalancesFromNode = async () => undefined;
+    await startupService.refreshWalletState('startup');
+    expect(startupService.walletState.sync.hasSnapshot).toBe(true);
+
+    // Hold a later background refresh open after startup has completed.
+    const service = createServiceForStateTests();
+    service.authoritativeAccountKey = '';
+    let releaseRefresh!: () => void;
+    service.reloadBalancesFromNode = async () => new Promise<void>(resolve => releaseRefresh = resolve);
+
+    const refresh = service.refreshWalletState('background');
+    await Promise.resolve();
+    expect(service.walletState.sync.status).toBe('loading');
+    expect(service.walletState.sync.hasSnapshot).toBe(true);
+    releaseRefresh();
+    await refresh;
+    expect(service.walletState.sync.status).toBe('ready');
+  });
+
   it('runs a follow-up generation for invalidation during a query', async () => {
     const service = createServiceForStateTests();
     let releaseFirst;

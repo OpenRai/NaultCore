@@ -20,6 +20,7 @@ import { combineLatest, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './passkey-unlock.service';
+import { formatSmallRawAmountForToast } from '../utils/transaction-toast-amount';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -44,6 +45,8 @@ export interface WalletSyncState {
   status: WalletSyncStatus;
   reason?: string;
   error?: string;
+  /** True once authoritative balances have been loaded for the current accounts. */
+  hasSnapshot?: boolean;
 }
 
 export interface WalletAccountSnapshot {
@@ -188,6 +191,7 @@ export class WalletService {
   };
 
   private walletStateRevision = 0;
+  private authoritativeAccountKey: string|null = null;
   private readonly walletStateSubject: BehaviorSubject<WalletStateSnapshot>;
   readonly walletState$: Observable<WalletStateSnapshot>;
   private reconciliationRequestedGeneration = 0;
@@ -285,7 +289,10 @@ export class WalletService {
       pendingFiat: this.wallet.pendingFiat,
       hasPending: this.wallet.hasPending,
       pendingBlocks: Object.freeze(pendingBlocks),
-      sync: Object.freeze({ ...sync }),
+      sync: Object.freeze({
+        ...sync,
+        hasSnapshot: this.authoritativeAccountKey === this.wallet.accounts.map(account => account.id).sort().join(','),
+      }),
     });
   }
 
@@ -320,6 +327,7 @@ export class WalletService {
 
       try {
         await this.reloadBalancesFromNode();
+        this.authoritativeAccountKey = this.wallet.accounts.map(account => account.id).sort().join(',');
         this.reconciliationCompletedGeneration = generation;
         const snapshot = this.publishWalletState({ status: 'ready', reason });
         this.resolveReconciliationWaiters(generation, snapshot);
@@ -626,8 +634,12 @@ export class WalletService {
 
     const walletJson = JSON.parse(walletData);
     this.localWalletId = typeof walletJson.localWalletId === 'string' ? walletJson.localWalletId : null;
-    this.passkeyUnlockRecord = this.isValidPasskeyRecord(walletJson.passkeyUnlock, this.localWalletId)
-      ? walletJson.passkeyUnlock : null;
+    const savedPasskeyRecord = this.isValidPasskeyRecord(walletJson.passkeyUnlock, this.localWalletId)
+      ? walletJson.passkeyUnlock as PasskeyUnlockRecord : null;
+    // Older builds allowed multiple enrollments. Keep the newest one for this wallet.
+    this.passkeyUnlockRecord = savedPasskeyRecord
+      ? { ...savedPasskeyRecord, credentials: savedPasskeyRecord.credentials.slice(-1) }
+      : null;
     const walletType: WalletType = walletJson.type || 'seed';
     if (walletType === 'seed' || walletType === 'privateKey' || walletType === 'expandedKey') {
       this.commitLifecycle({ kind: 'locked', type: walletType, encryptedSecret: walletJson.seed });
@@ -808,15 +820,15 @@ export class WalletService {
 
   async enablePasskeyUnlock(): Promise<boolean> {
     const state = this.unlockedState();
-    if (!state?.password || this.appSettings.settings.walletStore !== 'localStorage' || !this.passkeys.isAvailable()) return false;
+    if (!state?.password || this.passkeyUnlockRecord?.credentials.length || this.appSettings.settings.walletStore !== 'localStorage' || !this.passkeys.isAvailable()) return false;
     const generation = this.lifecycleGeneration;
     const walletId = this.localWalletId || this.passkeys.newWalletId();
-    const result = await this.passkeys.enroll(walletId, state.type, state.secret, this.passkeyUnlockRecord);
-    if (!result.ok || generation !== this.lifecycleGeneration || this.lifecycleState !== state) return false;
+    const result = await this.passkeys.enroll(walletId, state.type, state.secret);
+    if (!result.ok || !result.value.credentials.length || generation !== this.lifecycleGeneration || this.lifecycleState !== state) return false;
     const previousWalletId = this.localWalletId;
     const previousRecord = this.passkeyUnlockRecord;
     this.localWalletId = walletId;
-    this.passkeyUnlockRecord = result.value;
+    this.passkeyUnlockRecord = { ...result.value, credentials: result.value.credentials.slice(-1) };
     try {
       this.persistWalletExport(this.generateWalletExport());
       return true;
@@ -853,7 +865,7 @@ export class WalletService {
   }
 
   getPasskeyCredentials(): ReadonlyArray<Pick<PasskeyEnvelope, 'credentialId'|'label'|'createdAt'>> {
-    return (this.passkeyUnlockRecord?.credentials || []).map(({ credentialId, label, createdAt }) => ({ credentialId, label, createdAt }));
+    return (this.passkeyUnlockRecord?.credentials || []).slice(-1).map(({ credentialId, label, createdAt }) => ({ credentialId, label, createdAt }));
   }
 
   private prepareAccountCredentials(type: SoftwareWalletType, secretBytes: Uint8Array) {
@@ -1512,9 +1524,14 @@ export class WalletService {
       if (this.successfulBlocks.length >= 15) this.successfulBlocks.shift();
       this.successfulBlocks.push(nextBlock.hash);
 
-      const receiveAmount = this.util.nano.rawToMnano(nextBlock.amount);
+      const rawReceiveAmount = new BigNumber(nextBlock.amount);
+      const smallRawAmount = formatSmallRawAmountForToast(rawReceiveAmount);
+      const receiveAmount = this.util.nano.rawToMnano(rawReceiveAmount);
       this.notifications.removeNotification('success-receive');
-      this.notifications.sendSuccess(`Successfully received ${receiveAmount.isZero() ? '' : this.noZerosPipe.transform(receiveAmount.toFixed(6)) } XNO!`, { identifier: 'success-receive' });
+      const receiveMessage = smallRawAmount
+        ? `Successfully received ${smallRawAmount}!`
+        : `Successfully received ${receiveAmount.isZero() ? '' : this.noZerosPipe.transform(receiveAmount.toFixed(6)) } XNO!`;
+      this.notifications.sendSuccess(receiveMessage, { identifier: 'success-receive' });
 
       // remove after processing
       // list also updated after reconciliation but not if called too fast

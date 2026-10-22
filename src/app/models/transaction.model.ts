@@ -12,6 +12,8 @@ export type DirectionFilter = 'all' | TransactionDirection;
  */
 export interface WalletTransaction {
   hash: string;
+  /** Source send hash shared by a pending receive and its confirmed receive block. */
+  sourceHash?: string | null;
   /** The local wallet account this movement belongs to. */
   accountId: string;
   accountLabel: string;

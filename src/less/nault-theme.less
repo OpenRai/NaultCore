@@ -66,6 +66,35 @@ body {
 	--nav-health-bad: #C0243C;
 }
 
+// Shared content-area tokens.
+//
+// Angular component styles are plain CSS, so they cannot read the @global-*
+// LESS variables below — that is why --w-* and --tx-* were invented, one
+// namespace per component, kept in sync by hand. These custom properties close
+// that gap instead: one neutral set, declared on <body> and re-declared under
+// .dark-mode in dark-mode.less, so a component just consumes var(--text-primary)
+// and themes with the rest of the app.
+//
+// Deliberately NOT a generalisation of --nav-*: that prefix is sidebar-local and
+// its values were contrast-tuned against --nav-bg specifically.
+//
+// Light values. --text-muted is @global-color and --text-primary is near-black
+// so headings, labels, and body copy stay in step with the Accounts page.
+body {
+	--surface-card: #FFFFFF;
+	--surface-subtle: #F7F7FA;
+	--surface-hover: #F4F4F8;
+	--text-primary: #1D1D22;
+	--text-muted: #676686;
+	--text-accent: #4A90E2;
+	--text-link: #0B63C4;
+	--border-subtle: #E4E4EA;
+	--border-strong: #D5D5DE;
+	--status-success: #2FB344;
+	--status-warning: #D97706;
+	--status-danger: #D0342C;
+}
+
 app-root {
 	display: block;
 	inline-size: 100%;
@@ -84,7 +113,7 @@ app-root {
 h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list dt,
 .uk-table th, .uk-form-label, .uk-form-icon, .nano-card, .nav-representative-info,
 .accounts-dropdown, .nav-container .nav-action-receive, .left-nav > li, .mobile-top-bar,
-.uk-modal-dialog p {
+.uk-modal-dialog p, .tx-table-grid thead th, .tx-filters-toggle, .tx-table-grid td::before {
 	font-family: @global-secondary-font-family;
 }
 

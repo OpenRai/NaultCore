@@ -10,6 +10,7 @@ import { NotificationService } from "./notification.service";
 import { NoPaddingZerosPipe } from "../pipes/no-padding-zeros.pipe";
 import { AppSettingsService } from "./app-settings.service";
 import { WorkPoolService } from "./work-pool.service";
+import { formatSmallRawAmountForToast } from "../utils/transaction-toast-amount";
 
 // Type-only imports (erased at compile time, zero bundle cost)
 import type { NanoNym, StealthAccount, NanoNymNotification } from "../types/nanonym.types";
@@ -643,8 +644,11 @@ export class NanoNymManagerService implements OnDestroy {
         console.log(`[Manager] ✅ Phase 1 Success: Stealth account ${stealthAccount.address} opened. Receive block hash: ${newHash}`);
 
         const receiveAmount = new BigNumber(stealthAccount.amountRaw);
+        const smallRawAmount = formatSmallRawAmountForToast(receiveAmount);
         this.notifications.removeNotification('success-receive-nanonym');
-        this.notifications.sendSuccess(`Successfully received ${this.noZerosPipe.transform(this.util.nano.rawToMnano(receiveAmount).toFixed(6)) } XNO to ${nanoNym.label}!`, { identifier: 'success-receive-nanonym' });
+        const receiveAmountLabel = smallRawAmount
+          || `${this.noZerosPipe.transform(this.util.nano.rawToMnano(receiveAmount).toFixed(6))} XNO`;
+        this.notifications.sendSuccess(`Successfully received ${receiveAmountLabel} to ${nanoNym.label}!`, { identifier: 'success-receive-nanonym' });
 
         // Update the stealth account's balance and the parent NanoNym's balance
         const accountInfo = await this.api.accountInfo(stealthAccount.address);

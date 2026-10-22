@@ -105,7 +105,7 @@ describe('TransactionHistoryService', () => {
 
     it('maps a receive row to a received transaction', async () => {
       api.accountHistory.mockResolvedValue({
-        history: [row({ subtype: 'receive', account: ACCOUNT, link_as_account: 'nano_sender' })],
+        history: [row({ subtype: 'receive', account: ACCOUNT, link_as_account: 'nano_sender', link: 'source-send-hash' })],
       });
 
       const rows = await service.rowsFor(ACCOUNT);
@@ -113,6 +113,7 @@ describe('TransactionHistoryService', () => {
 
       expect(tx.direction).toBe('received');
       expect(tx.counterparty).toBe('nano_sender');
+      expect(tx.sourceHash).toBe('source-send-hash');
     });
 
     it('attaches the address book label for the counterparty when known', async () => {
@@ -155,6 +156,7 @@ describe('TransactionHistoryService', () => {
       expect(tx.direction).toBe('received');
       expect(tx.timestamp).toBeNull();
       expect(tx.counterparty).toBe('nano_sender');
+      expect(tx.sourceHash).toBe('pend1');
     });
 
     it('ignores pending blocks belonging to another account', () => {

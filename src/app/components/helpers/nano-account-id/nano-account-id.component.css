@@ -1,0 +1,9 @@
+:host(.qr-modal-address) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:host(.qr-modal-address) .nano-address-middle {
+  flex: 1 1 auto;
+  min-width: 0;
+}

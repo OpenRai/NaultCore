@@ -73,6 +73,7 @@ export class WalletComponent implements OnInit, OnDestroy {
   private loadToken = 0;
   private lastLoadedAccountsKey: string | null = null;
   private previousSyncStatus: string | null = null;
+  private hasLoadedTransactions = false;
   passkeyOfferDismissed = false;
   passkeySetupInProgress = false;
 
@@ -144,7 +145,7 @@ export class WalletComponent implements OnInit, OnDestroy {
 
   /** Avoid presenting startup's zero-filled snapshot as a real balance. */
   get walletDataStatus(): string | null {
-    if (!this.walletState.lifecycle.configured || this.walletState.sync.status === 'ready') return null;
+    if (!this.walletState.lifecycle.configured || this.walletState.sync.status === 'ready' || this.walletState.sync.hasSnapshot) return null;
     return this.walletState.sync.status === 'error' ? 'Unavailable' : 'Loading…';
   }
 
@@ -212,14 +213,18 @@ export class WalletComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.activityLoading = true;
+    this.activityLoading = !this.hasLoadedTransactions;
     this.cdr.markForCheck();
     const accountIds = accounts.map(a => a.id);
     const cachedRows = this.history.cachedRowsForAccounts(accountIds);
     const freshRows = this.history.rowsForAccounts(accountIds);
     void cachedRows.then(rowsByAccount => {
       if (token !== this.loadToken || !Array.from(rowsByAccount.values()).some(rows => rows.length > 0)) return;
+      // On refresh, keep the current rows until the authoritative request
+      // finishes; cached data can predate a just-confirmed receive.
+      if (this.hasLoadedTransactions) return;
       this.applyTransactionRows(rowsByAccount);
+      this.hasLoadedTransactions = true;
       this.activityLoading = false;
       this.cdr.markForCheck();
     }).catch(() => undefined);
@@ -228,8 +233,12 @@ export class WalletComponent implements OnInit, OnDestroy {
       const rowsByAccount = await freshRows;
       if (token !== this.loadToken) return;
       this.applyTransactionRows(rowsByAccount);
+      this.hasLoadedTransactions = true;
     } catch {
-      if (token === this.loadToken) this.transactions = [];
+      if (token === this.loadToken) {
+        this.transactions = [];
+        this.hasLoadedTransactions = true;
+      }
     } finally {
       if (token === this.loadToken) {
         this.activityLoading = false;
@@ -250,6 +259,19 @@ export class WalletComponent implements OnInit, OnDestroy {
         ),
       );
     }
-    this.transactions = sortTransactions(merged).slice(0, WALLET_ENTRY_CAP);
+    const transactions = sortTransactions(merged).slice(0, WALLET_ENTRY_CAP);
+    const update = () => {
+      this.transactions = transactions;
+      this.cdr.detectChanges();
+    };
+    const supportsMotion = typeof document !== 'undefined'
+      && typeof document.startViewTransition === 'function'
+      && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (this.hasLoadedTransactions && supportsMotion) {
+      document.startViewTransition(update);
+    } else {
+      this.transactions = transactions;
+      this.cdr.markForCheck();
+    }
   }
 }

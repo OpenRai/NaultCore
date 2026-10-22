@@ -2,3 +2,28 @@
 
 // custom UIkit theme
 @import "less/nault-theme.less";
+
+// Keep wallet activity updates local to the rows that changed. This avoids a
+// page-wide crossfade while a receive moves from pending into confirmed history.
+:root {
+  view-transition-name: none;
+}
+
+::view-transition-group(.wallet-activity-row) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+::view-transition-old(.wallet-activity-row),
+::view-transition-new(.wallet-activity-row) {
+  animation-duration: 180ms;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.wallet-activity-row),
+  ::view-transition-old(.wallet-activity-row),
+  ::view-transition-new(.wallet-activity-row) {
+    animation: none;
+  }
+}

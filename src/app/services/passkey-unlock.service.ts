@@ -51,7 +51,7 @@ export class PasskeyUnlockService {
     return this.toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
   }
 
-  async enroll(walletId: string, walletType: string, secret: string, existing: PasskeyUnlockRecord|null): Promise<PasskeyResult<PasskeyUnlockRecord>> {
+  async enroll(walletId: string, walletType: string, secret: string): Promise<PasskeyResult<PasskeyUnlockRecord>> {
     if (!this.isAvailable()) return { ok: false, reason: 'unavailable' };
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const salt = crypto.getRandomValues(new Uint8Array(32));
@@ -66,7 +66,6 @@ export class PasskeyUnlockService {
           pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
           timeout: 60000,
           attestation: 'none',
-          excludeCredentials: (existing?.credentials || []).map(item => ({ type: 'public-key', id: this.fromBase64Url(item.credentialId) })),
           authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
           extensions: { prf: { eval: { first: salt } } },
         } as any,
@@ -91,8 +90,7 @@ export class PasskeyUnlockService {
     const verified = envelope ? await this.decryptEnvelope(walletId, walletType, envelope, prf) : null;
     prf.fill(0);
     if (!envelope || verified !== secret) return { ok: false, reason: 'failed' };
-    const credentials = [...(existing?.credentials || []), envelope];
-    return { ok: true, value: { walletId, rpId: this.rpId, credentials } };
+    return { ok: true, value: { walletId, rpId: this.rpId, credentials: [envelope] } };
   }
 
   async unlock(record: PasskeyUnlockRecord, walletType: string, signal?: AbortSignal): Promise<PasskeyResult<{ secret: string; credentialId: string }>> {

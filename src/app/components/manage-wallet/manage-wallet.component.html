@@ -15,7 +15,7 @@
           }
           @if (walletService.canEnrollPasskey && !canManagePasskeys) {
             @if (walletService.isLocked()) {
-              <p>Unlock with your wallet password before adding or removing passkeys.</p>
+              <p>Unlock with your wallet password before enabling or removing passkey unlock.</p>
             } @else if (walletService.hasPasswordProtectedWallet()) {
               <p>For passkey management, lock this wallet and unlock it with your wallet password.</p>
             } @else {
@@ -29,7 +29,7 @@
                   <span>{{ credential.label }} · Added {{ credential.createdAt | date:'mediumDate' }}</span>
                   <button class="uk-button uk-button-default uk-button-small" type="button"
                     (click)="removePasskey(credential.credentialId)" [disabled]="!canManagePasskeys || passkeyActionInProgress">
-                    Remove from this wallet
+                    Remove passkey
                   </button>
                 </li>
               }
@@ -37,11 +37,15 @@
           } @else {
             <p>No passkey is enrolled for this wallet on this browser.</p>
           }
+          <p class="uk-text-small">Each wallet has one passkey enrollment on this browser. A newly created or imported wallet starts without one, so set it up again after choosing a password.</p>
+          @if (passkeyCredentials.length) {
+            <p class="uk-text-small">Removing it disconnects it from this wallet. The credential itself may remain in your device or password manager.</p>
+          }
         </div>
-        @if (walletService.canEnrollPasskey) {
+        @if (walletService.canEnrollPasskey && !passkeyCredentials.length) {
           <div class="uk-card-footer uk-text-right">
-            <button class="uk-button uk-button-primary" type="button" (click)="addPasskey()" [disabled]="!canManagePasskeys || passkeyActionInProgress">
-              {{ passkeyCredentials.length ? 'Add another passkey' : 'Enable passkey unlock' }}
+            <button class="uk-button uk-button-primary" type="button" (click)="enablePasskey()" [disabled]="!canManagePasskeys || passkeyActionInProgress">
+              Enable passkey unlock
             </button>
           </div>
         }

@@ -296,9 +296,11 @@
               "src/app/services/app-settings.service.spec.ts",
               "src/app/services/recovery-verification.service.spec.ts",
               "src/app/services/wallet.service.spec.ts",
+              "src/app/services/passkey-unlock.service.spec.ts",
               "src/app/services/wallet-context.service.spec.ts",
               "src/app/services/work-pool.service.spec.ts",
               "src/app/services/util.service.spec.ts",
+              "src/app/utils/transaction-toast-amount.spec.ts",
               "src/app/services/theme.service.spec.ts",
               "src/app/services/websocket.service.spec.ts",
               "src/app/services/qr-modal.service.spec.ts",
@@ -384,6 +386,9 @@
     "analytics": false,
     "schematicCollections": [
       "@angular-eslint/schematics"
-    ]
+    ],
+    "cache": {
+      "enabled": true
+    }
   }
 }

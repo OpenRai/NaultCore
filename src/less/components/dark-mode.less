@@ -37,6 +37,25 @@
 	--nav-health-warn: #FAA05A;
 	--nav-health-bad: #F0506E;
 
+	// Shared content-area tokens, dark palette. Light values live on <body> in
+	// nault-theme.less. --text-primary is #DDD, not #f0f0f8: that is what the
+	// heading rule below and every other page in the app already use, and
+	// keeping two near-identical greys is exactly the drift this set exists to
+	// end. Card, border, and status values are the ramp above rather than
+	// fresh literals.
+	--surface-card: #22222A;
+	--surface-subtle: #1A1A20;
+	--surface-hover: #26262E;
+	--text-primary: #DDD;
+	--text-muted: #8F8FAB;
+	--text-accent: #4A90E2;
+	--text-link: #4A90E2;
+	--border-subtle: #25252D;
+	--border-strong: #2E2E38;
+	--status-success: #48D262;
+	--status-warning: #FBBF24;
+	--status-danger: #FF6B6B;
+
 	.content-container {
 		@scrollbar-color: #4E4E5A;
 

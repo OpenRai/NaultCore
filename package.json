@@ -7,7 +7,7 @@
   "author": "Conny Brunnkvist <cbrunnkvist@gmail.com>",
   "main": "desktop-app/dist/desktop-app.js",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.23.4"
   },
   "scripts": {
     "ng": "pnpm run version && ng",

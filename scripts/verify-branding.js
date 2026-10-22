@@ -6,6 +6,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 const required = [
   'src/assets/img/naultcore-logo.png',
   'src/assets/img/preview.png',
+  'src/assets/img/preview.jpg',
   'src/assets/logo_source/naultcore-ex-3.png',
   'src/assets/favicon/favicon.ico',
   'src/assets/favicon/favicon-16x16.png',
@@ -44,6 +45,11 @@ for (const [relative, expected] of Object.entries(expectedSizes)) {
   if (actual !== expected) throw new Error(`${relative} is ${actual}; expected ${expected}`);
 }
 
+// Leave headroom below the social preview checker's 500 KB image limit.
+const socialPreview = fs.readFileSync(path.join(root, 'src/assets/img/preview.jpg'));
+if (socialPreview.readUInt16BE(0) !== 0xffd8) throw new Error('Social preview must be a JPEG.');
+if (socialPreview.length >= 500000) throw new Error('Social preview must remain below 500 KB.');
+
 const index = read('src/index.html');
 const previewIndex = read('src/index.preview.html');
 for (const [name, content] of [['src/index.html', index], ['src/index.preview.html', previewIndex]]) {
@@ -56,6 +62,10 @@ for (const [name, content] of [['src/index.html', index], ['src/index.preview.ht
   // twitter:card must be present for Discord / Twitter unfurl support
   if (!content.includes('twitter:card')) throw new Error(`${name} is missing twitter:card meta tag`);
   if (!content.includes('twitter:image')) throw new Error(`${name} is missing twitter:image meta tag`);
+  if (!content.includes('assets/img/preview.jpg?v=4')) throw new Error(`${name} must use the compressed social preview`);
+  if ((content.match(/<h1\b/gi) || []).length !== 1) throw new Error(`${name} must provide one initial page heading`);
+  const structuredData = content.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  if (!structuredData || JSON.parse(structuredData[1])['@type'] !== 'WebApplication') throw new Error(`${name} must describe the wallet as a WebApplication`);
   // og:image:width / height must be present
   if (!content.includes('og:image:width')) throw new Error(`${name} is missing og:image:width`);
   if (!content.includes('og:image:height')) throw new Error(`${name} is missing og:image:height`);

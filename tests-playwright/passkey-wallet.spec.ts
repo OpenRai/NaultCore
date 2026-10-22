@@ -248,6 +248,9 @@ test.describe('passkey wallet journeys', () => {
     await page.getByRole('button', { name: /Wallet Locked/ }).click();
     await expect(page.getByRole('status').filter({ hasText: 'Device authentication did not unlock the wallet' })).toBeVisible({ timeout: 15000 });
     await enterWalletPassword(page);
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Remove passkey' }).click();
+    await expect.poll(async () => walletStorage(page)).toMatchObject({ hasPasskey: false });
     await page.getByRole('button', { name: /Enable passkey unlock|Add another passkey/ }).click();
     await expect.poll(async () => walletStorage(page)).toMatchObject({ hasPasskey: true });
     await lockFromSidebar(page);

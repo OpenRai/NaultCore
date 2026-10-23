@@ -15,7 +15,9 @@
           }
           @if (walletService.canEnrollPasskey && !canManagePasskeys) {
             @if (walletService.isLocked()) {
-              <p>Unlock with your wallet password before enabling or removing passkey unlock.</p>
+              <p>
+                <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> with your wallet password to access passkey / device authentication settings.
+              </p>
             } @else if (walletService.hasPasswordProtectedWallet()) {
               <p>For passkey management, lock this wallet and unlock it with your wallet password.</p>
             } @else {
@@ -177,7 +179,7 @@
             <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> to access the export tool.
           </div>
         } @else {
-          @if (walletService.hasPassword()) {
+          @if (walletService.hasPasswordProtectedWallet()) {
             <div class="uk-card-body">
               Use this export tool to simplify wallet transfer to other devices.
               <br>

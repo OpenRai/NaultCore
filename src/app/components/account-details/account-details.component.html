@@ -21,9 +21,8 @@
             <div class="account-balances">
               @if (!loadingAccountDetails) {
                 <div class="balance-container primary">
-                  <div class="currency-name">XNO</div>
                   <div class="amount-container">
-                    <app-nano-amount [raw]="account?.balance || 0" context="review" smallLabel="balance"></app-nano-amount>
+                    <app-nano-amount [raw]="account?.balance || 0" context="preview"></app-nano-amount>
                     @if (((wallet.walletState$ | async)?.sync?.status === 'loading') && wallet.isConfigured()) {
                       <div class="amount-updating"><div uk-spinner="ratio: 0.5;"></div></div>
                     }
@@ -205,7 +204,7 @@
                         [title]="( (account && account.balanceRaw && account.balanceRaw.gt(0) ) ? ( '+' + ( account.balanceRaw.toString(10)  ) + ' raw' ) : '' )"
                         >
                         <span class="amount-currency-symbol xno-symbol"></span>
-                        <app-nano-amount [raw]="account?.balance || 0" context="review" smallLabel="balance"></app-nano-amount>
+                        <app-nano-amount [raw]="account?.balance || 0" context="inspect"></app-nano-amount>
                       </div>
                       @if (account && account.pending && (account.pending > 0)) {
                         <div
@@ -216,7 +215,7 @@
                           <div class="text-full">
                             <div class="amount-sign">+</div>
                             <div class="amount-currency-symbol xno-symbol"></div>
-                            <app-nano-amount [raw]="account.pending" context="notify"></app-nano-amount>
+                            <app-nano-amount [raw]="account.pending" context="preview"></app-nano-amount>
                           </div>
                         </div>
                       }
@@ -356,7 +355,7 @@
             }
           }
         </div>
-        <table class="transactions-list hide-on-small-viewports uk-table uk-table-striped uk-table-small" style="margin-top: 0;">
+        <table class="transactions-list account-history-table hide-on-small-viewports uk-table uk-table-striped uk-table-small" style="margin-top: 0;">
           <thead>
             <tr>
               <th scope="col" class="type-column"></th>
@@ -371,10 +370,10 @@
                 <td class="type-column">
                   <span class="type uk-text-small" uk-icon="icon: plus-circle; ratio: 1.2;"></span>
                 </td>
-                <td class="account-column uk-visible-toggle uk-text-truncate">
-                  <div uk-grid class="uk-flex-nowrap">
-                    <div class="uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
-                      <a [routerLink]="'/account/' + pending.account" class="account-container uk-text-truncate" [title]="'general.view-details' | transloco" uk-tooltip>
+                <td class="account-column uk-visible-toggle">
+                  <div class="transaction-counterparty">
+                    <div class="transaction-counterparty-identity">
+                      <a [routerLink]="'/account/' + pending.account" class="account-container" [title]="'general.view-details' | transloco" uk-tooltip>
                         <div class="identicon-name-row uk-text-truncate">
                           @if ((settings.settings.identiconsStyle !== 'none')) {
                             <app-nano-identicon scale="6" [accountID]="pending.account" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
@@ -383,8 +382,8 @@
                             <div class="account-label uk-text-truncate">{{ pending.addressBookName }}</div>
                           }
                         </div>
-                        <div class="nano-address-clickable nano-address-monospace uk-text-truncate">
-                          <app-nano-account-id [accountID]="pending.account" middle="auto"></app-nano-account-id>
+                        <div class="nano-address-clickable nano-address-monospace transaction-counterparty-address">
+                          <app-nano-account-id [accountID]="pending.account" middle="break"></app-nano-account-id>
                         </div>
                       </a>
                     </div>
@@ -429,8 +428,7 @@
                   @if (showReceiveWorkStatus()) {
                     <span class="uk-text-warning uk-text-small"><span uk-icon="icon: bolt; ratio: 0.75"></span> Preparing receive work</span><br>
                   }
-                  <app-nano-amount [raw]="pending.amount" context="notify"></app-nano-amount>
-                  <span class="currency-name">XNO</span>
+                  <app-nano-amount [raw]="pending.amount" [detailsRoute]="'/transaction/' + pending.hash" context="preview"></app-nano-amount>
                   <div class="compact-actions-date">
                     <ng-template [ngTemplateOutlet]="pendingTransactionActionsOrDate"></ng-template>
                   </div>
@@ -468,10 +466,10 @@
                     <span class="uk-text-warning uk-margin-small-left" [title]="workStatus?.lastError || 'Retry transaction work'" uk-tooltip uk-icon="icon: warning; ratio: 0.9" (click)="retryWork(); $event.stopPropagation()"></span>
                   }
                 </td>
-                <td class="account-column uk-text-middle uk-visible-toggle uk-text-truncate">
-                  <div uk-grid class="uk-flex-nowrap">
-                    <div class="uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
-                      <a [routerLink]="'/account/' + (history.link_as_account || history.account)" class="account-container uk-text-truncate" [title]="'general.view-details' | transloco" uk-tooltip>
+                <td class="account-column uk-text-middle uk-visible-toggle">
+                  <div class="transaction-counterparty">
+                    <div class="transaction-counterparty-identity">
+                      <a [routerLink]="'/account/' + (history.link_as_account || history.account)" class="account-container" [title]="'general.view-details' | transloco" uk-tooltip>
                         <div class="identicon-name-row uk-text-truncate">
                           @if ((settings.settings.identiconsStyle !== 'none')) {
                             <app-nano-identicon scale="6" [accountID]="history.link_as_account || history.account" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
@@ -480,8 +478,8 @@
                             <div class="account-label uk-text-truncate">{{ history.addressBookName }}</div>
                           }
                         </div>
-                        <div class="nano-address-clickable nano-address-monospace uk-text-truncate">
-                          <app-nano-account-id [accountID]="history.link_as_account || history.account" middle="auto"></app-nano-account-id>
+                        <div class="nano-address-clickable nano-address-monospace transaction-counterparty-address">
+                          <app-nano-account-id [accountID]="history.link_as_account || history.account" middle="break"></app-nano-account-id>
                         </div>
                       </a>
                     </div>
@@ -556,8 +554,7 @@
                           }
                         </span><br>
                       }
-                      <app-nano-amount [raw]="history.amount" context="inspect"></app-nano-amount>
-                      <span class="currency-name">XNO</span>
+                      <app-nano-amount [raw]="history.amount" [detailsRoute]="'/transaction/' + history.hash" context="preview"></app-nano-amount>
                       <div class="compact-actions-date text-half-muted">
                         <ng-template [ngTemplateOutlet]="historyTransactionActionsOrDate"></ng-template>
                       </div>
@@ -614,9 +611,8 @@
             <div class="account-balances">
               @if (!loadingAccountDetails) {
                 <div class="balance-container primary">
-                  <div class="currency-name">XNO</div>
                   <div class="amount-container">
-                    <app-nano-amount [raw]="nanoNym.balance" context="review" smallLabel="balance"></app-nano-amount>
+                    <app-nano-amount [raw]="nanoNym.balance" context="preview"></app-nano-amount>
                   </div>
                 </div>
                 @if (settings.settings.displayCurrency) {
@@ -728,7 +724,7 @@
                   <div class="account-amounts-primary">
                     <div class="account-amounts-primary-confirmed">
                       <span class="amount-currency-symbol xno-symbol"></span>
-                      <app-nano-amount [raw]="nanoNym.balance" context="review" smallLabel="balance"></app-nano-amount>
+                      <app-nano-amount [raw]="nanoNym.balance" context="preview"></app-nano-amount>
                     </div>
                   </div>
                 </div>
@@ -834,7 +830,7 @@
           }
         </div>
         <!-- Phase 7: Desktop Table -->
-        <table class="transactions-list hide-on-small-viewports uk-table uk-table-striped uk-table-small" style="margin-top: 0;">
+        <table class="transactions-list account-history-table hide-on-small-viewports uk-table uk-table-striped uk-table-small" style="margin-top: 0;">
           <thead>
             <tr>
               <th scope="col" class="type-column"></th>
@@ -849,18 +845,18 @@
                 <td class="type-column">
                   <span class="type uk-text-small uk-text-success" uk-icon="icon: plus-circle; ratio: 1.2;"></span>
                 </td>
-                <td class="account-column uk-text-middle uk-visible-toggle uk-text-truncate">
-                  <div uk-grid class="uk-flex-nowrap">
-                    <div class="uk-width-auto uk-text-truncate" style="max-width: calc(100% - 35px);">
-                      <a [routerLink]="'/account/' + payment.stealthAddress" class="account-container uk-text-truncate" [title]="'account-details.view-stealth-account' | transloco" uk-tooltip>
+                <td class="account-column uk-text-middle uk-visible-toggle">
+                  <div class="transaction-counterparty">
+                    <div class="transaction-counterparty-identity">
+                      <a [routerLink]="'/account/' + payment.stealthAddress" class="account-container" [title]="'account-details.view-stealth-account' | transloco" uk-tooltip>
                         <div class="identicon-name-row uk-text-truncate">
                           @if ((settings.settings.identiconsStyle !== 'none')) {
                             <app-nano-identicon scale="6" [accountID]="payment.stealthAddress" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
                           }
                           <div class="account-label uk-text-truncate uk-text-muted uk-text-small">Stealth Account</div>
                         </div>
-                        <div class="nano-address-clickable nano-address-monospace uk-text-truncate">
-                          <app-nano-account-id [accountID]="payment.stealthAddress" middle="auto"></app-nano-account-id>
+                        <div class="nano-address-clickable nano-address-monospace transaction-counterparty-address">
+                          <app-nano-account-id [accountID]="payment.stealthAddress" middle="break"></app-nano-account-id>
                         </div>
                       </a>
                     </div>
@@ -874,8 +870,7 @@
                 </td>
                 <td class="amount-column uk-text-middle uk-text-success">
                   <span class="uk-text-small">{{ 'general.blockactions.received' | transloco }}</span><br>
-                  <app-nano-amount [raw]="payment.amount" context="inspect"></app-nano-amount>
-                  <span class="currency-name">XNO</span>
+                  <app-nano-amount [raw]="payment.amount" [detailsRoute]="'/transaction/' + payment.hash" context="preview"></app-nano-amount>
                 </td>
                 <td class="date-column uk-text-middle uk-text-truncate">
                   <span class="transaction-date">

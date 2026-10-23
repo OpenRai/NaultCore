@@ -184,7 +184,6 @@
               <div class="uk-text-danger">You are about to send</div>
               <div class="block-amount-primary uk-text-danger">
                 <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                <span class="currency-name">XNO</span>
               </div>
               @if (amountExtraRaw.gt(0)) {
                 <div class="uk-text-small text-half-muted" style="margin: 2px 0 -2px 0;">+{{ amountExtraRaw.toString(10) }} raw</div>
@@ -230,8 +229,7 @@
                           <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
                           <span class="block-balance">
                             <span class="balance-amount-primary">
-                              <app-nano-amount [raw]="fromAccount.balance || 0" context="review" smallLabel="balance"></app-nano-amount>
-                              <span class="currency-name">XNO</span>
+                              <app-nano-amount [raw]="fromAccount.balance || 0" context="preview"></app-nano-amount>
                             </span>
                           </span>
                         </div>
@@ -241,7 +239,6 @@
                             <span class="balance-amount-primary uk-text-danger">
                               <span class="amount-sign">-</span>
                               <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                              <span class="currency-name">XNO</span>
                             </span>
                           </span>
                         </div>
@@ -316,8 +313,7 @@
                         <div class="uk-text-small text-half-muted" style="height: 25px;">Current Balance</div>
                         <span class="block-balance">
                           <span class="balance-amount-primary">
-                            <app-nano-amount [raw]="toAccount.balance || 0" context="review" smallLabel="balance"></app-nano-amount>
-                            <span class="currency-name">XNO</span>
+                            <app-nano-amount [raw]="toAccount.balance || 0" context="preview"></app-nano-amount>
                           </span>
                         </span>
                       </div>
@@ -327,7 +323,6 @@
                           <span class="balance-amount-primary uk-text-success">
                             <span class="amount-sign">+</span>
                             <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                            <span class="currency-name">XNO</span>
                           </span>
                         </span>
                       </div>

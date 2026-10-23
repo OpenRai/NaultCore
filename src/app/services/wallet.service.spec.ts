@@ -76,6 +76,18 @@ describe('WalletService wallet state snapshots', () => {
 });
 
 describe('WalletService passkey lifecycle', () => {
+  it('retains password protection and encrypted export without keeping the password in a passkey session', () => {
+    const service = createServiceForStateTests();
+    service.lifecycleState = {
+      kind: 'unlocked', type: 'seed', secret: 'a'.repeat(64), secretBytes: new Uint8Array(32),
+      password: '', encryptedSecret: 'original-password-encrypted-secret',
+    };
+
+    expect(service.hasPassword()).toBe(false);
+    expect(service.hasPasswordProtectedWallet()).toBe(true);
+    expect(service.generateExportData().seed).toBe('original-password-encrypted-secret');
+  });
+
   function createPasskeyService(withPasskey = true) {
     const service: any = Object.create(WalletService.prototype);
     const state = { kind: 'unlocked', type: 'seed', secret: 'a'.repeat(64), secretBytes: new Uint8Array(32), password: 'wallet password', encryptedSecret: 'encrypted' };

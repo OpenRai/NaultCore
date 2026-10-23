@@ -135,8 +135,7 @@
               }
               @if (isReceivableTransaction || isSendTransaction || isReceiveTransaction) {
                 <div class="amount">
-                  <app-nano-amount [raw]="transaction.amount" context="inspect"></app-nano-amount>
-                  <span class="currency-name">XNO</span>
+                  <app-nano-amount [raw]="transaction.amount" [detailsRoute]="'/transaction/' + transaction.hash" context="preview"></app-nano-amount>
                 </div>
               }
             </div>

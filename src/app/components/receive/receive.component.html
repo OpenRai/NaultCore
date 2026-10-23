@@ -560,7 +560,7 @@
                   "
                                 >
                                 <span class="uk-text-small">Ready to receive</span><br />
-                                <app-nano-amount [raw]="pending.amount" context="notify"></app-nano-amount>
+                                <app-nano-amount [raw]="pending.amount" [detailsRoute]="'/transaction/' + pending.hash" context="preview"></app-nano-amount>
                                 <div class="compact-actions-date">
                                   <ng-template
                                     [ngTemplateOutlet]="transactionActions"

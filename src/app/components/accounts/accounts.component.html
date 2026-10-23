@@ -51,12 +51,11 @@
                     @if (account.pending.gt(0)) {
                       <div class="incoming-label">
                         <div class="text-snippet">{{ 'general.new' | transloco }}</div>
-                        <div class="text-full">+<app-nano-amount [raw]="account.pending" context="notify"></app-nano-amount></div>
+                        <div class="text-full">+<app-nano-amount [raw]="account.pending" [detailsRoute]="'/account/' + account.id" context="preview"></app-nano-amount></div>
                       </div>
                     }
                     <span class="amounts" [title]="( account.balanceRaw.gt(0) ? ( '+' + ( account.balanceRaw.toString(10) ) + ' raw' ) : '' )">
-                      <app-nano-amount [raw]="account.balance" context="review" smallLabel="balance"></app-nano-amount>
-                      <span class="currency-name">XNO</span>
+                      <app-nano-amount [raw]="account.balance" [detailsRoute]="'/account/' + account.id" context="preview"></app-nano-amount>
                     </span>
                   </div>
                   <div class="account-amounts-converted uk-width-1-1 text-half-muted">
@@ -235,8 +234,7 @@
                   <td class="account-amounts-column uk-text-right">
                     <div class="account-amounts-primary uk-width-1-1">
                       <span class="amounts">
-                        <app-nano-amount [raw]="account.balance" context="review" smallLabel="balance"></app-nano-amount>
-                        <span class="currency-name">XNO</span>
+                        <app-nano-amount [raw]="account.balance" [detailsRoute]="'/account/' + account.id" context="preview"></app-nano-amount>
                       </span>
                     </div>
                     <div class="account-amounts-converted uk-width-1-1 text-half-muted">

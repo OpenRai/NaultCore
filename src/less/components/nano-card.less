@@ -27,6 +27,26 @@
 
 		> .card-contents {
 			z-index: auto;
+			> .wallet-account-count {
+				position: absolute;
+				inset-inline-start: 17px;
+				bottom: 11px;
+				color: #DEEDFF;
+				font-size: 11px;
+				line-height: 1.2;
+			}
+			> .account-balances > .balance-container.primary > .amount-container {
+				font-size: 24px;
+				font-weight: 600;
+				line-height: 1.2;
+				font-variant-numeric: tabular-nums;
+			}
+
+			> .account-balances > .balance-container.converted > .amount-container {
+				font-size: 15px;
+				line-height: 1.2;
+			}
+
 			> .account-name-container > .select-button {
 				position: relative;
 				z-index: 3;

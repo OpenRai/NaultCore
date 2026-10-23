@@ -1,34 +1,11 @@
 @if (presentation; as amount) {
-  @switch (amount.relation) {
-    @case ('unavailable') {
-      <span aria-label="{{ 'amount.unavailable' | transloco }}">—</span>
-    }
-    @case ('invalid') {
-      <span aria-label="{{ 'amount.unavailable' | transloco }}">—</span>
-    }
-    @default {
-      @if (amount.relation === 'small') {
-        <span [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ smallText }}</span>
-      } @else {
-        <span [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ amount.display }}</span>
-      }
-      @if (showExactDetails && (amount.relation === 'small' || amount.relation === 'bounded' || amount.relation === 'approximate')) {
-        <details class="amount-details">
-          <summary [attr.aria-label]="'amount.show-exact-amount' | transloco">{{ 'amount.exact-details' | transloco }}</summary>
-          <span class="amount-exact" data-testid="nano-amount-exact">{{ amount.exactXno }} XNO</span>
-          <button type="button" ngxClipboard [cbContent]="amount.exactXno" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-xno' | transloco">{{ 'amount.copy-xno' | transloco }}</button>
-          <span class="amount-raw">{{ amount.exactRaw }} raw</span>
-          <button type="button" ngxClipboard [cbContent]="amount.exactRaw" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-raw' | transloco">{{ 'amount.copy-raw' | transloco }}</button>
-        </details>
-      }
-      @if (amount.relation === 'exact' && (context === 'authorize' || context === 'inspect')) {
-        <button type="button" ngxClipboard [cbContent]="amount.exactXno" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-xno' | transloco">{{ 'amount.copy-xno' | transloco }}</button>
-        <details class="amount-details">
-          <summary [attr.aria-label]="'amount.show-raw-amount' | transloco">{{ 'amount.raw-details' | transloco }}</summary>
-          <span class="amount-raw">{{ amount.exactRaw }} raw</span>
-          <button type="button" ngxClipboard [cbContent]="amount.exactRaw" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-raw' | transloco">{{ 'amount.copy-raw' | transloco }}</button>
-        </details>
-      }
-    }
+  @if (amount.relation === 'invalid' || amount.relation === 'unavailable') {
+    <span [attr.aria-label]="unavailableLabel">—</span>
+  } @else if (detailsRoute) {
+    <a class="amount-link" [routerLink]="detailsRoute"
+      [attr.aria-label]="amount.display + ' · ' + detailsLabel"
+      [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ amount.display }}</a>
+  } @else {
+    <span [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ amount.display }}</span>
   }
 }

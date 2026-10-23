@@ -117,6 +117,7 @@
 
 .summary-primary {
   min-inline-size: 0;
+  container-type: inline-size;
 }
 
 /* uk-form-label above supplies Montserrat and the muted body colour; what is
@@ -130,18 +131,8 @@
   text-transform: uppercase;
 }
 
-/* The headline number.
-   - `white-space: nowrap` stops the browser ever breaking "1000000" into a
-     vertical column of single digits, which is what word-break: break-all did.
-   - `clamp()` with cqi units shrinks the type as the column narrows, so the
-     value stays on one line instead of wrapping.
-   - The wrapper scrolls rather than overflowing if a pathological balance still
-     cannot fit, because a scrolled number beats an unreadable one. */
+/* Size the overview amount to its own column, with natural breaks at units. */
 .balance-display-wrap {
-  overflow-x: auto;
-  /* Without this, setting overflow-x makes overflow-y compute to auto too and
-     a phantom vertical scrollbar appears beside the number. */
-  overflow-y: hidden;
   max-inline-size: 100%;
 }
 
@@ -153,11 +144,11 @@
   gap: 0;
   margin: 0;
   color: var(--text-primary);
-  font-size: clamp(1.35rem, 9cqi, 3rem);
+  font-size: clamp(1rem, 7cqi, 3rem);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
   min-inline-size: 0;
 }
 
@@ -252,6 +243,7 @@
 
 .action-context {
   display: flex;
+  flex: 1 1 18rem;
   align-items: center;
   gap: 0.5rem;
   min-inline-size: 0;
@@ -277,9 +269,9 @@
   font-size: 0.78rem;
   color: var(--text-muted);
   min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex-basis: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .action-buttons {

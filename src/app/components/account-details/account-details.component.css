@@ -2,6 +2,33 @@
     margin-bottom: 6px;
 }
 
+.account-history-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.account-history-table .type-column {
+    width: 40px;
+}
+
+.transaction-counterparty {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.transaction-counterparty-identity {
+    flex: 1;
+    min-width: 0;
+}
+
+.transaction-counterparty-identity .account-container,
+.transaction-counterparty-address {
+    display: block;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .nano-address-actions {
     margin-top: 2px;
 }
@@ -132,6 +159,9 @@
 .account-amounts-primary-confirmed {
     font-family: 'Montserrat', Arial, Helvetica, sans-serif;
     line-height: 1;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .account-amounts-primary-confirmed > .amount-integer {

@@ -51,7 +51,7 @@
           <div class="balance-column">
             @if (walletState.sync.hasSnapshot) {
               <div class="balance primary">
-                <app-nano-amount [raw]="walletState.selectedAccount.balance" context="review" smallLabel="balance"></app-nano-amount>
+                <app-nano-amount [raw]="walletState.selectedAccount.balance" context="preview"></app-nano-amount>
               </div>
               <div class="balance converted">{{ walletState.selectedAccount.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
             } @else {
@@ -76,10 +76,10 @@
                   @if (account.pending.gt(0)) {
                     <span class="incoming-label">
                       <span class="text-snippet">{{ 'general.new' | transloco }}</span>
-                      <span class="text-full">+<app-nano-amount [raw]="account.pending" context="notify"></app-nano-amount></span>
+                      <span class="text-full">+<app-nano-amount [raw]="account.pending" context="preview"></app-nano-amount></span>
                     </span>
                   }
-                  <app-nano-amount [raw]="account.balance" context="review" smallLabel="balance"></app-nano-amount>
+                  <app-nano-amount [raw]="account.balance" context="preview"></app-nano-amount>
                 </div>
                 <div class="balance converted">{{ account.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
               } @else {
@@ -135,23 +135,13 @@
                   <div class="account-balances">
                     @if (walletState.sync.hasSnapshot || !isConfigured()) {
                       <div class="balance-container primary">
-                        <div class="currency-name">XNO</div>
                         <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceXnoCard">
-                          <app-nano-amount [raw]="totalBalance$ | async" context="review" smallLabel="balance"></app-nano-amount>
+                          <app-nano-amount [raw]="totalBalance$ | async" context="preview"></app-nano-amount>
                           @if (walletState.sync.status === 'loading' && isConfigured()) {
                             <div class="amount-updating"><div uk-spinner="ratio: 0.5;"></div></div>
                           }
                         </div>
                       </div>
-                      @if (settings.settings.displayCurrency) {
-                        <div class="balance-container converted">
-                          <div class="currency-name">{{ settings.settings.displayCurrency }}</div>
-                          <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
-                            <div class="amount-integer">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                            <div class="amount-fractional">{{ (totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
-                          </div>
-                        </div>
-                      }
                     } @else {
                       @if ((node.status !== false)) {
                         <div class="spinner-container">
@@ -159,6 +149,20 @@
                         </div>
                       }
                     }
+                    @if (settings.settings.displayCurrency) {
+                      <div class="balance-container converted">
+                        <div class="amount-container" [attr.data-testid]="testIds.app.totalBalanceFiatCard">
+                          @if (walletState.sync.hasSnapshot || !isConfigured()) {
+                            {{ ((totalBalanceFiat$ | async) | fiat: settings.settings.displayCurrency) || ('— ' + settings.settings.displayCurrency) }}
+                          } @else {
+                            — {{ settings.settings.displayCurrency }}
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                  <div class="wallet-account-count">
+                    {{ (walletState.accounts.length === 1 ? 'wallet.across-accounts-singular' : 'wallet.across-accounts-plural') | transloco: { count: walletState.accounts.length } }}
                   </div>
                 </div>
               </div>
@@ -211,7 +215,7 @@
                       }
                     </div>
                     <div class="pending-overview-amount">
-                      <app-nano-amount [raw]="walletState.pending" context="notify" [showExactDetails]="false"></app-nano-amount>
+                      <app-nano-amount [raw]="walletState.pending" context="preview"></app-nano-amount>
                     </div>
                   </div>
                 </div>

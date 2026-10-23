@@ -62,7 +62,6 @@
                     [class.uk-text-success]="( (blockType === 'open') || (blockType === 'receive') )"
                     >
                     <app-nano-amount [raw]="$safeNavigationMigration(transaction?.amount)" context="inspect"></app-nano-amount>
-                    <span class="currency-name">XNO</span>
                   </div>
                 }
                 @if (amountRaw.gt(0)) {
@@ -206,7 +205,6 @@
               <div class="uk-form-controls uk-text-truncate block-balance">
                 <div class="balance-amount-primary uk-text-truncate">
                   <app-nano-amount [raw]="isStateBlock ? getBalanceFromDec($safeNavigationMigration(transaction?.contents?.balance)) : getBalanceFromHex($safeNavigationMigration(transaction?.contents?.balance))" context="inspect"></app-nano-amount>
-                  <span class="currency-name">XNO</span>
                 </div>
                 <div class="uk-text-small block-hash-monospace"><span class="text-half-muted" style="margin-right: 4px;">=</span>{{ transaction?.contents?.balance }} raw</div>
               </div>

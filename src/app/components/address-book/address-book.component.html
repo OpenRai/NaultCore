@@ -31,13 +31,12 @@
           @if (showAdvancedOptions) {
             <div class="advanced-options">
               <span [title]="( totalTrackedBalanceRaw.gt(0) ? ( '+' + ( totalTrackedBalanceRaw.toString(10) ) + ' raw' ) : '' )">
-                <app-nano-amount [raw]="totalTrackedBalance" context="review" smallLabel="balance"></app-nano-amount>
-                <span class="currency-name">XNO</span>
+                <app-nano-amount [raw]="totalTrackedBalance" context="preview"></app-nano-amount>
               </span>
               @if (totalTrackedPending.gt(0)) {
                 <div class="incoming-label">
                   <div class="text-snippet">{{ 'general.new' | transloco }}</div>
-                  <div class="text-full">+<app-nano-amount [raw]="totalTrackedPending" context="notify"></app-nano-amount></div>
+                  <div class="text-full">+<app-nano-amount [raw]="totalTrackedPending" context="preview"></app-nano-amount></div>
                 </div>
               }
               <div class="account-amounts-converted uk-width-1-1 text-half-muted">
@@ -118,13 +117,12 @@
                             @if (!loadingBalances) {
                               <div class="account-amounts-primary uk-width-1-1">
                                 <span [title]="( accounts[addressBook.account]?.balanceRaw.gt(0) ? ( '+' + ( accounts[addressBook.account]?.balanceRaw.toString(10) ) + ' raw' ) : '' )">
-                                  <app-nano-amount [raw]="$safeNavigationMigration(accounts[addressBook.account]?.balance)" context="review" smallLabel="balance"></app-nano-amount>
-                                  <span class="currency-name">XNO</span>
+                                  <app-nano-amount [raw]="$safeNavigationMigration(accounts[addressBook.account]?.balance)" [detailsRoute]="'/account/' + addressBook.account" context="preview"></app-nano-amount>
                                 </span>
                                 @if (accounts[addressBook.account]?.pending.gt(0)) {
                                   <div class="incoming-label">
                                     <div class="text-snippet">New</div>
-                                    <div class="text-full">+<app-nano-amount [raw]="$safeNavigationMigration(accounts[addressBook.account]?.pending)" context="notify"></app-nano-amount></div>
+                                    <div class="text-full">+<app-nano-amount [raw]="$safeNavigationMigration(accounts[addressBook.account]?.pending)" [detailsRoute]="'/account/' + addressBook.account" context="preview"></app-nano-amount></div>
                                   </div>
                                 }
                               </div>

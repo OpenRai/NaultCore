@@ -68,7 +68,7 @@ test('shows loading instead of zero while startup balance reconciliation is pend
   await expect(balance.getByTestId('nano-amount-summary')).toHaveText('0 XNO');
 });
 
-test('discloses an exact one-raw balance when the receive minimum is disabled', async ({ seededPage, testWallet }) => {
+test('shows a numeric one-raw preview and links through to account details', async ({ seededPage, testWallet }) => {
   await seededPage.goto('/configure-app');
   const minimumReceive = seededPage.locator('#form-horizontal-text4');
   await minimumReceive.fill('');
@@ -93,10 +93,35 @@ test('discloses an exact one-raw balance when the receive minimum is disabled', 
   await seededPage.goto('/wallet');
   await seededPage.evaluate(async () => { await (window as any).__NAULTCORE_E2E__.refreshWallet(); });
   const balance = seededPage.locator('[data-testid="wallet-summary-card"] .summary-primary app-nano-amount');
-  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('Small balance');
-  await balance.getByText('Show exact amount').click();
-  await expect(balance.getByTestId('nano-amount-exact')).toHaveText(`0.${'0'.repeat(29)}1 XNO`);
-  await expect(balance).toContainText('1 raw');
+  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('1 × 10⁻³⁰ XNO');
+  await expect(balance.locator('details')).toHaveCount(0);
+  await balance.getByRole('link').click();
+  await expect(seededPage).toHaveURL(/\/accounts$/);
+  await seededPage.locator(`[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`)
+    .locator('[data-testid="nano-amount-summary"]:visible').first().click();
+  await expect(seededPage).toHaveURL(new RegExp(`/account/${testWallet.accounts[0]}$`));
+});
+
+test('keeps identity card fiat visible unless currency is None and fits dashboard previews', async ({ seededPage }) => {
+  await seededPage.goto('/configure-app');
+  const currency = seededPage.getByLabel('FIAT Currency', { exact: true });
+  const fiat = seededPage.getByTestId('total-balance-fiat-card');
+  await currency.selectOption('USD');
+  await expect(fiat).toContainText('$');
+  await expect(fiat).not.toContainText('≈');
+  await currency.selectOption('');
+  await expect(fiat).toHaveCount(0);
+  await currency.selectOption('EUR');
+  await expect(fiat).toContainText('€');
+
+  await seededPage.goto('/wallet');
+  await expect(seededPage.locator('.wallet-account-count')).toHaveText('Across 3 accounts');
+  await expect(seededPage.locator('details.amount-details')).toHaveCount(0);
+  for (const width of [1280, 390]) {
+    await seededPage.setViewportSize({ width, height: 900 });
+    const balance = seededPage.locator('.balance-display-wrap');
+    await expect.poll(() => balance.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  }
 });
 
 test('shows cached activity while fetching, then refreshes it after wallet reconciliation', async ({ seededPage, testWallet }) => {

@@ -2,25 +2,18 @@
   display: contents;
 }
 
-.amount-details {
-  display: inline-block;
+.amount-link {
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
 }
 
-.amount-details summary {
-  cursor: pointer;
-  display: inline-block;
-  margin-inline-start: 0.35em;
+.amount-link:hover {
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
 
-.amount-exact,
-.amount-raw {
-  font-variant-numeric: tabular-nums;
-  margin-inline-end: 0.35em;
-}
-
-.amount-details button,
-.amount-exact-actions button {
-  margin-inline-end: 0.35em;
+.amount-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
 }

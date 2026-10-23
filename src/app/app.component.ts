@@ -281,7 +281,7 @@ get appearanceAutoLabel(): string {
 
       setInterval(() => {
         this.inactiveSeconds += 1;
-        if (!this.settings.settings.lockInactivityMinutes || this.walletService.isLocked() || !this.walletService.hasPassword()) return;
+        if (!this.settings.settings.lockInactivityMinutes || this.walletService.isLocked() || !this.walletService.hasPasswordProtectedWallet()) return;
         if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {
           this.walletService.lockWallet();
           this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`, { identifier: 'wallet-locked' });

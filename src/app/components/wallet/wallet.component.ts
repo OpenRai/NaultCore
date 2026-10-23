@@ -150,12 +150,6 @@ export class WalletComponent implements OnInit, OnDestroy {
     return account.addressBookName || `Account #${account.index}`;
   }
 
-  truncateAddress(address: string | null): string {
-    if (!address) return '';
-    if (address.length <= 20) return address;
-    return `${address.slice(0, 10)}…${address.slice(-8)}`;
-  }
-
   selectAccount(accountId: string): void {
     this.walletContext.selectAccount(accountId || null);
   }

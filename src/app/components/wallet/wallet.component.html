@@ -53,11 +53,11 @@
             @if (walletDataStatus) {
               <span class="balance-int" role="status">{{ walletDataStatus }}</span>
             } @else {
-              <app-nano-amount [raw]="walletState.balance" context="review" smallLabel="balance"></app-nano-amount>
+              <app-nano-amount [raw]="walletState.balance" [detailsRoute]="'/accounts'" context="preview"></app-nano-amount>
             }
           </div>
         </div>
-        @if (!walletDataStatus && settings.settings.displayCurrency && walletState.balanceFiat && walletState.balanceFiat > 0) {
+        @if (!walletDataStatus && settings.settings.displayCurrency) {
           <div class="balance-fiat">
           {{ walletState.balanceFiat | fiat: settings.settings.displayCurrency }}
           </div>
@@ -84,7 +84,7 @@
             @if (walletDataStatus) {
               <span class="stat-none">—</span>
             } @else if (walletState.pending && !walletState.pending.isZero()) {
-              <span class="stat-pending"><app-nano-amount [raw]="walletState.pending" context="notify"></app-nano-amount></span>
+              <span class="stat-pending"><app-nano-amount [raw]="walletState.pending" [detailsRoute]="'/receive'" context="preview"></app-nano-amount></span>
             } @else {
               <span class="stat-none">—</span>
             }
@@ -120,7 +120,7 @@
         </select>
         @if (selectedAccount) {
           <span class="nano-address-monospace action-context-addr" [title]="selectedAccount.id">
-            {{ truncateAddress(selectedAccount.id) }}
+            {{ selectedAccount.id }}
           </span>
         }
       </div>

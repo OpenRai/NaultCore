@@ -84,8 +84,7 @@
                       <td class="voting-weight-column uk-width-1-4">
                         <div class="uk-text-small text-half-muted">Total</div>
                         <div class="amounts">
-                          <app-nano-amount [raw]="rep.delegatedWeight" context="review" smallLabel="balance"></app-nano-amount>
-                          <span class="currency-name">XNO</span>
+                          <app-nano-amount [raw]="rep.delegatedWeight" [detailsRoute]="'/account/' + rep.id" context="preview"></app-nano-amount>
                         </div>
                       </td>
                     </tr>
@@ -107,8 +106,7 @@
                         </td>
                         <td class="voting-weight-column uk-width-1-4">
                           <div class="amounts">
-                            <app-nano-amount [raw]="delegatingAccount.balance" context="review" smallLabel="balance"></app-nano-amount>
-                            <span class="currency-name">XNO</span>
+                            <app-nano-amount [raw]="delegatingAccount.balance" [detailsRoute]="'/account/' + delegatingAccount.id" context="preview"></app-nano-amount>
                           </div>
                         </td>
                       </tr>

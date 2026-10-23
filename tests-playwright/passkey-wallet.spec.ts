@@ -165,11 +165,17 @@ test.describe('passkey wallet journeys', () => {
     await page.getByRole('button', { name: /Enable passkey unlock/ }).click();
     await expect.poll(async () => walletStorage(page)).toMatchObject({ hasPasskey: true });
     const enrolledWalletId = (await walletStorage(page)).localWalletId;
+    await lockFromSidebar(page);
+    await page.getByRole('button', { name: /Wallet Locked/ }).click();
+    await expect(page.getByRole('button', { name: /Wallet Unlocked/ })).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#unlock-wallet-modal')).toBeHidden();
     const backupCard = page.locator('.uk-card').filter({ hasText: /Export .* Wallet/ });
+    await expect(backupCard).not.toContainText('You need to set a secure wallet password');
     await backupCard.getByTestId('manage-wallet-backup-wallet-button').click();
     const exportUrlField = backupCard.locator('input[type="text"]');
     const exportUrl = await exportUrlField.inputValue();
     const exportData = JSON.parse(Buffer.from(new URL(exportUrl).hash.slice(1), 'base64').toString('utf8'));
+    expect(isPasswordEncryptedWallet(exportData.seed)).toBe(true);
     expect(exportData.passkeyUnlock).toBeUndefined();
     await exportUrlField.evaluate(element => ((element as HTMLInputElement).value = '[redacted test backup]'));
 

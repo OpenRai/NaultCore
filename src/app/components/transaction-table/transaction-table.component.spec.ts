@@ -10,6 +10,7 @@ import { TransactionTableComponent } from './transaction-table.component';
 class NanoAmountStubComponent {
   @Input() raw: unknown;
   @Input() context: unknown;
+  @Input() detailsRoute: unknown;
 }
 
 function makeTransaction(overrides: Partial<WalletTransaction> = {}): WalletTransaction {

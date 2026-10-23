@@ -1,4 +1,4 @@
-export type NanoAmountContext = 'authorize' | 'inspect' | 'review' | 'notify';
+export type NanoAmountContext = 'authorize' | 'inspect' | 'review' | 'notify' | 'preview';
 export type NanoAmountRelation = 'exact' | 'approximate' | 'bounded' | 'small' | 'unavailable' | 'invalid';
 
 export interface NanoAmountPresentation {
@@ -111,6 +111,32 @@ export function formatNanoAmount(
 
   if (magnitude === '0') {
     return { context, relation: 'exact', display: '0 XNO', exactXno: '0', exactRaw: '0', negative: false };
+  }
+
+  // Previews show the amount itself, regardless of the receive threshold.
+  // Use scientific notation only when a decimal would crowd the sidebar.
+  if (context === 'preview') {
+    const xno = rawToXno(magnitude);
+    const rounded = roundToSignificantDigits(xno, SUMMARY_SIGNIFICANT_DIGITS);
+    let display = rounded;
+    if (rounded.length > 14) {
+      const [integer, fraction = ''] = rounded.split('.');
+      const digits = `${integer}${fraction}`;
+      const first = digits.search(/[1-9]/);
+      const exponent = integer.length - first - 1;
+      const coefficient = digits.slice(first).replace(/0+$/, '');
+      const superscript = String(exponent).replace(/[-0-9]/g, digit => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(digit)]);
+      display = `${coefficient[0]}${coefficient.length > 1 ? `.${coefficient.slice(1)}` : ''} × 10${superscript}`;
+    }
+    const isExact = rounded === xno;
+    return {
+      context,
+      relation: isExact ? 'exact' : 'approximate',
+      display: `${negative ? '−' : ''}${isExact ? '' : '≈'}${display} XNO`,
+      exactXno: signedXno,
+      exactRaw: raw,
+      negative,
+    };
   }
 
   const minimumRaw = xnoToRaw(minimumReceiveXno);

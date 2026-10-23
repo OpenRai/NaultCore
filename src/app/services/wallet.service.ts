@@ -1184,6 +1184,7 @@ export class WalletService {
   }
 
   getWalletType(): WalletType|null { return this.lifecycleSnapshot().type; }
+  /** Whether this session holds the password itself; false after passkey unlock. */
   hasPassword(): boolean { return this.unlockedState()?.password.length > 0; }
   hasPasswordProtectedWallet(): boolean {
     const state = this.lifecycleState;

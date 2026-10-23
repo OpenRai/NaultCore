@@ -4,6 +4,15 @@ import BigNumber from 'bignumber.js';
 const ONE_XNO_RAW = '1000000000000000000000000000000';
 
 describe('formatNanoAmount', () => {
+  it('shows numeric previews independent of the minimum receive setting', () => {
+    expect(formatNanoAmount('1234567890123456789012345678901', 'preview', '10').display).toBe('≈1.23457 XNO');
+    expect(formatNanoAmount('10000000000000000000000', 'preview', '1').display).toBe('0.00000001 XNO');
+    expect(formatNanoAmount('1', 'preview', null).display).toBe('1 × 10⁻³⁰ XNO');
+    expect(formatNanoAmount('1234567', 'preview', '0').display).toBe('≈1.23457 × 10⁻²⁴ XNO');
+    expect(formatNanoAmount('0', 'preview').display).toBe('0 XNO');
+    expect(formatNanoAmount(null, 'preview').relation).toBe('unavailable');
+  });
+
   it('preserves the exact XNO decimal and raw value in authorization and inspection contexts', () => {
     const raw = '1';
     for (const context of ['authorize', 'inspect'] as const) {

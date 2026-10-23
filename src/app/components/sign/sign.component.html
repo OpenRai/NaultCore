@@ -34,7 +34,6 @@
                 <div>
                   <div class="block-amount-primary" [class.uk-text-danger]="txType == txTypes.send" [class.uk-text-success]="txType == txTypes.receive">
                     <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                    <span class="currency-name">XNO</span>
                   </div>
                   @if (settings.settings.displayCurrency && amountFiat !== null) {
                     <div style="margin: 8px 0 -1px 0;" class="text-half-muted">{{ amountFiat | fiat: settings.settings.displayCurrency }}</div>
@@ -93,7 +92,6 @@
                           <span class="balance-amount-primary uk-text-danger">
                             <span class="amount-sign">-</span>
                             <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                            <span class="currency-name">XNO</span>
                           </span>
                         </span>
                       </div>
@@ -170,7 +168,6 @@
                           <span class="balance-amount-primary uk-text-success">
                             <span class="amount-sign">+</span>
                             <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
-                            <span class="currency-name">XNO</span>
                           </span>
                         </span>
                       </div>

@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
-import { AppSettingsService } from '../../services/app-settings.service';
-import { NotificationService } from '../../services/notification.service';
-import { formatNanoAmount, NanoAmountContext, NanoAmountPresentation } from '../../utils/nano-amount-format';
+import { formatNanoAmount, NanoAmountPresentation } from '../../utils/nano-amount-format';
 
 @Component({
   selector: 'app-nano-amount',
@@ -13,25 +11,20 @@ import { formatNanoAmount, NanoAmountContext, NanoAmountPresentation } from '../
 })
 export class NanoAmountComponent {
   @Input() raw: unknown;
-  @Input() context: NanoAmountContext = 'review';
-  @Input() smallLabel: 'amount' | 'balance' = 'amount';
-  @Input() showExactDetails = true;
+  @Input() context: 'preview' | 'inspect' | 'authorize' = 'preview';
+  @Input() detailsRoute: string | null = null;
 
-  private readonly settings = inject(AppSettingsService);
-  private readonly notifications = inject(NotificationService);
   private readonly translate = inject(TranslocoService);
 
+  get unavailableLabel(): string {
+    return this.translate.translate('amount.unavailable');
+  }
+
+  get detailsLabel(): string {
+    return this.translate.translate('general.view-details');
+  }
+
   get presentation(): NanoAmountPresentation {
-    return formatNanoAmount(this.raw, this.context, this.settings.settings.minimumReceive);
-  }
-
-  get smallText(): string {
-    const key = this.smallLabel === 'balance' ? 'amount.small-balance' : 'amount.small-amount';
-    return this.translate.translate(key);
-  }
-
-  copied(): void {
-    this.notifications.removeNotification('success-copied');
-    this.notifications.sendSuccess(this.translate.translate('general.successfully-copied-to-clipboard'), { identifier: 'success-copied' });
+    return formatNanoAmount(this.raw, this.context);
   }
 }

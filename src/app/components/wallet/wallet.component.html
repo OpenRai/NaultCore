@@ -53,17 +53,13 @@
             @if (walletDataStatus) {
               <span class="balance-int" role="status">{{ walletDataStatus }}</span>
             } @else {
-              <span class="balance-int">{{ formatAmount(walletState.balance).split('.')[0] }}</span>
-              @if (formatAmount(walletState.balance).includes('.')) {
-                <span class="balance-dec">.{{ formatAmount(walletState.balance).split('.')[1] }}</span>
-              }
-              <span class="balance-unit">XNO</span>
+              <app-nano-amount [raw]="walletState.balance" context="review" smallLabel="balance"></app-nano-amount>
             }
           </div>
         </div>
         @if (!walletDataStatus && settings.settings.displayCurrency && walletState.balanceFiat && walletState.balanceFiat > 0) {
           <div class="balance-fiat">
-            ~{{ formatFiat(walletState.balanceFiat, settings.settings.displayCurrency) }}
+          {{ walletState.balanceFiat | fiat: settings.settings.displayCurrency }}
           </div>
         }
         <a
@@ -88,7 +84,7 @@
             @if (walletDataStatus) {
               <span class="stat-none">—</span>
             } @else if (walletState.pending && !walletState.pending.isZero()) {
-              <span class="stat-pending">{{ formatAmount(walletState.pending) }} XNO</span>
+              <span class="stat-pending"><app-nano-amount [raw]="walletState.pending" context="notify"></app-nano-amount></span>
             } @else {
               <span class="stat-none">—</span>
             }

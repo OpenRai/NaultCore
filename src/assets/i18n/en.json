@@ -350,6 +350,19 @@
       "while-the-application-is-locked-the-secret-recovery-phrase-will-be-encrypted": "While the application is locked, the secret recovery phrase will be encrypted, which prevents sending/receiving funds and managing accounts."
     }
   },
+  "amount": {
+    "copy-raw": "Copy raw",
+    "copy-xno": "Copy XNO",
+    "copy-exact-raw": "Copy exact raw amount",
+    "copy-exact-xno": "Copy exact XNO amount",
+    "exact-details": "Show exact amount",
+    "raw-details": "Show raw amount",
+    "show-exact-amount": "Show the exact amount and copy options",
+    "show-raw-amount": "Show exact raw amount",
+    "small-amount": "Small amount",
+    "small-balance": "Small balance",
+    "unavailable": "Amount unavailable"
+  },
   "general": {
     "account": "Account",
     "accounts": "Accounts",

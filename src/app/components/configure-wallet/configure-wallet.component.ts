@@ -12,6 +12,7 @@ import { ACCOUNT_INDEX_MAX } from '../../services/util.service';
 import { branding } from 'environments/branding';
 import { RecoveryCandidate, RecoveryImportService, RecoveryInterpretation, RecoveryMnemonicWordStatus } from '../../services/recovery-import.service';
 import { RecoveryVerificationResult, RecoveryVerificationService } from '../../services/recovery-verification.service';
+import { formatNanoAmount } from '../../utils/nano-amount-format';
 
 enum panels {
   'landing',
@@ -458,7 +459,7 @@ export class ConfigureWalletComponent implements OnInit {
   }
 
   formatRecoveryAmount(raw: string): string {
-    return this.util.nano.rawToMnano(raw).toFixed(6);
+    return formatNanoAmount(raw, 'inspect').exactXno ?? '';
   }
 
   recoveryCandidateDescription(candidate: RecoveryCandidate): string {

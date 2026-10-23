@@ -560,13 +560,7 @@
                   "
                                 >
                                 <span class="uk-text-small">Ready to receive</span><br />
-                                <span class="amount-integer">{{
-                                  pending.amount | rai: "mnano,true" | amountsplit: 0
-                                }}</span>
-                                <span class="amount-fractional">{{
-                                  pending.amount | rai: "mnano,true" | amountsplit: 1
-                                }}</span>
-                                <span class="currency-name">XNO</span>
+                                <app-nano-amount [raw]="pending.amount" context="notify"></app-nano-amount>
                                 <div class="compact-actions-date">
                                   <ng-template
                                     [ngTemplateOutlet]="transactionActions"
@@ -917,16 +911,7 @@
                                   <p
                                     class="uk-text-large uk-text-primary uk-margin-remove-top"
                                     >
-                                    <span class="merchant-mode-amount-integer">{{
-                                      merchantModeRawRequestedQR | rai: "mnano,true" | amountsplit: 0
-                                    }}</span>
-                                    <span class="merchant-mode-amount-fractional">{{
-                                      merchantModeRawRequestedQR | rai: "mnano,true" | amountsplit: 1
-                                    }}</span>
-                                    <span
-                                      class="merchant-mode-currency-name merchant-mode-currency-margin"
-                                      >XNO</span
-                                      >
+                                    <app-nano-amount [raw]="merchantModeRawRequestedQR" context="authorize"></app-nano-amount>
                                     </p>
                                   }
                                   <p class="text-half-muted" style="margin: -16px 0 10px 0">to</p>
@@ -984,16 +969,7 @@
                                           [class.uk-text-success]="prompt.moreThanRequested"
                                           [class.uk-text-warning]="prompt.lessThanRequested"
                                           >
-                                          <span class="merchant-mode-amount-integer">{{
-                                            prompt.amountRaw | rai: "mnano,true" | amountsplit: 0
-                                          }}</span>
-                                          <span class="merchant-mode-amount-fractional">{{
-                                            prompt.amountRaw | rai: "mnano,true" | amountsplit: 1
-                                          }}</span>
-                                          <span
-                                            class="merchant-mode-currency-name merchant-mode-currency-margin"
-                                            >XNO</span
-                                            >
+                                          <app-nano-amount [raw]="prompt.amountRaw" context="inspect"></app-nano-amount>
                                           </p>
                                           @if (prompt.amountHiddenRaw.gt(0)) {
                                             <div
@@ -1094,16 +1070,7 @@
                                       Received
                                     </p>
                                     <p class="uk-text-large uk-text-success uk-margin-remove-top">
-                                      <span class="merchant-mode-amount-integer">{{
-                                        merchantModeRawReceivedTotal | rai: "mnano,true" | amountsplit: 0
-                                      }}</span>
-                                      <span class="merchant-mode-amount-fractional">{{
-                                        merchantModeRawReceivedTotal | rai: "mnano,true" | amountsplit: 1
-                                      }}</span>
-                                      <span
-                                        class="merchant-mode-currency-name merchant-mode-currency-margin"
-                                        >XNO</span
-                                        >
+                                      <app-nano-amount [raw]="merchantModeRawReceivedTotal" context="inspect"></app-nano-amount>
                                       </p>
                                       @if (merchantModeRawReceivedTotalHiddenRaw.gt(0)) {
                                         <div
@@ -1126,21 +1093,11 @@
                                           ngxClipboard
             [cbContent]="
               'Amount Requested: ' +
-              (merchantModeRawRequestedTotal
-                | rai: 'mnano,true'
-                | amountsplit: 0) +
-              (merchantModeRawRequestedTotal
-                | rai: 'mnano,true'
-                | amountsplit: 1) +
+              formatExactXno(merchantModeRawRequestedTotal) +
               ' XNO' +
               '\n\n' +
               'Amount Paid: ' +
-              (merchantModeRawReceivedTotal
-                | rai: 'mnano,true'
-                | amountsplit: 0) +
-              (merchantModeRawReceivedTotal
-                | rai: 'mnano,true'
-                | amountsplit: 1) +
+              formatExactXno(merchantModeRawReceivedTotal) +
               ' XNO' +
               '\n\n' +
               'Transaction ID\'s:' +

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Pipe, PipeTransform } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ClipboardModule } from 'ngx-clipboard';
@@ -17,6 +18,12 @@ import { NotificationService } from '../../services/notification.service';
 import { TransactionHistoryService } from '../../services/transaction-history.service';
 import { WalletComponent } from './wallet.component';
 import { TransactionTableComponent } from '../transaction-table/transaction-table.component';
+import { NanoAmountComponent } from '../nano-amount/nano-amount.component';
+
+@Pipe({ name: 'fiat', standalone: false })
+export class FiatPipeStub implements PipeTransform {
+  transform(value: unknown): string { return String(value ?? ''); }
+}
 
 const account = {
   id: 'nano_1test',
@@ -94,7 +101,7 @@ function toTransaction(row: any, accountId: string, label: string) {
  * what lets WalletComponent see <app-transaction-table>.
  */
 @NgModule({
-  declarations: [WalletComponent, TransactionTableComponent],
+  declarations: [WalletComponent, TransactionTableComponent, NanoAmountComponent, FiatPipeStub],
   imports: [CommonModule, FormsModule, RouterModule.forRoot([]), TranslocoRootModule, ClipboardModule],
 })
 class WalletTestModule {}
@@ -128,10 +135,10 @@ describe('WalletComponent', () => {
       imports: [WalletTestModule],
       providers: [
         { provide: WalletService, useValue: wallet },
-        { provide: NotificationService, useValue: { sendSuccess: vi.fn(), sendWarning: vi.fn() } },
+        { provide: NotificationService, useValue: { sendSuccess: vi.fn(), sendWarning: vi.fn(), removeNotification: vi.fn() } },
         WalletContextService,
         { provide: TransactionHistoryService, useValue: makeHistoryStub() },
-        { provide: AppSettingsService, useValue: { settings: { displayCurrency: 'USD' } } },
+        { provide: AppSettingsService, useValue: { settings: { displayCurrency: 'USD', minimumReceive: null } } },
         {
           provide: TranslocoService,
           useValue: { translate: (key: string, params?: any) => params?.time ? `${key}:${params.time}` : (params ? `${key}:${JSON.stringify(params)}` : key) },

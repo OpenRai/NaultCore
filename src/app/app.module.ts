@@ -79,6 +79,7 @@ import { WalletContextService } from './services/wallet-context.service';
 import { WalletComponent } from './components/wallet/wallet.component';
 import { TransactionTableComponent } from './components/transaction-table/transaction-table.component';
 import { TransactionHistoryService } from './services/transaction-history.service';
+import { NanoAmountComponent } from './components/nano-amount/nano-amount.component';
 
 @NgModule({
   declarations: [
@@ -122,7 +123,8 @@ import { TransactionHistoryService } from './services/transaction-history.servic
     NoPaddingZerosPipe,
     AboutOverlayComponent,
     WalletComponent,
-    TransactionTableComponent
+    TransactionTableComponent,
+    NanoAmountComponent
   ],
   imports: [
     BrowserModule,

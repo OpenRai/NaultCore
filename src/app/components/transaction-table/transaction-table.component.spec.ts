@@ -3,7 +3,14 @@ import { RouterModule } from '@angular/router';
 import BigNumber from 'bignumber.js';
 import { TranslocoService } from '@jsverse/transloco';
 import { WalletTransaction } from '../../models/transaction.model';
+import { Component, Input } from '@angular/core';
 import { TransactionTableComponent } from './transaction-table.component';
+
+@Component({ selector: 'app-nano-amount', template: '', standalone: false })
+class NanoAmountStubComponent {
+  @Input() raw: unknown;
+  @Input() context: unknown;
+}
 
 function makeTransaction(overrides: Partial<WalletTransaction> = {}): WalletTransaction {
   return {
@@ -45,7 +52,7 @@ describe('TransactionTableComponent', () => {
       // Declared on the TestBed rather than in a second static NgModule:
       // TransactionTableComponent already belongs to WalletTestModule and a
       // component may only be declared by one NgModule at compile time (NG6007).
-      declarations: [TransactionTableComponent],
+      declarations: [TransactionTableComponent, NanoAmountStubComponent],
       imports: [RouterModule.forRoot([])],
       providers: [
         {

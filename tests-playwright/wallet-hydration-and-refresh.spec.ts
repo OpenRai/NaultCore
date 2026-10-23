@@ -67,6 +67,37 @@ test('shows loading instead of zero while startup balance reconciliation is pend
   await expect(page.locator('.balance-unit')).toHaveText('XNO');
 });
 
+test('discloses an exact one-raw balance when the receive minimum is disabled', async ({ seededPage, testWallet }) => {
+  await seededPage.goto('/configure-app');
+  const minimumReceive = seededPage.locator('#form-horizontal-text4');
+  await minimumReceive.fill('');
+  await minimumReceive.blur();
+
+  await seededPage.route('**/*', async route => {
+    const request = route.request();
+    if (request.method() === 'POST') {
+      let body: { action?: string; accounts?: string[] } = {};
+      try { body = request.postDataJSON(); } catch { /* use the configured mock */ }
+      if (body.action === 'accounts_balances' && body.accounts) {
+        await route.fulfill({ json: { balances: Object.fromEntries(body.accounts.map(account => [account, {
+          balance: account === testWallet.accounts[0] ? '1' : '0',
+          pending: '0',
+        }])) } });
+        return;
+      }
+    }
+    await route.fallback();
+  });
+
+  await seededPage.goto('/wallet');
+  await seededPage.evaluate(async () => { await (window as any).__NAULTCORE_E2E__.refreshWallet(); });
+  const balance = seededPage.locator('[data-testid="wallet-summary-card"] .summary-primary app-nano-amount');
+  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('Small balance');
+  await balance.getByText('Show exact amount').click();
+  await expect(balance.getByTestId('nano-amount-exact')).toHaveText(`0.${'0'.repeat(29)}1 XNO`);
+  await expect(balance).toContainText('1 raw');
+});
+
 test('shows cached activity while fetching, then refreshes it after wallet reconciliation', async ({ seededPage, testWallet }) => {
   const cachedRow = historyRow('cached-history-hash', testWallet.accounts[0], 1700000000);
   const newlyRegisteredRow = historyRow('newly-registered-history-hash', testWallet.accounts[0], 1700000001);

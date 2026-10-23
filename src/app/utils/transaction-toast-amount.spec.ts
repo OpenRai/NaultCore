@@ -1,20 +1,21 @@
-import BigNumber from 'bignumber.js';
-import { formatSmallRawAmountForToast } from './transaction-toast-amount';
+import { formatNotificationAmount } from './transaction-toast-amount';
 
-describe('formatSmallRawAmountForToast', () => {
-  it('formats small integer amounts exactly in raw', () => {
-    expect(formatSmallRawAmountForToast(new BigNumber('999999'))).toBe('999999 raw');
-    expect(formatSmallRawAmountForToast(new BigNumber('1'))).toBe('1 raw');
-    expect(formatSmallRawAmountForToast(new BigNumber('0'))).toBe('0 raw');
+describe('formatNotificationAmount', () => {
+  it('uses the configured minimum for bounded notifications', () => {
+    expect(formatNotificationAmount('999999999999999999999999', '0.000001')).toBe('<0.000001 XNO');
   });
 
-  it('leaves the threshold and larger amounts to existing XNO formatting', () => {
-    expect(formatSmallRawAmountForToast(new BigNumber('1000000'))).toBeNull();
-    expect(formatSmallRawAmountForToast(new BigNumber('1000001'))).toBeNull();
+  it('keeps one raw visible when the minimum is zero or blank', () => {
+    expect(formatNotificationAmount('1', '0')).toBe('Small amount (1 raw)');
+    expect(formatNotificationAmount('1', null)).toBe('Small amount (1 raw)');
   });
 
-  it('does not format non-integer or negative values as raw transaction amounts', () => {
-    expect(formatSmallRawAmountForToast(new BigNumber('1.5'))).toBeNull();
-    expect(formatSmallRawAmountForToast(new BigNumber('-1'))).toBeNull();
+  it('marks rounded notification amounts explicitly', () => {
+    expect(formatNotificationAmount('1234567890123456789012345678901', null)).toBe('≈1.23457 XNO');
+  });
+
+  it('keeps zero and invalid values distinguishable', () => {
+    expect(formatNotificationAmount('0', null)).toBe('0 XNO');
+    expect(formatNotificationAmount('invalid', null)).toBe('');
   });
 });

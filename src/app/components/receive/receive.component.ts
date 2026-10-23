@@ -17,6 +17,7 @@ import { TranslocoService } from "@jsverse/transloco";
 import { SpendableAccount } from "../../types/spendable-account.types";
 import { Subscription } from "rxjs";
 import { TestIds } from '../../testing/test-ids';
+import { formatNanoAmount } from '../../utils/nano-amount-format';
 import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymStorageService } from "../../services/nanonym-storage.service";
 import { WalletContextService } from "../../services/wallet-context.service";
@@ -650,5 +651,9 @@ export class ReceiveComponent implements OnInit, OnDestroy {
 
     this.inMerchantModePaymentComplete = true;
     this.inMerchantModeQR = false;
+  }
+
+  formatExactXno(raw: unknown): string {
+    return formatNanoAmount(raw, 'inspect').exactXno ?? '';
   }
 }

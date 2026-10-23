@@ -33,8 +33,7 @@
               @if (txType != txTypes.change) {
                 <div>
                   <div class="block-amount-primary" [class.uk-text-danger]="txType == txTypes.send" [class.uk-text-success]="txType == txTypes.receive">
-                    <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                    <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                    <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
                     <span class="currency-name">XNO</span>
                   </div>
                   @if (settings.settings.displayCurrency && amountFiat !== null) {
@@ -83,8 +82,7 @@
                         <div class="uk-text-small text-half-muted" style="height: 25px;">Balance</div>
                         <span class="block-balance">
                           <span class="balance-amount-primary">
-                            <span class="amount-integer">{{ fromAccountBalance ? (fromAccountBalance | rai: 'mnano,true' | amountsplit: 0) : 'N/A' }}</span>
-                            <span class="amount-fractional">{{ fromAccountBalance ? (fromAccountBalance | rai: 'mnano,true' | amountsplit: 1) : '' }}</span>
+                            <app-nano-amount [raw]="fromAccountBalance" context="inspect"></app-nano-amount>
                             <span class="currency-name">{{ fromAccountBalance ? 'XNO' : '' }}</span>
                           </span>
                         </span>
@@ -94,8 +92,7 @@
                         <span class="block-balance">
                           <span class="balance-amount-primary uk-text-danger">
                             <span class="amount-sign">-</span>
-                            <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                            <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                            <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
                             <span class="currency-name">XNO</span>
                           </span>
                         </span>
@@ -162,8 +159,7 @@
                         <div class="uk-text-small text-half-muted" style="height: 25px;">Balance</div>
                         <span class="block-balance">
                           <span class="balance-amount-primary">
-                            <span class="amount-integer">{{ toAccountBalance && txType === txTypes.receive ? (toAccountBalance | rai: 'mnano,true' | amountsplit: 0) : 'N/A' }}</span>
-                            <span class="amount-fractional">{{ toAccountBalance && txType === txTypes.receive ? (toAccountBalance | rai: 'mnano,true' | amountsplit: 1) : '' }}</span>
+                            <app-nano-amount [raw]="toAccountBalance && txType === txTypes.receive ? toAccountBalance : null" context="inspect"></app-nano-amount>
                             <span class="currency-name">{{ toAccountBalance && txType === txTypes.receive ? 'XNO' : '' }}</span>
                           </span>
                         </span>
@@ -173,8 +169,7 @@
                         <span class="block-balance">
                           <span class="balance-amount-primary uk-text-success">
                             <span class="amount-sign">+</span>
-                            <span class="amount-integer">{{ rawAmount | rai: 'mnano,true' | amountsplit: 0 }}</span>
-                            <span class="amount-fractional">{{ rawAmount | rai: 'mnano,true' | amountsplit: 1 }}</span>
+                            <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
                             <span class="currency-name">XNO</span>
                           </span>
                         </span>

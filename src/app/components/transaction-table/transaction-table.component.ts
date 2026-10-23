@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, inject } 
 import BigNumber from 'bignumber.js';
 import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
-import { RaiPipe } from '../../pipes/rai.pipe';
 import {
   EMPTY_TRANSACTION_FILTER,
   TransactionDirection,
@@ -34,7 +33,6 @@ import {
   templateUrl: './transaction-table.component.html',
   styleUrls: ['./transaction-table.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [RaiPipe],
 })
 export class TransactionTableComponent {
   private readonly translate = inject(TranslocoService);
@@ -55,7 +53,6 @@ export class TransactionTableComponent {
   /** True when the reader has opened the filter disclosure themselves. */
   filtersOpen = false;
 
-  private readonly amountPipe = new RaiPipe();
 
   get visible(): WalletTransaction[] {
     return filterTransactions(this.transactions, this.filter);
@@ -210,10 +207,6 @@ export class TransactionTableComponent {
 
   accountLabel(id: string): string {
     return this.accounts.find(a => a.id === id)?.label ?? id;
-  }
-
-  formatAmount(amount: BigNumber | string | number): string {
-    return this.amountPipe.transform(amount, 'mnano,true');
   }
 
   formatDate(timestamp: number | null): string {

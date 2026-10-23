@@ -1,0 +1,26 @@
+:host {
+  display: contents;
+}
+
+.amount-details {
+  display: inline-block;
+}
+
+.amount-details summary {
+  cursor: pointer;
+  display: inline-block;
+  margin-inline-start: 0.35em;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.amount-exact,
+.amount-raw {
+  font-variant-numeric: tabular-nums;
+  margin-inline-end: 0.35em;
+}
+
+.amount-details button,
+.amount-exact-actions button {
+  margin-inline-end: 0.35em;
+}

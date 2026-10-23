@@ -301,6 +301,7 @@
               "src/app/services/work-pool.service.spec.ts",
               "src/app/services/util.service.spec.ts",
               "src/app/utils/transaction-toast-amount.spec.ts",
+              "src/app/utils/nano-amount-format.spec.ts",
               "src/app/services/theme.service.spec.ts",
               "src/app/services/websocket.service.spec.ts",
               "src/app/services/qr-modal.service.spec.ts",

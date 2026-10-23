@@ -110,11 +110,11 @@
       <span class="tx-summary-totals">
         <span class="tx-total tx-total-in">
           <span uk-icon="icon: arrow-down; ratio: 0.6"></span>
-          {{ formatAmount(totals.incoming) }}
+          <app-nano-amount [raw]="totals.incoming" context="notify"></app-nano-amount>
         </span>
         <span class="tx-total tx-total-out">
           <span uk-icon="icon: arrow-up; ratio: 0.6"></span>
-          {{ formatAmount(totals.outgoing) }}
+          <app-nano-amount [raw]="totals.outgoing" context="notify"></app-nano-amount>
         </span>
       </span>
     }
@@ -218,7 +218,7 @@
                   [class.tx-amount-in]="tx.direction === 'received'"
                   [class.tx-amount-out]="tx.direction === 'sent'"
                 >
-                  {{ tx.direction === 'received' ? '+' : '−' }}{{ formatAmount(tx.amount) }}
+                  {{ tx.direction === 'received' ? '+' : '−' }}<app-nano-amount [raw]="tx.amount" context="notify"></app-nano-amount>
                 </span>
                 <span class="tx-unit">XNO</span>
               </td>

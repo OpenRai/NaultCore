@@ -25,7 +25,8 @@ import { NanoNymManagerService } from "../../services/nanonym-manager.service";
 import { NanoNymAccountSelectionService } from "../../services/nanonym-account-selection.service";
 import { OrbitdbNotificationService } from "../../services/orbitdb-notification.service";
 import { WalletContextService } from "../../services/wallet-context.service";
-import { formatSmallRawAmountForToast } from "../../utils/transaction-toast-amount";
+import { formatNotificationAmount } from "../../utils/transaction-toast-amount";
+import { formatNanoAmount } from '../../utils/nano-amount-format';
 
 const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
@@ -820,8 +821,7 @@ export class SendComponent implements OnInit {
         }
 
         this.notificationService.removeNotification("success-send");
-        const smallRawAmount = formatSmallRawAmountForToast(new BigNumber(this.rawAmount));
-        const sentAmountLabel = smallRawAmount || `${this.amount} ${this.selectedAmount.shortName}`;
+        const sentAmountLabel = formatNotificationAmount(new BigNumber(this.rawAmount), this.settings?.settings?.minimumReceive);
         this.notificationService.sendSuccess(
           `Successfully sent ${sentAmountLabel}!`,
           { identifier: "success-send" },
@@ -1091,9 +1091,7 @@ export class SendComponent implements OnInit {
       }
 
       if (successCount > 0) {
-        const smallRawAmount = formatSmallRawAmountForToast(totalSent);
-        const sentXNO = this.util.nano.rawToMnano(totalSent).toFixed(6);
-        const sentAmountLabel = smallRawAmount || `${sentXNO} XNO`;
+        const sentAmountLabel = formatNotificationAmount(totalSent, this.settings?.settings?.minimumReceive);
         this.notificationService.removeNotification("success-send");
         this.notificationService.sendSuccess(
           `Successfully sent ${sentAmountLabel} from ${successCount} stealth account${successCount > 1 ? 's' : ''}!`,
@@ -1447,7 +1445,7 @@ export class SendComponent implements OnInit {
         this.preparingTransaction = false;
         console.error('[Send-NanoNym] Selection failed - insufficient balance');
         return this.notificationService.sendError(
-          `Insufficient balance in ${currentNanoNymAccount.label}. Available: ${this.util.nano.rawToMnano(currentNanoNymAccount.balance).toFixed(6)} XNO`
+          `Insufficient balance in ${currentNanoNymAccount.label}. Available: ${formatNotificationAmount(currentNanoNymAccount.balance, this.settings?.settings?.minimumReceive)}`
         );
       }
 
@@ -1569,7 +1567,7 @@ export class SendComponent implements OnInit {
   formatAccountLabel(account: SpendableAccount): string {
     return formatSpendableAccountLabel(
       account,
-      (raw: BigNumber) => this.util.nano.rawToMnano(raw).toFixed(6).replace(/\.?0+$/, '')
+      (raw: BigNumber) => formatNanoAmount(raw, 'review', this.settings?.settings?.minimumReceive).display.replace(/\sXNO$/, '')
     );
   }
 

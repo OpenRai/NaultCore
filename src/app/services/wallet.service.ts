@@ -12,7 +12,6 @@ import {NotificationService} from './notification.service';
 import {AppSettingsService} from './app-settings.service';
 import {PriceService} from './price.service';
 import {LedgerService} from './ledger.service';
-import { NoPaddingZerosPipe } from 'app/pipes/no-padding-zeros.pipe';
 import { NanoNymManagerService } from './nanonym-manager.service';
 import { NanoNymStorageService } from './nanonym-storage.service';
 import { SpendableAccount, RegularAccount, NanoNymAccount } from '../types/spendable-account.types';
@@ -20,7 +19,7 @@ import { combineLatest, Observable, of } from 'rxjs';
 import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './passkey-unlock.service';
-import { formatSmallRawAmountForToast } from '../utils/transaction-toast-amount';
+import { formatNotificationAmount } from '../utils/transaction-toast-amount';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -159,7 +158,6 @@ export class WalletService {
   private websocket = inject(WebsocketService);
   private nanoBlock = inject(NanoBlockService);
   private ledgerService = inject(LedgerService);
-  private noZerosPipe = inject(NoPaddingZerosPipe);
   private notifications = inject(NotificationService);
   private nanoNymStorage = inject(NanoNymStorageService);
   private injector = inject(Injector);
@@ -1525,12 +1523,9 @@ export class WalletService {
       this.successfulBlocks.push(nextBlock.hash);
 
       const rawReceiveAmount = new BigNumber(nextBlock.amount);
-      const smallRawAmount = formatSmallRawAmountForToast(rawReceiveAmount);
-      const receiveAmount = this.util.nano.rawToMnano(rawReceiveAmount);
+      const receiveAmount = formatNotificationAmount(rawReceiveAmount, this.appSettings.settings.minimumReceive);
       this.notifications.removeNotification('success-receive');
-      const receiveMessage = smallRawAmount
-        ? `Successfully received ${smallRawAmount}!`
-        : `Successfully received ${receiveAmount.isZero() ? '' : this.noZerosPipe.transform(receiveAmount.toFixed(6)) } XNO!`;
+      const receiveMessage = `Successfully received ${receiveAmount}!`;
       this.notifications.sendSuccess(receiveMessage, { identifier: 'success-receive' });
 
       // remove after processing

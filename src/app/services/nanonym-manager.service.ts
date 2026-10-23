@@ -7,10 +7,9 @@ import { WebsocketService } from "./websocket.service";
 import { NanoBlockService } from "./nano-block.service";
 import { UtilService } from "./util.service";
 import { NotificationService } from "./notification.service";
-import { NoPaddingZerosPipe } from "../pipes/no-padding-zeros.pipe";
 import { AppSettingsService } from "./app-settings.service";
 import { WorkPoolService } from "./work-pool.service";
-import { formatSmallRawAmountForToast } from "../utils/transaction-toast-amount";
+import { formatNotificationAmount } from "../utils/transaction-toast-amount";
 
 // Type-only imports (erased at compile time, zero bundle cost)
 import type { NanoNym, StealthAccount, NanoNymNotification } from "../types/nanonym.types";
@@ -58,7 +57,6 @@ export class NanoNymManagerService implements OnDestroy {
   private nanoBlock = inject(NanoBlockService);
   private util = inject(UtilService);
   private notifications = inject(NotificationService);
-  private noZerosPipe = inject(NoPaddingZerosPipe);
   private appSettings = inject(AppSettingsService);
   private orbitdbService = inject(OrbitdbNotificationService);
   private workPool = inject(WorkPoolService);
@@ -547,10 +545,9 @@ export class NanoNymManagerService implements OnDestroy {
       console.log(`[Manager] ✅ Stealth account created: ${recovered.stealth.address}`);
 
       // 7.5. Show incoming payment notification
-      const incomingAmount = this.util.nano.rawToMnano(stealthAccount.balance);
       this.notifications.removeNotification('incoming-nanonym-payment');
       this.notifications.sendInfo(
-        `Incoming payment: ${this.noZerosPipe.transform(incomingAmount.toFixed(6))} XNO to ${nanoNym.label}`,
+        `Incoming payment: ${formatNotificationAmount(stealthAccount.amountRaw, this.appSettings.settings.minimumReceive)} to ${nanoNym.label}`,
         { identifier: 'incoming-nanonym-payment', timeout: 5000 }
       );
 
@@ -644,10 +641,8 @@ export class NanoNymManagerService implements OnDestroy {
         console.log(`[Manager] ✅ Phase 1 Success: Stealth account ${stealthAccount.address} opened. Receive block hash: ${newHash}`);
 
         const receiveAmount = new BigNumber(stealthAccount.amountRaw);
-        const smallRawAmount = formatSmallRawAmountForToast(receiveAmount);
+        const receiveAmountLabel = formatNotificationAmount(receiveAmount, this.appSettings.settings.minimumReceive);
         this.notifications.removeNotification('success-receive-nanonym');
-        const receiveAmountLabel = smallRawAmount
-          || `${this.noZerosPipe.transform(this.util.nano.rawToMnano(receiveAmount).toFixed(6))} XNO`;
         this.notifications.sendSuccess(`Successfully received ${receiveAmountLabel} to ${nanoNym.label}!`, { identifier: 'success-receive-nanonym' });
 
         // Update the stealth account's balance and the parent NanoNym's balance

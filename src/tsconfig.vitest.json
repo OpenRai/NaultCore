@@ -38,6 +38,8 @@
     "app/services/util.service.spec.ts",
     "app/services/util.service.ts",
     "app/utils/transaction-toast-amount.spec.ts",
+    "app/utils/nano-amount-format.ts",
+    "app/utils/nano-amount-format.spec.ts",
     "app/services/theme.service.spec.ts",
     "app/services/websocket.service.spec.ts",
     "app/services/qr-modal.service.spec.ts",

@@ -1,0 +1,21 @@
+<ng-container *ngIf="presentation as amount">
+  <ng-container [ngSwitch]="amount.relation">
+    <span *ngSwitchCase="'unavailable'" aria-label="{{ 'amount.unavailable' | transloco }}">—</span>
+    <span *ngSwitchCase="'invalid'" aria-label="{{ 'amount.unavailable' | transloco }}">—</span>
+    <ng-container *ngSwitchDefault>
+      <span *ngIf="amount.relation === 'small'" [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ smallText }}</span>
+      <span *ngIf="amount.relation !== 'small'" [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ amount.display }}</span>
+      <details *ngIf="amount.relation === 'small' || amount.relation === 'bounded' || amount.relation === 'approximate'" class="amount-details">
+        <summary [attr.aria-label]="'amount.show-exact-amount' | transloco">{{ 'amount.exact-details' | transloco }}</summary>
+        <span class="amount-exact" data-testid="nano-amount-exact">{{ amount.exactXno }} XNO</span>
+        <button type="button" ngxClipboard [cbContent]="amount.exactXno" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-xno' | transloco">{{ 'amount.copy-xno' | transloco }}</button>
+        <span class="amount-raw">{{ amount.exactRaw }} raw</span>
+        <button type="button" ngxClipboard [cbContent]="amount.exactRaw" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-raw' | transloco">{{ 'amount.copy-raw' | transloco }}</button>
+      </details>
+      <ng-container *ngIf="amount.relation === 'exact' && (context === 'authorize' || context === 'inspect')">
+        <button type="button" ngxClipboard [cbContent]="amount.exactXno" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-xno' | transloco">{{ 'amount.copy-xno' | transloco }}</button>
+        <details class="amount-details"><summary [attr.aria-label]="'amount.show-raw-amount' | transloco">{{ 'amount.raw-details' | transloco }}</summary><span class="amount-raw">{{ amount.exactRaw }} raw</span><button type="button" ngxClipboard [cbContent]="amount.exactRaw" (cbOnSuccess)="copied()" [attr.aria-label]="'amount.copy-exact-raw' | transloco">{{ 'amount.copy-raw' | transloco }}</button></details>
+      </ng-container>
+    </ng-container>
+  </ng-container>
+</ng-container>

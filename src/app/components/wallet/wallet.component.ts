@@ -9,8 +9,6 @@ import { TransactionHistoryService } from '../../services/transaction-history.se
 import { AppSettingsService } from '../../services/app-settings.service';
 import { TestIds } from '../../testing/test-ids';
 import { TransactionIntent } from '../../types/wallet-context.types';
-import { RaiPipe } from '../../pipes/rai.pipe';
-import BigNumber from 'bignumber.js';
 import { WalletTransaction, sortTransactions } from '../../models/transaction.model';
 
 /** The Wallet page shows at most this many merged entries. */
@@ -34,7 +32,6 @@ export class WalletComponent implements OnInit, OnDestroy {
 
   readonly testIds = TestIds;
   readonly walletState$ = this.walletService.walletState$;
-  private readonly amountPipe = new RaiPipe();
   private readonly translate = inject(TranslocoService);
 
   /**
@@ -157,18 +154,6 @@ export class WalletComponent implements OnInit, OnDestroy {
     if (!address) return '';
     if (address.length <= 20) return address;
     return `${address.slice(0, 10)}…${address.slice(-8)}`;
-  }
-
-  formatAmount(amount: BigNumber | string | number): string {
-    return this.amountPipe.transform(amount, 'mnano,true');
-  }
-
-  formatFiat(value: number, currency: string): string {
-    try {
-      return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
-    } catch {
-      return `${value} ${currency}`;
-    }
   }
 
   selectAccount(accountId: string): void {

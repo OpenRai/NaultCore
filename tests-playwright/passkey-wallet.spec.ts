@@ -138,6 +138,9 @@ test.describe('passkey wallet journeys', () => {
   });
 
   test('imports recovery material, enrolls later, and restores an encrypted backup without reconnecting the passkey', async ({ page }) => {
+    // The recovery verifier probes ten account indices across each compatible
+    // interpretation; allow slower CI runners time to finish that bounded scan.
+    test.setTimeout(90_000);
     const authenticator = await installVirtualAuthenticator(page);
     const testOnlySeed = randomBytes(32).toString('hex').toUpperCase();
     await startWithEmptyWallet(page);

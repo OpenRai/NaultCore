@@ -112,13 +112,14 @@ test.describe('passkey wallet journeys', () => {
     await expect(page.getByTestId('accounts-page-root')).toBeVisible();
     await expect(page.getByTestId('receive-account-button').first()).toBeVisible();
     await page.getByTestId('receive-account-button').first().click();
-    await expect(page.locator('#unlock-wallet-modal')).toBeVisible();
     await expect(page.getByRole('button', { name: /Wallet Unlocked/ })).toBeVisible({ timeout: 15000 });
-    // Dismiss the completed gate explicitly; UIkit can leave the modal in its transition
-    // state while the route change from the gated action completes.
-    await page.getByTestId('wallet-widget-cancel-button').click();
-    await expect(page.locator('#unlock-wallet-modal')).toBeHidden();
     await expect(page).toHaveURL(/\/receive\?account=/);
+    // A successful passkey prompt can dismiss the modal before Playwright observes it.
+    // If UIkit is still showing it during the route transition, close it explicitly.
+    if (await page.locator('#unlock-wallet-modal').isVisible()) {
+      await page.getByTestId('wallet-widget-cancel-button').click();
+      await expect(page.locator('#unlock-wallet-modal')).toBeHidden();
+    }
 
     await lockFromSidebar(page);
     await expect(page.getByText('You must set a password on your wallet - it is currently blank!')).toHaveCount(0);

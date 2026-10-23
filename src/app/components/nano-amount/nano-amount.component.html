@@ -12,7 +12,7 @@
       } @else {
         <span [attr.data-relation]="amount.relation" data-testid="nano-amount-summary">{{ amount.display }}</span>
       }
-      @if (amount.relation === 'small' || amount.relation === 'bounded' || amount.relation === 'approximate') {
+      @if (showExactDetails && (amount.relation === 'small' || amount.relation === 'bounded' || amount.relation === 'approximate')) {
         <details class="amount-details">
           <summary [attr.aria-label]="'amount.show-exact-amount' | transloco">{{ 'amount.exact-details' | transloco }}</summary>
           <span class="amount-exact" data-testid="nano-amount-exact">{{ amount.exactXno }} XNO</span>

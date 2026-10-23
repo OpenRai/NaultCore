@@ -203,30 +203,15 @@
                   (keydown.space)="requestWalletUnlockFromReceivable($event)"
                 >
                   <div class="card-contents">
-                    <div class="account-name-container">
+                    <div class="account-name-container pending-overview-heading">
                       @if (walletService.isLocked()) {
-                        <span class="name">Receivable</span>
+                        <span class="name">Pending</span>
                       } @else {
-                        <a routerLink="/receive" class="name">Receivable</a>
+                        <a routerLink="/receive" class="name">Pending</a>
                       }
-                      <div class="receivable-status">Confirmed &bull; ready to receive</div>
                     </div>
-                    <div class="account-balances">
-                      <div class="balance-container primary">
-                        <div class="currency-name">XNO</div>
-                        <div class="amount-container">
-                          <app-nano-amount [raw]="walletState.pending" context="notify" smallLabel="balance"></app-nano-amount>
-                        </div>
-                      </div>
-                      @if (settings.settings.displayCurrency) {
-                        <div class="balance-container converted">
-                          <div class="currency-name">{{ settings.settings.displayCurrency }}</div>
-                          <div class="amount-container">
-                            <div class="amount-integer">{{ walletState.pendingFiat | fiat: settings.settings.displayCurrency | amountsplit: 0 }}</div>
-                            <div class="amount-fractional">{{ walletState.pendingFiat | fiat: settings.settings.displayCurrency | amountsplit: 1 }}</div>
-                          </div>
-                        </div>
-                      }
+                    <div class="pending-overview-amount">
+                      <app-nano-amount [raw]="walletState.pending" context="notify" [showExactDetails]="false"></app-nano-amount>
                     </div>
                   </div>
                 </div>

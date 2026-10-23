@@ -93,27 +93,33 @@
 	&.incoming-card {
 		background: #272837;
 
-		min-height: 125px;
-		height: 125px;
+		min-height: 94px;
+		height: 94px;
 
 		@media (min-width: 1500px) {
-			min-height: 140px;
-			height: 140px;
+			min-height: 104px;
+			height: 104px;
 		}
 
-		> .card-contents > .account-name-container {
-			align-items: flex-start;
-			flex-direction: column;
-			margin-bottom: 7px;
+		> .card-contents > .pending-overview-heading {
+			margin: 13px 17px 4px;
 
 			> .name {
-				margin-bottom: 1px;
-			}
-
-			> .receivable-status {
 				color: #A3B0D6;
-				font-size: 11px;
-				line-height: 1.2;
+				font-size: 12px;
+			}
+		}
+
+		> .card-contents > .pending-overview-amount {
+			margin: 0 17px;
+			color: #FFF;
+			font-size: 22px;
+			font-weight: 600;
+			line-height: 1.2;
+			font-variant-numeric: tabular-nums;
+
+			@media (min-width: 1500px) {
+				font-size: 25px;
 			}
 		}
 	}

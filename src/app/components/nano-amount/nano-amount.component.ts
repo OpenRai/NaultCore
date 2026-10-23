@@ -15,6 +15,7 @@ export class NanoAmountComponent {
   @Input() raw: unknown;
   @Input() context: NanoAmountContext = 'review';
   @Input() smallLabel: 'amount' | 'balance' = 'amount';
+  @Input() showExactDetails = true;
 
   private readonly settings = inject(AppSettingsService);
   private readonly notifications = inject(NotificationService);

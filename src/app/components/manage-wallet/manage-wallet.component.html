@@ -9,19 +9,16 @@
           <h3 class="uk-card-title">Passkey / Device Authentication</h3>
         </div>
         <div class="uk-card-body">
-          <p>Use your device authentication to unlock this wallet. A device may ask for a fingerprint, face recognition, PIN, or another unlock method. Your wallet password and recovery backup remain important.</p>
-          @if (!walletService.canEnrollPasskey) {
-            <p>Passkey setup is unavailable in this browser or wallet storage mode.</p>
-          }
-          @if (walletService.canEnrollPasskey && !canManagePasskeys) {
-            @if (walletService.isLocked()) {
-              <p>
-                <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> with your wallet password to access passkey / device authentication settings.
-              </p>
-            } @else if (walletService.hasPasswordProtectedWallet()) {
-              <p>For passkey management, lock this wallet and unlock it with your wallet password.</p>
-            } @else {
-              <p>Set a wallet password <a href="#change-wallet-password">below</a> before enabling passkey unlock.</p>
+          @if (walletService.isLocked()) {
+            <p>
+              <button type="button" class="unlock-wallet-link" (click)="unlockWallet()"><span uk-icon="icon: lock;"></span> Unlock wallet</button> with your wallet password to access passkey / device authentication settings.
+            </p>
+          } @else {
+            <p>Use a passkey to unlock with your device. Your wallet password still works.</p>
+            @if (!walletService.canEnrollPasskey) {
+              <p>Passkeys aren't available for this wallet in this browser.</p>
+            } @else if (!canManagePasskeys) {
+              <p>To change these settings, lock the wallet and unlock with your wallet password.</p>
             }
           }
           @if (passkeyCredentials.length) {
@@ -29,22 +26,21 @@
               @for (credential of passkeyCredentials; track credential.credentialId) {
                 <li class="uk-flex uk-flex-between uk-flex-middle">
                   <span>{{ credential.label }} · Added {{ credential.createdAt | date:'mediumDate' }}</span>
-                  <button class="uk-button uk-button-default uk-button-small" type="button"
-                    (click)="removePasskey(credential.credentialId)" [disabled]="!canManagePasskeys || passkeyActionInProgress">
-                    Remove passkey
-                  </button>
+                  @if (!walletService.isLocked()) {
+                    <button class="uk-button uk-button-default uk-button-small" type="button"
+                      (click)="removePasskey(credential.credentialId)" [disabled]="!canManagePasskeys || passkeyActionInProgress">
+                      Remove passkey
+                    </button>
+                  }
                 </li>
               }
             </ul>
-          } @else {
-            <p>No passkey is enrolled for this wallet on this browser.</p>
-          }
-          <p class="uk-text-small">Each wallet has one passkey enrollment on this browser. A newly created or imported wallet starts without one, so set it up again after choosing a password.</p>
-          @if (passkeyCredentials.length) {
-            <p class="uk-text-small">Removing it disconnects it from this wallet. The credential itself may remain in your device or password manager.</p>
+            @if (!walletService.isLocked()) {
+              <p class="uk-text-small">Removing a passkey disconnects it from this wallet. It may still appear on your device or in your password manager.</p>
+            }
           }
         </div>
-        @if (walletService.canEnrollPasskey && !passkeyCredentials.length) {
+        @if (!walletService.isLocked() && walletService.canEnrollPasskey && !passkeyCredentials.length) {
           <div class="uk-card-footer uk-text-right">
             <button class="uk-button uk-button-primary" type="button" (click)="enablePasskey()" [disabled]="!canManagePasskeys || passkeyActionInProgress">
               Enable passkey unlock

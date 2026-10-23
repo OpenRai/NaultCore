@@ -64,7 +64,8 @@ test('shows loading instead of zero while startup balance reconciliation is pend
   await expect(page.locator('.balance-int[role="status"]')).toHaveText('Loading…');
 
   releaseBalances();
-  await expect(page.locator('.balance-unit')).toHaveText('XNO');
+  const balance = page.locator('[data-testid="wallet-summary-card"] .summary-primary app-nano-amount');
+  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('0 XNO');
 });
 
 test('discloses an exact one-raw balance when the receive minimum is disabled', async ({ seededPage, testWallet }) => {

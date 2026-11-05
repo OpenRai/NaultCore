@@ -297,6 +297,7 @@ export class SweeperComponent implements OnInit {
         return;
       }
 
+      this.workPool.updateAccountFrontier(address, data.hash);
       this.workPool.suppressPrecomputation(address, data.hash);
       const nanoAmountSent = this.util.nano.rawToMnano(this.adjustedBalance);
       this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
@@ -343,6 +344,7 @@ export class SweeperComponent implements OnInit {
       // publish block for each iteration
       const data = await this.api.process(block.block, this.subType === 'open' ? TxType.open : TxType.receive);
       if (data.hash) {
+        this.workPool.updateAccountFrontier(receiveAddress, data.hash);
         this.appendLog('Pending receive accepted by the node. Receive block: ' + data.hash);
 
         // continue with the next pending
@@ -462,6 +464,9 @@ export class SweeperComponent implements OnInit {
       validResponse = true;
       balance = accountInfo.balance;
       this.adjustedBalance = balance.toString();
+      if (parseInt(this.adjustedBalance, 10) > 0) {
+        this.appendLog('Found balance of ' + this.util.nano.rawToMnano(this.adjustedBalance) + ' XNO in source account ' + address + '.');
+      }
       previous = accountInfo.frontier;
       this.representative = accountInfo.representative;
       subType = 'receive';

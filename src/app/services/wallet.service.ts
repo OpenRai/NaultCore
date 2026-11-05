@@ -5,7 +5,7 @@ import {ApiService} from './api.service';
 import {BigNumber} from 'bignumber.js';
 import {AddressBookService} from './address-book.service';
 import * as CryptoJS from 'crypto-js';
-import {WorkPoolService} from './work-pool.service';
+import {WorkFrontierChangedError, WorkPoolService} from './work-pool.service';
 import {WebsocketService} from './websocket.service';
 import {NanoBlockService} from './nano-block.service';
 import {NotificationService} from './notification.service';
@@ -1518,7 +1518,21 @@ export class WalletService {
       return; // Dispose of the block, no matching account
     }
 
-    const newHash = await this.nanoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
+    let newHash: string;
+    try {
+      newHash = await this.nanoBlock.generateReceive(walletAccount, nextBlock.hash, this.isLedgerWallet());
+    } catch (error) {
+      // Work can legitimately become stale while another action advances this account.
+      // Release the inbox guard before reconciliation; never retry an uncertain process result.
+      this.processingPending = false;
+      if (error instanceof WorkFrontierChangedError) {
+        await this.refreshWalletState('pending-receive-frontier-change');
+        setTimeout(() => void this.processPendingBlocks(), 1500);
+        return;
+      }
+      this.notifications.sendError('There was a problem receiving the transaction, try manually!', {length: 10000});
+      return;
+    }
     if (newHash) {
       if (this.successfulBlocks.length >= 15) this.successfulBlocks.shift();
       this.successfulBlocks.push(nextBlock.hash);

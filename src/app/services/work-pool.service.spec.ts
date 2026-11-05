@@ -84,6 +84,106 @@ describe('WorkPoolService', () => {
     uninstallTestClock();
   });
 
+  it('preserves active and queued external sweep work across unrelated wallet refreshes', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const receive = service.getWork(root('A'), 1 / 64, 'external');
+    const send = service.getWork(root('B'), 1, 'external');
+    service.syncAccountRoots([{ account: 'wallet', root: root('C'), multiplier: 1 }]);
+    expect(worker().terminated).toBe(false);
+    worker().respond({ id: worker().posted.at(-1)!.id, ok: true, work: `${receiveThreshold}-WORK` });
+    expect(await receive).toBe(`${receiveThreshold}-WORK`);
+    expect(worker().posted.at(-1)!.root).toBe(root('B'));
+    expect(worker().posted.at(-1)!.threshold).toBe(sendThreshold);
+    worker().respond({ id: worker().posted.at(-1)!.id, ok: true, work: `${sendThreshold}-WORK` });
+    expect(await send).toBe(`${sendThreshold}-WORK`);
+    expect(service.workExists(root('B'), 1, 'external')).toBe(true);
+  });
+
+  it('rotates account lanes before serving a busy account again', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const first = service.getWork(root('A'), 1 / 64, 'account0');
+    const again = service.getWork(root('B'), 1 / 64, 'account0');
+    const fifth = service.getWork(root('C'), 1 / 64, 'account5');
+    const eighth = service.getWork(root('D'), 1 / 64, 'account8');
+    for (const expected of ['A', 'C', 'D', 'B']) {
+      expect(worker().posted.at(-1)!.root).toBe(root(expected));
+      worker().respond({ id: worker().posted.at(-1)!.id, ok: true, work: `${receiveThreshold}-WORK` });
+    }
+    await Promise.all([first, again, fifth, eighth]);
+  });
+
+  it('cancels old external frontier work while preserving other account lanes', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    const stale = service.getWork(root('A'), 1, 'external');
+    const queued = service.getWork(root('B'), 1, 'external');
+    const other = service.getWork(root('C'), 1 / 64, 'other');
+    const oldWorker = worker();
+    service.updateAccountFrontier('external', root('D'));
+    expect(oldWorker.terminated).toBe(true);
+    await expectRejectedWithError(stale, 'PoW request invalidated by frontier change');
+    await expectRejectedWithError(queued, 'PoW request invalidated by frontier change');
+    expect(worker().posted.at(-1)!.root).toBe(root('C'));
+    worker().respond({ id: worker().posted.at(-1)!.id, ok: true, work: `${receiveThreshold}-WORK` });
+    await other;
+  });
+
+  it('cancels changed wallet roots, preserves other lanes, and cancels removed accounts', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    service.syncAccountRoots([{ account: 'wallet', root: root('A'), multiplier: 1 }]);
+    const stale = service.getWork(root('A'), 1, 'wallet');
+    const other = service.getWork(root('C'), 1 / 64, 'other');
+    const oldWorker = worker();
+    service.syncAccountRoots([{ account: 'wallet', root: root('B'), multiplier: 1 }]);
+    expect(oldWorker.terminated).toBe(true);
+    await expectRejectedWithError(stale, 'PoW request invalidated by frontier change');
+    expect(worker().posted.at(-1)!.root).toBe(root('C'));
+    worker().respond({ id: worker().posted.at(-1)!.id, ok: true, work: `${receiveThreshold}-WORK` });
+    await other;
+    const removed = service.getWork(root('B'), 1, 'wallet');
+    service.syncAccountRoots([]);
+    await expectRejectedWithError(removed, 'PoW request invalidated by frontier change');
+    expect(service.state$.value.activeRoot).toBeNull();
+  });
+
+  it('ignores remote completions from cancelled work', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    (TestBed.inject(PowRoutingService) as any).state = { policy: 'remote', route: 'remote' };
+    let completeOld: (value: {work: string}) => void;
+    api.workGenerateOnce.mockImplementationOnce(() => new Promise(resolve => completeOld = resolve));
+    const stale = service.getWork(root('A'), 1, 'external');
+    service.updateAccountFrontier('external', root('B'));
+    await expectRejectedWithError(stale, 'PoW request invalidated by frontier change');
+    api.workGenerateOnce.mockReturnValue(new Promise(() => undefined));
+    const current = service.getWork(root('B'), 1, 'external');
+    completeOld!({ work: `${sendThreshold}-WORK` });
+    await Promise.resolve();
+    expect(service.state$.value.activeRoot).toBe(root('B'));
+    expect(service.workExists(root('B'), 1, 'external')).toBe(false);
+    service.cancelAllWork();
+    await expectRejectedWithError(current, 'Proof of Work generation cancelled by the user');
+  });
+
+  it('ignores an old remote generation after the same speculative job resumes', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    (TestBed.inject(PowRoutingService) as any).state = { policy: 'remote', route: 'remote' };
+    let completeOld: (value: {work: string}) => void;
+    let completeResumed: (value: {work: string}) => void;
+    api.workGenerateOnce
+      .mockImplementationOnce(() => new Promise(resolve => completeOld = resolve))
+      .mockResolvedValueOnce({ work: `${sendThreshold}-WORK` })
+      .mockImplementationOnce(() => new Promise(resolve => completeResumed = resolve));
+    service.addWorkToCache(root('A'), 1, 'background');
+    await service.getWork(root('B'), 1, 'interactive', true);
+    expect(service.state$.value.activeRoot).toBe(root('A'));
+    completeOld!({ work: `${sendThreshold}-WORK` });
+    await Promise.resolve();
+    expect(service.workExists(root('A'), 1, 'background')).toBe(false);
+    expect(service.state$.value.activeRoot).toBe(root('A'));
+    completeResumed!({ work: `${sendThreshold}-WORK` });
+    await Promise.resolve();
+    expect(service.workExists(root('A'), 1, 'background')).toBe(true);
+  });
+
   it('persists locally generated work and restores it only for its matching account and root', async () => {
     const service = TestBed.inject(WorkPoolService);
     const accountRoot = root('A');
@@ -191,18 +291,34 @@ describe('WorkPoolService', () => {
     expect(local.posted.map(request => request.root)).toEqual([root('A'), root('B'), root('C')]);
   });
 
-  it('preempts speculative receive work for an interactive send', async () => {
+  it('finishes an active receive before the interactive send, ahead of queued receives', async () => {
     const service = TestBed.inject(WorkPoolService);
     const receive = service.getWork(root('A'), 1 / 64, 'nano_1');
-    const interactive = service.getWork(root('B'), 1, 'nano_1', true);
-    const initialWorker = ControlledWorker.instances[0];
-    const interactiveWorker = worker();
-    expect(initialWorker.terminated).toBe(true);
-    expect(interactiveWorker.posted[0]).toEqual(partial({ root: root('B'), threshold: sendThreshold }));
-    interactiveWorker.respond({ id: interactiveWorker.posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
-    expect(await interactive).toBe(`${sendThreshold}-WORK`);
-    interactiveWorker.respond({ id: interactiveWorker.posted[1].id, ok: true, work: `${receiveThreshold}-WORK` });
+    const nextReceive = service.getWork(root('C'), 1 / 64, 'nano_3');
+    const interactive = service.getWork(root('B'), 1, 'nano_2', true);
+    const local = worker();
+    expect(local.terminated).toBe(false);
+    local.respond({ id: local.posted[0].id, ok: true, work: `${receiveThreshold}-WORK` });
     expect(await receive).toBe(`${receiveThreshold}-WORK`);
+    expect(local.posted[1]).toEqual(partial({ root: root('B'), threshold: sendThreshold }));
+    local.respond({ id: local.posted[1].id, ok: true, work: `${sendThreshold}-WORK` });
+    expect(await interactive).toBe(`${sendThreshold}-WORK`);
+    expect(local.posted[2].root).toBe(root('C'));
+    local.respond({ id: local.posted[2].id, ok: true, work: `${receiveThreshold}-WORK` });
+    await nextReceive;
+  });
+
+  it('preempts speculative work for an interactive send and resumes it afterward', async () => {
+    const service = TestBed.inject(WorkPoolService);
+    service.addWorkToCache(root('A'), 1, 'nano_1', 10);
+    const original = worker();
+    const interactive = service.getWork(root('B'), 1, 'nano_2', true);
+    expect(original.terminated).toBe(true);
+    expect(worker().posted[0].root).toBe(root('B'));
+    worker().respond({ id: worker().posted[0].id, ok: true, work: `${sendThreshold}-WORK` });
+    await interactive;
+    expect(worker().posted[1].root).toBe(root('A'));
+    worker().respond({ id: worker().posted[1].id, ok: true, work: `${sendThreshold}-WORK` });
   });
 
   it('keeps receive/open and send-tier cache validity isolated', async () => {

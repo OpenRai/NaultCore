@@ -6,6 +6,13 @@ import { UtilService } from './util.service';
 import { AppSettingsService } from './app-settings.service';
 import { PowRoute, PowRoutingService } from './pow-routing.service';
 
+export class WorkFrontierChangedError extends Error {
+  constructor() {
+    super('PoW request invalidated by frontier change');
+    this.name = 'WorkFrontierChangedError';
+  }
+}
+
 export interface StoredWorkEntry {
   account: string | null;
   root: string;
@@ -104,6 +111,9 @@ export class WorkPoolService {
   private requests: WorkRequest[] = [];
   private inFlight = new Map<string, Promise<string>>();
   private nextRequestId = 0;
+  private dispatchSequence = 0;
+  private lastServed = new Map<string | null, number>();
+  private externalAccounts = new Set<string>();
   private accountRoots = new Map<string, string>();
   private accountPurposes = new Map<string, WorkPurpose>();
   // A sweeper may deliberately drain an account and know that its just-created
@@ -163,9 +173,11 @@ export class WorkPoolService {
   /** Reconciles durable work with the node's current account frontiers. */
   public syncAccountRoots(demands: WorkAccountDemand[]): void {
     this.loaded = true;
+    const previousAccounts = new Set(this.accountRoots.keys());
     this.accountRoots = new Map(demands.map(demand => [demand.account, demand.root.toUpperCase()]));
     this.accountPurposes = new Map(demands.map(demand => [demand.account, demand.purpose ?? 'frontier']));
     const validAccounts = new Set(this.accountRoots.keys());
+    for (const account of validAccounts) this.externalAccounts.delete(account);
     for (const [account, root] of this.suppressedPrecomputation) {
       if (!validAccounts.has(account) || this.accountRoots.get(account) !== root) {
         this.suppressedPrecomputation.delete(account);
@@ -179,18 +191,22 @@ export class WorkPoolService {
     }
     this.requests = this.requests.filter(request => {
       const expectedRoot = request.account ? this.accountRoots.get(request.account) : undefined;
-      if (request.account && (!expectedRoot || expectedRoot !== request.root)) {
-        request.reject(new Error('PoW request invalidated by frontier change'));
+      if (request.account && ((expectedRoot && expectedRoot !== request.root) ||
+          (!expectedRoot && previousAccounts.has(request.account)))) {
+        request.reject(new WorkFrontierChangedError());
         return false;
       }
       return true;
     });
     if (this.activeRequest?.account) {
       const expectedRoot = this.accountRoots.get(this.activeRequest.account);
-      if (!expectedRoot || expectedRoot !== this.activeRequest.root) {
-        this.removeFromCache(this.activeRequest.root, this.activeRequest.account);
+      if ((expectedRoot && expectedRoot !== this.activeRequest.root) ||
+          (!expectedRoot && previousAccounts.has(this.activeRequest.account))) {
+        this.cancelActiveRequest(new WorkFrontierChangedError());
       }
     }
+    this.workCache = this.workCache.filter(entry =>
+      !entry.account || !previousAccounts.has(entry.account) || validAccounts.has(entry.account));
     this.pruneWorkCache();
     this.persist();
     for (const demand of demands) {
@@ -201,6 +217,32 @@ export class WorkPoolService {
       const multiplier = purpose === 'receive-open' ? Math.min(demand.multiplier, 1 / 64) : demand.multiplier;
       this.addWorkToCache(demand.root, multiplier, demand.account, demand.priority ?? 0);
     }
+    this.processNext();
+    this.publishState();
+  }
+
+  /** Call after observing an accepted frontier, including for external sweep accounts. */
+  public updateAccountFrontier(account: string, hash: string): void {
+    const root = hash.toUpperCase();
+    if (this.accountRoots.has(account)) {
+      this.accountRoots.set(account, root);
+      this.accountPurposes.set(account, 'frontier');
+    }
+    for (const [key, hint] of this.receiveHints) {
+      if (hint.account === account && hint.root !== root) this.receiveHints.delete(key);
+    }
+    if (this.suppressedPrecomputation.get(account) !== root) this.suppressedPrecomputation.delete(account);
+    this.requests = this.requests.filter(request => {
+      if (request.account !== account || request.root === root) return true;
+      request.reject(new WorkFrontierChangedError());
+      return false;
+    });
+    if (this.activeRequest?.account === account && this.activeRequest.root !== root) {
+      this.cancelActiveRequest(new WorkFrontierChangedError());
+    }
+    this.workCache = this.workCache.filter(entry => entry.account !== account || entry.root === root);
+    this.persist();
+    this.processNext();
     this.publishState();
   }
 
@@ -271,7 +313,7 @@ export class WorkPoolService {
   /** Starts precomputation without blocking the caller. */
   public addWorkToCache(hash: string, multiplier = 1, account: string | null = null, priority = 0): void {
     const root = hash.toUpperCase();
-    if (this.findValidEntry(root, multiplier, account)) return;
+    if (this.findValidEntry(root, multiplier, account) || this.findPendingRequest(root, multiplier, account)) return;
     this.enqueue({
       id: ++this.nextRequestId,
       account,
@@ -296,7 +338,7 @@ export class WorkPoolService {
       this.clearActiveTimers();
       this.worker?.terminate();
       this.worker = null;
-      this.activeRequest.reject(new Error('PoW request invalidated by frontier change'));
+      this.activeRequest.reject(new WorkFrontierChangedError());
       this.activeRequest = null;
       this.activeWorkerRequestId = 0;
       this.processNext();
@@ -336,6 +378,7 @@ export class WorkPoolService {
    */
   public async getWork(hash: string, multiplier = 1, account: string | null = null, interactive = false): Promise<string> {
     const root = hash.toUpperCase();
+    if (account && !this.accountRoots.has(account)) this.externalAccounts.add(account);
     if (interactive && multiplier >= 1 && account) this.revokeReceiveHint(account, root);
     if (multiplier < 1 && account) this.receiveHints.delete(this.receiveHintKey(account, root));
     const cached = this.findValidEntry(root, multiplier, account);
@@ -349,6 +392,8 @@ export class WorkPoolService {
     const key = this.requestKey(root, multiplier, account);
     const existing = this.inFlight.get(key);
     if (existing) {
+      const request = this.findPendingRequest(root, multiplier, account);
+      if (interactive && request) request.priority = 100;
       this.logWorkEvent('joined', root, multiplier, account, this.findPendingRequest(root, multiplier, account)?.id ?? null);
       return existing;
     }
@@ -362,11 +407,12 @@ export class WorkPoolService {
       pending.priority = interactive ? 100 : Math.max(pending.priority, 50);
       this.requests.sort((a, b) => b.priority - a.priority);
       this.logWorkEvent('joined', root, multiplier, account, pending.id);
-      this.ensureWorker();
-      this.processNext();
       const promise = this.attachRequestListener(pending);
       this.inFlight.set(key, promise);
-      promise.finally(() => this.inFlight.delete(key)).catch(() => undefined);
+      promise.finally(() => {
+        if (this.inFlight.get(key) === promise) this.inFlight.delete(key);
+      }).catch(() => undefined);
+      this.processNext();
       return promise;
     }
 
@@ -385,7 +431,9 @@ export class WorkPoolService {
       });
     });
     this.inFlight.set(key, promise);
-    promise.finally(() => this.inFlight.delete(key)).catch(() => undefined);
+    promise.finally(() => {
+      if (this.inFlight.get(key) === promise) this.inFlight.delete(key);
+    }).catch(() => undefined);
     return promise;
   }
 
@@ -425,6 +473,10 @@ export class WorkPoolService {
     if (this.activeRequest) return;
     let request: WorkRequest | undefined;
     while (this.requests.length && !request) {
+      // Priority selects the class; least recently served account selects its lane.
+      // Request id keeps FIFO order within a lane.
+      this.requests.sort((a, b) => b.priority - a.priority ||
+        (this.lastServed.get(a.account) ?? 0) - (this.lastServed.get(b.account) ?? 0) || a.id - b.id);
       const candidate = this.requests.shift()!;
       if (candidate.hinted && !candidate.hintConsumed) {
         if (!this.consumeReceiveHint(candidate)) continue;
@@ -442,6 +494,8 @@ export class WorkPoolService {
       return;
     }
     this.activeRequest = request;
+    const generationId = this.activeWorkerRequestId = ++this.workerRequestId;
+    this.lastServed.set(request.account, ++this.dispatchSequence);
     this.activeStartedAt = Date.now();
     this.remoteRetryAttempt = 0;
     this.lastErrorAccount = null;
@@ -457,13 +511,16 @@ export class WorkPoolService {
       return;
     }
     void this.powRouting.resolveRoute()
-      .then(route => this.startGeneration(request, threshold, route))
-      .catch(error => this.failRouteResolution(request, error));
+      .then(route => {
+        if (this.activeWorkerRequestId === generationId) this.startGeneration(request, threshold, route);
+      })
+      .catch(error => {
+        if (this.activeWorkerRequestId === generationId) this.failRouteResolution(request, error);
+      });
   }
 
   private startGeneration(request: WorkRequest, threshold: string, route: PowRoute): void {
     if (this.activeRequest !== request) return;
-    this.activeWorkerRequestId = ++this.workerRequestId;
     this.logWorkEvent(`started-${route}`, request.root, request.multiplier, request.account, request.id, threshold);
     if (route === 'remote') {
       this.state$.next({ ...this.state$.value, phase: 'remote', lastError: null });
@@ -538,6 +595,7 @@ export class WorkPoolService {
 
   private async tryRemoteWork(request: WorkRequest, threshold: string): Promise<void> {
     if (this.activeRequest !== request) return;
+    const generationId = this.activeWorkerRequestId;
     try {
       const response = await this.api.workGenerateOnce(
         request.root,
@@ -546,6 +604,7 @@ export class WorkPoolService {
         true,
         this.appSettings.settings.customWorkServerAuth || '',
       );
+      if (this.activeRequest !== request || this.activeWorkerRequestId !== generationId) return;
       const work = response?.work?.toUpperCase();
       if (work && this.util.nano.validateWork(request.root, threshold, work)) {
         this.clearActiveTimers();
@@ -556,7 +615,7 @@ export class WorkPoolService {
       }
       throw new Error('Remote PoW response failed validation');
     } catch (error) {
-      if (this.activeRequest !== request) return;
+      if (this.activeRequest !== request || this.activeWorkerRequestId !== generationId) return;
       this.remoteRetryAttempt += 1;
       const delay = Math.min(30_000, 1_000 * 2 ** Math.min(this.remoteRetryAttempt - 1, 5));
       this.state$.next({ ...this.state$.value, lastError: error instanceof Error ? error.message : String(error) });
@@ -594,10 +653,10 @@ export class WorkPoolService {
     this.activeWorkerRequestId = 0;
   }
 
-  /** Foreground wallet actions must never wait behind speculative work. */
+  /** Foreground actions preempt speculation; already requested work finishes first. */
   private preemptBackgroundForInteractiveWork(root: string, multiplier: number, account: string | null): void {
     const active = this.activeRequest;
-    if (!active || active.priority >= 100) return;
+    if (!active || active.priority >= 50) return;
     if (active.root === root && active.multiplier === multiplier && active.account === account) return;
 
     this.clearActiveTimers();
@@ -673,11 +732,11 @@ export class WorkPoolService {
     }
   }
 
-  /** Removes durable entries that cannot be used by any current wallet frontier. */
+  /** Keep current wallet roots and work explicitly requested for external accounts. */
   private pruneWorkCache(): void {
     if (this.accountRoots.size === 0) return;
     this.workCache = this.workCache.filter(entry =>
-      !!entry.account && this.accountRoots.get(entry.account) === entry.root);
+      !!entry.account && (this.externalAccounts.has(entry.account) || this.accountRoots.get(entry.account) === entry.root));
   }
 
   private findPendingRequest(root: string, multiplier: number, account: string | null): WorkRequest | undefined {

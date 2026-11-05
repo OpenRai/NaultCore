@@ -1,6 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 import BigNumber from 'bignumber.js';
 
+import { WorkFrontierChangedError } from './work-pool.service';
 import { WalletService } from './wallet.service';
 
 function createServiceForStateTests(): any {
@@ -331,5 +332,31 @@ describe('WalletService WebSocket confirmation guard', () => {
       hash,
       block: { type: 'send', account: 'nano_1test' },
     })).toBe(false);
+  });
+});
+
+
+describe('WalletService receive work cancellation', () => {
+  it('releases the inbox and reconciles when a competing action advances the frontier', async () => {
+    vi.useFakeTimers();
+    try {
+      const service = createServiceForStateTests();
+      service.lifecycleState = { kind: 'ledger' };
+      service.processingPending = false;
+      service.wallet.pendingBlocks = [{ account: 'source', hash: 'pending' }];
+      service.successfulBlocks = [];
+      service.appSettings = { settings: {} };
+      service.getWalletAccount = () => ({ id: 'source' });
+      service.nanoBlock = { generateReceive: vi.fn().mockRejectedValue(new WorkFrontierChangedError()) };
+      service.refreshWalletState = vi.fn().mockResolvedValue(undefined);
+      service.notifications = { sendError: vi.fn() };
+      await WalletService.prototype.processPendingBlocks.call(service);
+      expect(service.processingPending).toBe(false);
+      expect(service.refreshWalletState).toHaveBeenCalledWith('pending-receive-frontier-change');
+      expect(service.notifications.sendError).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1500);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

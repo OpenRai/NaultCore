@@ -3,6 +3,7 @@ import {HttpClient} from '@angular/common/http';
 import {HttpHeaders} from '@angular/common/http';
 import {NodeService} from './node.service';
 import {AppSettingsService} from './app-settings.service';
+import { timeout } from 'rxjs/operators';
 import { TxType } from './util.service';
 
 @Injectable()
@@ -207,11 +208,11 @@ export class ApiService {
       headers = headers.set('Authorization', authorization);
     }
     try {
-      const res: any = await this.http.post(apiUrl, { action: 'version' }, { headers, responseType: 'json' }).toPromise();
+      const res: any = await this.http.post(apiUrl, { action: 'version' }, { headers, responseType: 'json' }).pipe(timeout(10_000)).toPromise();
       if (res && (res.node_vendor || res.rpc_version != null || res.protocol_version != null)) {
         return { success: true, version: res };
       }
-      const countRes: any = await this.http.post(apiUrl, { action: 'block_count' }, { headers, responseType: 'json' }).toPromise();
+      const countRes: any = await this.http.post(apiUrl, { action: 'block_count' }, { headers, responseType: 'json' }).pipe(timeout(10_000)).toPromise();
       if (countRes && countRes.count != null) {
         return { success: true, blockCount: countRes };
       }

@@ -61,6 +61,19 @@ describe('ApiService', () => {
       expect(result.version).toEqual({ node_vendor: 'Nano V26.0' });
     });
 
+    it('times out a stalled probe and cancels its HTTP request', async () => {
+      vi.useFakeTimers();
+      try {
+        const probe = service.probeServer('https://stalled.example/api');
+        const request = http.expectOne('https://stalled.example/api');
+        await vi.advanceTimersByTimeAsync(10_000);
+        expect((await probe).success).toBe(false);
+        expect(request.cancelled).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('returns error when node response fails', async () => {
       const probePromise = service.probeServer('https://candidate-rpc.example/api');
 

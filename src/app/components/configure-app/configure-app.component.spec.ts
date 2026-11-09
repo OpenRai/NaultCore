@@ -44,7 +44,7 @@ describe('ConfigureAppComponent', () => {
     mockWalletService = {
       reloadFiatBalances: vi.fn(),
       saveWalletExport: vi.fn(),
-      refreshWalletState: vi.fn(),
+      refreshWalletState: vi.fn().mockResolvedValue(undefined),
       isConfigured: vi.fn(() => false),
       resetWallet: vi.fn(),
       removeWalletData: vi.fn(),
@@ -335,6 +335,38 @@ describe('ConfigureAppComponent', () => {
   });
 
   describe('Nano RPC Server Test & Use', () => {
+    it('releases Random testing after a failed probe and allows a new selection', async () => {
+      component.selectedServer = 'random';
+      const endpoints = ['https://failed.example/api', 'https://working.example/api'];
+      mockAppSettings.loadAppSettings.mockImplementation(() => {
+        mockAppSettings.settings.serverAPI = endpoints.shift();
+      });
+      mockApi.probeServer.mockResolvedValueOnce({ success: false }).mockResolvedValueOnce({ success: true });
+      mockWalletService.refreshWalletState.mockReturnValue(new Promise(() => undefined));
+
+      await component.activateServer();
+      expect(component.testingServer).toBe(false);
+      expect(component.serverTestError).toBe('configure-app.server-connection-failed');
+      expect(mockWalletService.refreshWalletState).not.toHaveBeenCalled();
+      expect(mockNotifications.sendSuccess).not.toHaveBeenCalled();
+
+      await component.activateServer();
+      expect(mockApi.probeServer).toHaveBeenNthCalledWith(2, 'https://working.example/api', null);
+      expect(component.activeServerAPI).toBe('https://working.example/api');
+      expect(component.testingServer).toBe(false);
+      expect(component.serverTestError).toBeNull();
+      expect(mockWebsocket.forceReconnect).toHaveBeenCalled();
+    });
+
+    it('releases Random testing when a probe rejects', async () => {
+      component.selectedServer = 'random';
+      mockApi.probeServer.mockRejectedValue(new Error('timeout'));
+      await component.activateServer();
+      expect(component.testingServer).toBe(false);
+      expect(component.serverTestError).toBe('configure-app.server-connection-failed');
+      expect(mockNotifications.sendSuccess).not.toHaveBeenCalled();
+    });
+
     it('promotes candidate server to active when probe succeeds', async () => {
       mockApi.probeServer.mockResolvedValue({ success: true, version: { node_vendor: 'Nano V26' } });
       component.selectedServer = 'node1';

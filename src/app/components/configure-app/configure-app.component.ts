@@ -677,7 +677,15 @@ export class ConfigureAppComponent implements OnInit {
         this.serverAuth = this.activeServerAuth;
         this.serverAPIUpdated = this.activeServerAPI;
         this.node.node.status = false;
-        await this.walletService.refreshWalletState('server-change');
+        const probe = await this.api.probeServer(this.activeServerAPI, this.activeServerAuth);
+        if (!probe.success) {
+          this.serverTestError = this.translocoService.translate('configure-app.server-connection-failed');
+          return;
+        }
+        // Reconciliation may retry Random nodes indefinitely; it must not own the button state.
+        void this.walletService.refreshWalletState('server-change').catch(() => {
+          // Wallet refresh publishes its own retryable error state.
+        });
         this.websocket.forceReconnect();
         this.updateNodeStats();
         this.serverTestSuccess = this.translocoService.translate('configure-app.server-connected-success', { server: 'Random' });
@@ -727,7 +735,9 @@ export class ConfigureAppComponent implements OnInit {
         this.serverAPIUpdated = targetApi;
 
         this.node.node.status = false;
-        await this.walletService.refreshWalletState('server-change');
+        void this.walletService.refreshWalletState('server-change').catch(() => {
+          // Wallet refresh publishes its own retryable error state.
+        });
         this.websocket.forceReconnect();
         this.updateNodeStats();
 

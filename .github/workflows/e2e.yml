@@ -47,7 +47,8 @@ jobs:
 
   playwright-e2e:
     name: Playwright E2E Tests
-    runs-on: ubuntu-latest
+    # Playwright 1.59.1 supports Ubuntu 24.04; ubuntu-latest can select 26.04.
+    runs-on: ubuntu-24.04
     needs: unit-tests
     timeout-minutes: 15
 

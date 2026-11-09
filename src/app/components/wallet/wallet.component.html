@@ -1,168 +1,89 @@
-<div class="wallet-page uk-animation-slide-left-small" [attr.data-testid]="testIds.wallet.pageRoot">
-  <header class="wallet-header uk-margin-bottom">
-    <div class="wallet-header-main">
-      <!-- No colour, weight, or size here on purpose: the design system owns the
-           h2 spec, which is Montserrat at 27.2px in the accent colour with a
-           hairline rule under it. That is what makes this match Accounts. -->
-      <h2 class="wallet-title uk-heading-divider">Wallet</h2>
-    </div>
-    @if (walletState.lifecycle.locked) {
-      <span class="state-badge" role="status">Locked</span>
+<div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.wallet.pageRoot">
+  <div class="uk-width-1-1">
+    <h2 class="wallet-title uk-heading-divider">Wallet accounts</h2>
+
+    <nav aria-label="Wallet pages">
+      <ul class="uk-tab">
+        <li routerLinkActive="uk-active" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/wallet" routerLinkActive ariaCurrentWhenActive="page">Dashboard</a></li>
+        <li routerLinkActive="uk-active" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/accounts" routerLinkActive ariaCurrentWhenActive="page">{{ labels.accounts }}</a></li>
+      </ul>
+    </nav>
+
+    @if (walletState.lifecycle.locked && walletState.hasPending) {
+      <div class="uk-alert-warning uk-margin" role="status" uk-alert>
+        <p>Confirmed funds ready to receive. Unlock to sign the receive block and claim incoming Nano.</p>
+        <button class="uk-button uk-button-primary uk-button-small" type="button" (click)="requestWalletUnlock()" [attr.data-testid]="testIds.wallet.unlockReceivableButton">Unlock</button>
+      </div>
     }
-  </header>
 
-  <!-- Receivable Funds Notification (Locked + Pending) -->
-  @if (walletState.lifecycle.locked && walletState.hasPending) {
-    <button
-      class="receivable-unlock-banner"
-      type="button"
-      (click)="requestWalletUnlock()"
-      [attr.data-testid]="testIds.wallet.unlockReceivableButton"
-      aria-describedby="wallet-receivable-unlock-description"
-    >
-      <div class="receivable-unlock-text">
-        <strong>Confirmed funds ready to receive</strong>
-        <span id="wallet-receivable-unlock-description">Unlock to sign the receive block and claim incoming Nano.</span>
-      </div>
-      <span class="uk-button uk-button-primary uk-button-small">Unlock</span>
-    </button>
-  }
+    @if (showPasskeyOffer) {
+      <section class="uk-card uk-card-default uk-margin" aria-labelledby="wallet-passkey-offer-title">
+        <div class="uk-card-header"><h3 class="uk-card-title" id="wallet-passkey-offer-title">Set up passkey unlock?</h3></div>
+        <div class="uk-card-body"><p>Use your device authentication, such as a fingerprint, face, or PIN. Keep your wallet password and recovery backup.</p></div>
+        <div class="uk-card-footer">
+          <div class="uk-grid-small uk-child-width-auto" uk-grid>
+            <div><button class="uk-button uk-button-primary uk-button-small" type="button" (click)="setupPasskey()" [disabled]="passkeySetupInProgress">Set up passkey</button></div>
+            <div><button class="uk-button uk-button-default uk-button-small" type="button" (click)="dismissPasskeyOffer()">Not now</button></div>
+          </div>
+        </div>
+      </section>
+    }
 
-  @if (showPasskeyOffer) {
-    <section class="passkey-offer" aria-labelledby="wallet-passkey-offer-title">
-      <div>
-        <h3 id="wallet-passkey-offer-title">Set up passkey unlock?</h3>
-        <p>Use your device authentication, such as a fingerprint, face, or PIN. Keep your wallet password and recovery backup.</p>
+    <section class="uk-card uk-card-default uk-margin" [attr.data-testid]="testIds.wallet.summaryCard" aria-labelledby="wallet-overview-title">
+      <div class="uk-card-header">
+        <div class="uk-grid-small uk-flex-middle" uk-grid>
+          <div class="uk-width-expand"><h3 class="uk-card-title" id="wallet-overview-title">Wallet overview</h3></div>
+          @if (walletState.lifecycle.locked) {
+            <div class="uk-width-auto"><span class="uk-label uk-label-warning" role="status">Locked</span></div>
+          }
+        </div>
       </div>
-      <div class="passkey-offer-actions">
-        <button class="uk-button uk-button-primary uk-button-small" type="button" (click)="setupPasskey()" [disabled]="passkeySetupInProgress">Set up passkey</button>
-        <button class="uk-button uk-button-default uk-button-small" type="button" (click)="dismissPasskeyOffer()">Not now</button>
+      <div class="uk-card-body">
+        <div class="uk-grid-large uk-child-width-1-2@s" uk-grid>
+          <div>
+            <div class="uk-form-label">{{ labels.totalBalance }}</div>
+            <div class="wallet-balance uk-text-large uk-margin-small-top">
+              @if (walletDataStatus) {
+                <span role="status">{{ walletDataStatus }}</span>
+              } @else {
+                <app-nano-amount [raw]="walletState.balance" [detailsRoute]="'/accounts'" context="preview"></app-nano-amount>
+              }
+            </div>
+            @if (!walletDataStatus && settings.settings.displayCurrency) {
+              <div class="text-half-muted uk-margin-small-top">{{ walletState.balanceFiat | fiat: settings.settings.displayCurrency }}</div>
+            }
+            <a class="uk-display-inline-block uk-margin-small-top" routerLink="/accounts" [attr.data-testid]="testIds.wallet.accountsLink">{{ acrossAccountsLabel }}</a>
+          </div>
+          <div>
+            <div>
+              <div class="uk-form-label">{{ labels.pending }}</div>
+              <div class="uk-margin-small-top">
+                @if (walletDataStatus) {
+                  <span class="text-half-muted">—</span>
+                } @else if (walletState.pending && !walletState.pending.isZero()) {
+                  <app-nano-amount [raw]="walletState.pending" [detailsRoute]="'/receive'" context="preview"></app-nano-amount>
+                } @else {
+                  <span class="text-half-muted">—</span>
+                }
+              </div>
+              <div class="uk-form-label uk-margin-top">{{ labels.recentEvents }}</div>
+              <div class="uk-margin-small-top">{{ activityLoading ? '…' : transactions.length }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="uk-card-footer">
+        <div class="uk-grid-small uk-child-width-auto@s uk-child-width-1-1" uk-grid>
+          <div><a routerLink="/receive" class="uk-button uk-button-primary uk-width-1-1" [attr.data-testid]="testIds.wallet.receiveButton">{{ labels.receive }}</a></div>
+          <div><a routerLink="/send" class="uk-button uk-button-secondary uk-width-1-1" [attr.data-testid]="testIds.wallet.sendButton">{{ labels.send }}</a></div>
+        </div>
       </div>
     </section>
-  }
 
-  <!-- Wallet summary. No account list: the Accounts page owns that. -->
-  <section class="wallet-summary-card uk-card uk-overflow-hidden" [attr.data-testid]="testIds.wallet.summaryCard">
-    <div class="summary-grid">
-      <!-- The headline number. Wrapping is handled by the stylesheet, which
-            scales the type down instead of breaking it character by character. -->
-      <div class="summary-primary">
-        <span class="card-kicker uk-form-label">{{ labels.totalBalance }}</span>
-        <div class="balance-display-wrap">
-          <div class="balance-display">
-            @if (walletDataStatus) {
-              <span class="balance-int" role="status">{{ walletDataStatus }}</span>
-            } @else {
-              <app-nano-amount [raw]="walletState.balance" [detailsRoute]="'/accounts'" context="preview"></app-nano-amount>
-            }
-          </div>
-        </div>
-        @if (!walletDataStatus && settings.settings.displayCurrency) {
-          <div class="balance-fiat">
-          {{ walletState.balanceFiat | fiat: settings.settings.displayCurrency }}
-          </div>
-        }
-        <a
-          class="summary-accounts-link"
-          routerLink="/accounts"
-          [attr.data-testid]="testIds.wallet.accountsLink"
-        >
-          {{ acrossAccountsLabel }}
-        </a>
-      </div>
-
-      <!-- Secondary totals, so the summary says something even when the balance
-            is zero. -->
-      <dl class="summary-stats">
-        <div class="summary-stat">
-          <dt class="uk-form-label">{{ labels.accounts }}</dt>
-          <dd>{{ walletState.accounts.length }}</dd>
-        </div>
-        <div class="summary-stat">
-          <dt class="uk-form-label">{{ labels.pending }}</dt>
-          <dd>
-            @if (walletDataStatus) {
-              <span class="stat-none">—</span>
-            } @else if (walletState.pending && !walletState.pending.isZero()) {
-              <span class="stat-pending"><app-nano-amount [raw]="walletState.pending" [detailsRoute]="'/receive'" context="preview"></app-nano-amount></span>
-            } @else {
-              <span class="stat-none">—</span>
-            }
-          </dd>
-        </div>
-        <div class="summary-stat">
-          <dt class="uk-form-label">{{ labels.recentEvents }}</dt>
-          <dd>{{ activityLoading ? '…' : transactions.length }}</dd>
-        </div>
-      </dl>
+    <div class="uk-margin-top uk-grid-small uk-flex-middle" uk-grid>
+      <div class="uk-width-expand"><h3>{{ labels.recentActivity }}</h3></div>
+      <div class="uk-width-auto"><a routerLink="/accounts">{{ labels.manageAccounts }}</a></div>
     </div>
-
-    <!-- Action bar. The account selector lives here, subordinate to the total,
-          because Send and Receive still need a source account but the selector
-          is not what this page is about. -->
-    <div class="wallet-action-bar">
-      <div class="action-context">
-        <label class="action-context-label uk-form-label" for="wallet-account-selector">
-          {{ labels.spendFrom }}
-        </label>
-        <select
-          id="wallet-account-selector"
-          class="uk-select action-context-select"
-          [value]="selectedAccountId"
-          (change)="selectAccount($any($event.target).value)"
-          [attr.data-testid]="testIds.wallet.accountSelector"
-        >
-          @for (acc of walletState.accounts; track acc.id) {
-            <option [value]="acc.id" [selected]="acc.id === selectedAccountId">
-              {{ getAccountLabel(acc) }}
-            </option>
-          }
-        </select>
-        @if (selectedAccount) {
-          <span class="nano-address-monospace action-context-addr" [title]="selectedAccount.id">
-            {{ selectedAccount.id }}
-          </span>
-        }
-      </div>
-
-      <div class="action-buttons">
-        <button
-          class="uk-button uk-button-primary hero-action-btn"
-          type="button"
-          (click)="openReceive()"
-          [attr.data-testid]="testIds.wallet.receiveButton"
-        >
-          <span uk-icon="icon: arrow-down" class="btn-icon"></span>
-          <span>Receive</span>
-        </button>
-        <button
-          class="uk-button uk-button-secondary hero-action-btn"
-          type="button"
-          (click)="openTransaction('send')"
-          [attr.data-testid]="testIds.wallet.sendButton"
-        >
-          <span uk-icon="icon: arrow-up" class="btn-icon"></span>
-          <span>Send</span>
-        </button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Recent activity across every account: the reason this page exists. -->
-  <section class="wallet-activity-section">
-    <div class="activity-section-header">
-      <!-- Also inheriting: the h3 spec is Montserrat, normal weight, in the
-           heading colour. No bespoke size or weight here either. -->
-      <h3 class="activity-section-title">{{ labels.recentActivity }}</h3>
-      <a class="activity-manage-link" routerLink="/accounts" [attr.data-testid]="testIds.wallet.accountsLink">
-        {{ labels.manageAccounts }}
-      </a>
-    </div>
-
-    <app-transaction-table
-      [transactions]="transactions"
-      [accounts]="accountOptions"
-      [loading]="activityLoading"
-    ></app-transaction-table>
-  </section>
+    <app-transaction-table [transactions]="transactions" [accounts]="accountOptions" [loading]="activityLoading"></app-transaction-table>
+  </div>
 </div>

@@ -1,14 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { TranslocoService } from '@jsverse/transloco';
 import { Subscription } from 'rxjs';
-import { WalletContextService } from '../../services/wallet-context.service';
 import { WalletAccountSnapshot, WalletService, WalletStateSnapshot } from '../../services/wallet.service';
 import { NotificationService } from '../../services/notification.service';
 import { TransactionHistoryService } from '../../services/transaction-history.service';
 import { AppSettingsService } from '../../services/app-settings.service';
 import { TestIds } from '../../testing/test-ids';
-import { TransactionIntent } from '../../types/wallet-context.types';
 import { WalletTransaction, sortTransactions } from '../../models/transaction.model';
 
 /** The Wallet page shows at most this many merged entries. */
@@ -24,9 +21,7 @@ const WALLET_ENTRY_CAP = 25;
 export class WalletComponent implements OnInit, OnDestroy {
   private readonly walletService = inject(WalletService);
   private readonly notifications = inject(NotificationService);
-  private readonly walletContext = inject(WalletContextService);
   private readonly history = inject(TransactionHistoryService);
-  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   readonly settings = inject(AppSettingsService);
 
@@ -49,6 +44,8 @@ export class WalletComponent implements OnInit, OnDestroy {
         count: this.walletState.accounts.length,
       }),
       accounts: this.translate.translate('wallet.accounts'),
+      send: this.translate.translate('general.send'),
+      receive: this.translate.translate('general.receive'),
       pending: this.translate.translate('wallet.pending'),
       recentEvents: this.translate.translate('wallet.recent-events'),
       spendFrom: this.translate.translate('wallet.spend-from'),
@@ -119,14 +116,6 @@ export class WalletComponent implements OnInit, OnDestroy {
     this.loadToken++;
   }
 
-  get selectedAccount(): WalletAccountSnapshot | null {
-    return this.walletState.selectedAccount;
-  }
-
-  get selectedAccountId(): string {
-    return this.walletState.selectedAccountId || '';
-  }
-
   get allPendingBlocks() {
     return this.walletState.pendingBlocks || [];
   }
@@ -150,26 +139,9 @@ export class WalletComponent implements OnInit, OnDestroy {
     return account.addressBookName || `Account #${account.index}`;
   }
 
-  selectAccount(accountId: string): void {
-    this.walletContext.selectAccount(accountId || null);
-  }
-
   requestWalletUnlock(): void {
     if (!this.walletService.isLocked()) return;
     void this.walletService.requestWalletUnlock();
-  }
-
-  async openReceive(): Promise<void> {
-    if (this.walletService.isLocked()) {
-      const unlocked = await this.walletService.requestWalletUnlock();
-      if (!unlocked) return;
-    }
-    this.openTransaction('receive');
-  }
-
-  openTransaction(intent: TransactionIntent): void {
-    const target = this.walletContext.transaction(intent, this.selectedAccountId || null);
-    this.router.navigateByUrl(this.router.createUrlTree([...target.commands], { queryParams: target.queryParams }));
   }
 
   /**

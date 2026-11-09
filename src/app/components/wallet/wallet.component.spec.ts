@@ -200,49 +200,13 @@ describe('WalletComponent', () => {
     expect(fixture.nativeElement.querySelector('.eyebrow')).toBeFalsy();
   });
 
-  // The Montserrat and muted-copy treatment comes from these classes, not from
-  // a per-component font declaration.
-  it('labels its kickers through the shared form-label treatment', () => {
+  it('offers ordinary transaction page links without an account selector or forced context', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
-
-    expect(el.querySelector('.card-kicker')?.classList.contains('uk-form-label')).toBe(true);
-    expect(el.querySelector('.action-context-label')?.classList.contains('uk-form-label')).toBe(true);
-    expect(el.querySelector('.summary-stat dt')?.classList.contains('uk-form-label')).toBe(true);
-  });
-
-  it('keeps the account selector in the action bar for Send and Receive context', () => {
-    fixture.detectChanges();
-    const selector = fixture.nativeElement.querySelector('[data-testid="wallet-account-selector"]');
-    const actionBar = fixture.nativeElement.querySelector('.wallet-action-bar');
-
-    expect(selector).toBeTruthy();
-    expect(selector.value).toBe(account.id);
-    expect(actionBar.contains(selector)).toBe(true);
-  });
-
-  it('selects an account without navigating away from Wallet', () => {
-    component.selectAccount(account.id);
-
-    expect(wallet.selectAccount).toHaveBeenCalledWith(account.id);
-    expect(wallet.saveWalletExport).toHaveBeenCalled();
-  });
-
-  it('creates explicit account-aware transaction navigation targets', () => {
-    expect(component.selectedAccountId).toBe(account.id);
-    expect(component['walletContext'].transaction('send', component.selectedAccountId)).toEqual({
-      commands: ['/send'],
-      queryParams: { account: account.id },
-    });
-  });
-
-  it('requests unlock instead of navigating to Receive while locked', async () => {
-    wallet.isLocked.mockReturnValue(true);
-    wallet.requestWalletUnlock.mockResolvedValue(false);
-
-    await component.openReceive();
-
-    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
+    expect(el.querySelector('[data-testid="wallet-account-selector"]')).toBeNull();
+    expect(el.querySelector('[data-testid="wallet-send-button"]')?.getAttribute('href')).toBe('/send');
+    expect(el.querySelector('[data-testid="wallet-receive-button"]')?.getAttribute('href')).toBe('/receive');
+    expect(wallet.requestWalletUnlock).not.toHaveBeenCalled();
   });
 
   it('renders exactly one Receive button and one Send button on screen', () => {
@@ -329,7 +293,7 @@ describe('WalletComponent', () => {
     walletState$.next({ ...createState(), balance: new BigNumber(0), sync: { status: 'loading', reason: 'startup' } });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.balance-display').textContent).toContain('Loading…');
+    expect(fixture.nativeElement.querySelector('.wallet-balance').textContent).toContain('Loading…');
     expect(fixture.nativeElement.querySelector('.balance-unit')).toBeFalsy();
   });
 
@@ -338,7 +302,7 @@ describe('WalletComponent', () => {
     fixture.detectChanges();
 
     expect(component.walletDataStatus).toBeNull();
-    expect(fixture.nativeElement.querySelector('.balance-display').textContent).not.toContain('Loading');
+    expect(fixture.nativeElement.querySelector('.wallet-balance').textContent).not.toContain('Loading');
   });
 
   it('caps the merged wallet list at 25 entries', async () => {

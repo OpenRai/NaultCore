@@ -24,6 +24,13 @@
       </div>
     </div>
 
+  <nav aria-label="Wallet pages">
+    <ul class="uk-tab">
+      <li routerLinkActive="uk-active" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/wallet" routerLinkActive ariaCurrentWhenActive="page">Dashboard</a></li>
+      <li routerLinkActive="uk-active" [routerLinkActiveOptions]="{ exact: true }"><a routerLink="/accounts" routerLinkActive ariaCurrentWhenActive="page">{{ 'general.accounts' | transloco }}</a></li>
+    </ul>
+  </nav>
+
     <div class="uk-card uk-overflow-hidden">
       <table class="accounts-list uk-table uk-table-striped uk-table-small">
         <thead>

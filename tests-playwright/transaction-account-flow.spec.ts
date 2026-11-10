@@ -12,18 +12,36 @@ test('keeps navigation as wallet places and exposes Accounts through dashboard t
   await expect(seededPage).toHaveURL(/\/wallet$/);
 });
 
-for (const width of [393, 1280]) {
-  test(`keeps account actions visible with explicit scope at ${width}px, locked with zero balance`, async ({ seededPage, testWallet }, testInfo) => {
+for (const [width, compact] of [[393, false], [393, true], [850, false], [1280, false]] as const) {
+  test(`keeps account actions visible with explicit scope at ${width}px (compact=${compact}), locked with zero balance`, async ({ seededPage, testWallet }, testInfo) => {
     await seededPage.setViewportSize({ width, height: 900 });
-    await seededPage.goto(`/account/${testWallet.accounts[1]}${width < 960 ? '?compact=1' : ''}`);
+    await seededPage.goto(`/account/${testWallet.accounts[1]}${compact ? '?compact=1' : ''}`);
     const actions = seededPage.locator('[data-testid="accountDetails.transactionActions"]:visible');
     await expect(actions).toHaveCount(1);
     await expect(actions.getByRole('link', { name: 'Send', exact: true })).toBeVisible();
     await expect(actions.getByRole('link', { name: 'Receive', exact: true })).toBeVisible();
+    if (width <= 850) {
+      const send = await actions.getByRole('link', { name: 'Send', exact: true }).boundingBox();
+      const receive = await actions.getByRole('link', { name: 'Receive', exact: true }).boundingBox();
+      const container = await actions.boundingBox();
+      expect(Math.abs(send!.width - receive!.width)).toBeLessThan(1);
+      expect(receive!.x + receive!.width).toBeCloseTo(container!.x + container!.width, 0);
+    }
+    if (!compact) {
+      const header = seededPage.locator('.account-details-header');
+      const status = header.getByTestId('account-details-work-status');
+      await expect(status).toBeVisible();
+      const badge = await status.boundingBox();
+      const icon = await header.locator('app-nano-identicon').boundingBox();
+      expect(badge!.x).toBeGreaterThanOrEqual(icon!.x + icon!.width);
+      expect(Math.abs(badge!.y - icon!.y)).toBeLessThan(5);
+    }
+
     await expect(actions.getByRole('link', { name: 'Send', exact: true })).toHaveAttribute('href', `/send?account=${testWallet.accounts[1]}`);
     await seededPage.screenshot({ path: testInfo.outputPath(`account-actions-${width}.png`), fullPage: true, animations: 'disabled' });
     await actions.getByRole('link', { name: 'Receive', exact: true }).click();
     await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);
+    await expect(seededPage.locator('app-account-summary .address')).toHaveCount(0);
     await expect(seededPage.getByTestId('transaction.accountPicker')).toHaveCount(0);
     await expect(seededPage.getByRole('img', { name: 'QR code', exact: true })).toBeVisible();
     const shareBox = await seededPage.getByTestId('receive.shareAddress').boundingBox();

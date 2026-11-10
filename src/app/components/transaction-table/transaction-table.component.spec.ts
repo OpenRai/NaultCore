@@ -1,3 +1,4 @@
+import { NanoAccountIdComponent } from '../helpers/nano-account-id/nano-account-id.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterModule } from '@angular/router';
 import BigNumber from 'bignumber.js';
@@ -54,7 +55,7 @@ describe('TransactionTableComponent', () => {
       // TransactionTableComponent already belongs to WalletTestModule and a
       // component may only be declared by one NgModule at compile time (NG6007).
       declarations: [TransactionTableComponent, NanoAmountStubComponent],
-      imports: [RouterModule.forRoot([])],
+      imports: [NanoAccountIdComponent, RouterModule.forRoot([])],
       providers: [
         {
           provide: TranslocoService,
@@ -77,6 +78,19 @@ describe('TransactionTableComponent', () => {
       }),
     ];
     fixture.detectChanges();
+  });
+
+  it('uses the existing address renderer and preserves the checksum and account link', () => {
+    const address = 'nano_1555bxrn9kato63surwz5innnhn6xjjznzq3x68w717qt3hc5748nrxicbhs';
+    fixture.componentRef.setInput('transactions', [makeTransaction({ counterparty: address })]);
+    fixture.detectChanges();
+    const link = byTestId('transaction-table-counterparty-link');
+    const renderer = link.querySelector('app-nano-account-id');
+    expect(renderer).toBeTruthy();
+    expect(renderer.classList.contains('nano-address-breakable')).toBe(true);
+    expect(renderer.querySelector('.nano-address-prefix').textContent).toBe(address.slice(0, 10));
+    expect(renderer.querySelector('.nano-address-suffix').textContent).toBe(address.slice(-5));
+    expect(link.getAttribute('href')).toBe(`/account/${address}`);
   });
 
   it('collapses the filters by default and keeps the summary and table visible', () => {

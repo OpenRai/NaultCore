@@ -93,7 +93,7 @@ test('shows a numeric one-raw preview and links through to account details', asy
   await seededPage.goto('/wallet');
   await seededPage.evaluate(async () => { await (window as any).__NAULTCORE_E2E__.refreshWallet(); });
   const balance = seededPage.locator('[data-testid="wallet-summary-card"] .wallet-balance app-nano-amount');
-  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('1 × 10⁻³⁰ XNO');
+  await expect(balance.getByTestId('nano-amount-summary')).toHaveText('1 raw');
   await expect(balance.locator('details')).toHaveCount(0);
   await balance.getByRole('link').click();
   await expect(seededPage).toHaveURL(/\/accounts$/);

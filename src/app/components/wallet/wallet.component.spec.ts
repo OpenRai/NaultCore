@@ -1,3 +1,4 @@
+import { NanoAccountIdComponent } from '../helpers/nano-account-id/nano-account-id.component';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -102,7 +103,7 @@ function toTransaction(row: any, accountId: string, label: string) {
  */
 @NgModule({
   declarations: [WalletComponent, TransactionTableComponent, NanoAmountComponent, FiatPipeStub],
-  imports: [CommonModule, FormsModule, RouterModule.forRoot([]), TranslocoRootModule, ClipboardModule],
+  imports: [NanoAccountIdComponent, CommonModule, FormsModule, RouterModule.forRoot([]), TranslocoRootModule, ClipboardModule],
 })
 class WalletTestModule {}
 
@@ -141,7 +142,7 @@ describe('WalletComponent', () => {
         { provide: AppSettingsService, useValue: { settings: { displayCurrency: 'USD', minimumReceive: null } } },
         {
           provide: TranslocoService,
-          useValue: { translate: (key: string, params?: any) => params?.time ? `${key}:${params.time}` : (params ? `${key}:${JSON.stringify(params)}` : key) },
+          useValue: { getActiveLang: () => 'en-US', translate: (key: string, params?: any) => params?.time ? `${key}:${params.time}` : (params ? `${key}:${JSON.stringify(params)}` : key) },
         },
       ],
     }).compileComponents();
@@ -149,6 +150,19 @@ describe('WalletComponent', () => {
     fixture = TestBed.createComponent(WalletComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
+  });
+
+  it('renders exact amount detail as a separate localized raw row only when requested', async () => {
+    const amount = TestBed.createComponent(NanoAmountComponent);
+    amount.componentRef.setInput('raw', '1000000000000086118708102050');
+    amount.componentRef.setInput('context', 'inspect');
+    amount.componentRef.setInput('precision', 'raw-detail');
+    await amount.whenStable();
+    expect(amount.nativeElement.querySelector('[data-testid="nano-amount-summary"]').textContent.trim()).toBe('0.001 XNO');
+    expect(amount.nativeElement.querySelector('[data-testid="nano-amount-raw-remainder"]').textContent.trim()).toBe('+86,118,708,102,050 raw');
+    amount.componentRef.setInput('precision', 'summary');
+    await amount.whenStable();
+    expect(amount.nativeElement.querySelector('[data-testid="nano-amount-raw-remainder"]')).toBeNull();
   });
 
   it('shows the wallet total and links out to the Accounts page instead of listing accounts', () => {

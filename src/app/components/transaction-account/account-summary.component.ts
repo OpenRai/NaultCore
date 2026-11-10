@@ -19,8 +19,10 @@ import { NanoIdenticonComponent } from '../helpers/nano-identicon/nano-identicon
           @if (account.label !== indexLabel) {
             <span class="uk-text-small uk-text-muted"> · {{ indexLabel }}</span>
           }
-          <span class="address nano-address-monospace uk-text-small">{{ account.id }}</span>
-          <span class="uk-text-small">Available: {{ amount(account.balance) }}</span>
+          @if (showAddress) {
+            <span class="address nano-address-monospace uk-text-small">{{ account.id }}</span>
+          }
+          <span class="available uk-text-small">Available: {{ amount(account.balance) }}</span>
           @if (account.pending?.gt(0)) {
             <span class="pending uk-text-small uk-text-muted">Pending: {{ amount(account.pending) }} (not yet available)</span>
           }
@@ -32,13 +34,14 @@ import { NanoIdenticonComponent } from '../helpers/nano-identicon/nano-identicon
     :host { display: block; min-width: 0; }
     .identity { display: flex; align-items: flex-start; gap: 1rem; }
     .details { min-width: 0; }
-    .address, .pending { display: block; }
+    .address, .available, .pending { display: block; }
     .address { overflow-wrap: anywhere; margin-block: .25rem; }
     app-nano-identicon { flex: none; }
   `],
 })
 export class AccountSummaryComponent {
   @Input({ required: true }) account: SpendableAccount | null = null;
+  @Input() showAddress = true;
   readonly settings = inject(AppSettingsService);
   get indexLabel(): string {
     return `${this.account?.type === 'regular' ? 'Account' : 'NanoNym'} #${this.account?.index}`;

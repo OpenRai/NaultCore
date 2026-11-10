@@ -184,11 +184,8 @@
             <div class="uk-card-body" style="padding: 15px;">
               <div class="uk-text-danger">You are about to send</div>
               <div class="block-amount-primary uk-text-danger">
-                <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
               </div>
-              @if (amountExtraRaw.gt(0)) {
-                <div class="uk-text-small text-half-muted" style="margin: 2px 0 -2px 0;">+{{ amountExtraRaw.toString(10) }} raw</div>
-              }
               @if (settings.settings.displayCurrency) {
                 <div style="margin: 8px 0 -1px 0;" class="text-half-muted">{{ amountFiat | fiat: settings.settings.displayCurrency }}</div>
               }
@@ -239,7 +236,7 @@
                           <span class="block-balance">
                             <span class="balance-amount-primary uk-text-danger">
                               <span class="amount-sign">-</span>
-                              <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                              <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
                             </span>
                           </span>
                         </div>
@@ -276,7 +273,7 @@
                               </div>
                             </div>
                             <div class="uk-width-auto uk-text-right">
-                              <span class="uk-text-muted uk-text-small"><app-nano-amount [raw]="account.balance || account.amountRaw" context="inspect"></app-nano-amount></span>
+                              <span class="uk-text-muted uk-text-small"><app-nano-amount [raw]="account.balance || account.amountRaw" context="inspect" precision="raw-detail"></app-nano-amount></span>
                             </div>
                           </div>
                         </div>
@@ -323,7 +320,7 @@
                         <span class="block-balance">
                           <span class="balance-amount-primary uk-text-success">
                             <span class="amount-sign">+</span>
-                            <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                            <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
                           </span>
                         </span>
                       </div>
@@ -391,7 +388,7 @@
                         <span class="nano-address-monospace uk-text-truncate uk-display-block">{{account.address}}</span>
                       </div>
                       <div class="uk-width-auto uk-text-right">
-                        <span class="uk-text-muted"><app-nano-amount [raw]="account.amountRaw || account.balance" context="inspect"></app-nano-amount></span>
+                        <span class="uk-text-muted"><app-nano-amount [raw]="account.amountRaw || account.balance" context="inspect" precision="raw-detail"></app-nano-amount></span>
                       </div>
                     </div>
                   </li>

@@ -179,10 +179,6 @@
 
               <td class="col-detail">
                 <div class="tx-detail-primary">
-                  <!-- Show the label when we have one, the address otherwise.
-                       Never both: an address alone is unreadable and a label
-                       alone is unverified. The address is rendered in full and
-                       only ellipsizes if the column genuinely cannot fit it. -->
                   @if (tx.counterpartyLabel) {
                     <a class="tx-counterparty-label" [routerLink]="'/account/' + tx.counterparty">{{ tx.counterpartyLabel }}</a>
                   } @else if (tx.counterparty) {
@@ -191,7 +187,7 @@
                       [routerLink]="'/account/' + tx.counterparty"
                       [title]="tx.counterparty"
                       [attr.data-testid]="testIds.transactionTable.counterpartyLink"
-                    >{{ tx.counterparty }}</a>
+                    ><app-nano-account-id [accountID]="tx.counterparty" middle="break"></app-nano-account-id></a>
                   } @else {
                     <span class="tx-counterparty-none">{{ labels.noCounterparty }}</span>
                   }

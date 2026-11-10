@@ -571,8 +571,8 @@
             </p>
           </div>
         </div>
-        <section class="backup-mnemonic" aria-labelledby="backup-mnemonic-heading">
-          <h4 id="backup-mnemonic-heading">{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</h4>
+        <details class="backup-mnemonic backup-seed-disclosure">
+          <summary>{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</summary>
           <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
           <ol class="mnemonic-card-grid">
             @for (line of newWalletMnemonicLines; track line; let l = $index) {
@@ -593,7 +593,7 @@
             {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
           </button>
           <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
-        </section>
+        </details>
         <details class="backup-seed-disclosure">
           <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>
           <p>{{ 'configure-wallet.new-wallet.seed-backup-guidance' | transloco }}</p>

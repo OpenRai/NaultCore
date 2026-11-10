@@ -1,3 +1,4 @@
+import { formatNanoAmount } from '../../utils/nano-amount-format';
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import {ActivatedRoute, ChildActivationEnd, Router} from '@angular/router';
 import {WalletService} from '../../services/wallet.service';
@@ -187,6 +188,10 @@ export class TransactionDetailsComponent implements OnInit {
     }
 
     return (this.translocoService.translate('general.account') + ' #' + walletAccount.index);
+  }
+
+  exactXno(raw: unknown): string {
+    return formatNanoAmount(raw, 'inspect').exactXno ?? '';
   }
 
   getBalanceFromHex(balance) {

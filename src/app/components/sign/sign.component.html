@@ -33,7 +33,7 @@
               @if (txType != txTypes.change) {
                 <div>
                   <div class="block-amount-primary" [class.uk-text-danger]="txType == txTypes.send" [class.uk-text-success]="txType == txTypes.receive">
-                    <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                    <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
                   </div>
                   @if (settings.settings.displayCurrency && amountFiat !== null) {
                     <div style="margin: 8px 0 -1px 0;" class="text-half-muted">{{ amountFiat | fiat: settings.settings.displayCurrency }}</div>
@@ -81,7 +81,7 @@
                         <div class="uk-text-small text-half-muted" style="height: 25px;">Balance</div>
                         <span class="block-balance">
                           <span class="balance-amount-primary">
-                            <app-nano-amount [raw]="fromAccountBalance" context="inspect"></app-nano-amount>
+                            <app-nano-amount [raw]="fromAccountBalance" context="inspect" precision="raw-detail"></app-nano-amount>
                             <span class="currency-name">{{ fromAccountBalance ? 'XNO' : '' }}</span>
                           </span>
                         </span>
@@ -91,7 +91,7 @@
                         <span class="block-balance">
                           <span class="balance-amount-primary uk-text-danger">
                             <span class="amount-sign">-</span>
-                            <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                            <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
                           </span>
                         </span>
                       </div>
@@ -157,7 +157,7 @@
                         <div class="uk-text-small text-half-muted" style="height: 25px;">Balance</div>
                         <span class="block-balance">
                           <span class="balance-amount-primary">
-                            <app-nano-amount [raw]="toAccountBalance && txType === txTypes.receive ? toAccountBalance : null" context="inspect"></app-nano-amount>
+                            <app-nano-amount [raw]="toAccountBalance && txType === txTypes.receive ? toAccountBalance : null" context="inspect" precision="raw-detail"></app-nano-amount>
                             <span class="currency-name">{{ toAccountBalance && txType === txTypes.receive ? 'XNO' : '' }}</span>
                           </span>
                         </span>
@@ -167,7 +167,7 @@
                         <span class="block-balance">
                           <span class="balance-amount-primary uk-text-success">
                             <span class="amount-sign">+</span>
-                            <app-nano-amount [raw]="rawAmount" context="authorize"></app-nano-amount>
+                            <app-nano-amount [raw]="rawAmount" context="authorize" precision="raw-detail"></app-nano-amount>
                           </span>
                         </span>
                       </div>

@@ -1,0 +1,41 @@
+// Shared boundaries for the light palette. Dark-mode surfaces retain their
+// existing styles; a real border also survives forced-colors rendering.
+body:not(.dark-mode) {
+  --panel-border: #7f91aa;
+  --panel-divider: #c1cfdf;
+
+  .uk-card-default {
+    border: 1px solid var(--panel-border);
+    box-sizing: border-box;
+  }
+
+  .uk-card-default > .uk-card-header { border-bottom-color: var(--panel-divider); }
+  .uk-card-default > .uk-card-footer { border-top-color: var(--panel-divider); }
+
+  .uk-alert-primary, .uk-alert-info, .uk-alert-success,
+  .uk-alert-warning, .uk-alert-danger {
+    border: 1px solid;
+    box-sizing: border-box;
+  }
+
+  .uk-alert-primary, .uk-alert-info {
+    background: #edf5ff;
+    border-color: #6e8eaf;
+    color: #164b80;
+  }
+  .uk-alert-success {
+    background: #eef9f1;
+    border-color: #59866b;
+    color: #1b6535;
+  }
+  .uk-alert-warning {
+    background: #fff4e8;
+    border-color: #bc7b3f;
+    color: #84400c;
+  }
+  .uk-alert-danger {
+    background: #fff0f2;
+    border-color: #bb7585;
+    color: #9f243a;
+  }
+}

@@ -127,8 +127,8 @@
             </p>
           </div>
 
-          <section class="backup-mnemonic" aria-labelledby="backup-modal-mnemonic-heading">
-            <h3 id="backup-modal-mnemonic-heading">{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</h3>
+          <details class="backup-mnemonic backup-seed-disclosure">
+            <summary>{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</summary>
             <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
             <div class="backup-secret-value">{{ seedMnemonic() }}</div>
             <button
@@ -143,7 +143,7 @@
               {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
             </button>
             <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
-          </section>
+          </details>
 
           <details class="backup-seed-disclosure">
             <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>

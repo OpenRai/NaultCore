@@ -80,7 +80,7 @@
             <div class="uk-flex-1">
               <div class="uk-margin">
                 <h3 #destinationHeading tabindex="-1" class="uk-card-title uk-margin-small-bottom">Receiving account</h3>
-                <app-account-summary [account]="selectedDestination" />
+                <app-account-summary [account]="selectedDestination" [showAddress]="false" />
                 <button class="uk-button uk-button-default uk-margin-small-top" type="button"
                   (click)="changeAccount()">Change destination account</button>
                   <!-- NanoNym Badge -->
@@ -888,7 +888,7 @@
                                   <p
                                     class="uk-text-large uk-text-primary uk-margin-remove-top"
                                     >
-                                    <app-nano-amount [raw]="merchantModeRawRequestedQR" context="authorize"></app-nano-amount>
+                                    <app-nano-amount [raw]="merchantModeRawRequestedQR" context="authorize" precision="raw-detail"></app-nano-amount>
                                     </p>
                                   }
                                   <p class="text-half-muted" style="margin: -16px 0 10px 0">to</p>
@@ -946,7 +946,7 @@
                                           [class.uk-text-success]="prompt.moreThanRequested"
                                           [class.uk-text-warning]="prompt.lessThanRequested"
                                           >
-                                          <app-nano-amount [raw]="prompt.amountRaw" context="inspect"></app-nano-amount>
+                                          <app-nano-amount [raw]="prompt.amountRaw" context="inspect" precision="raw-detail"></app-nano-amount>
                                           </p>
                                           @if (prompt.amountHiddenRaw.gt(0)) {
                                             <div
@@ -1047,7 +1047,7 @@
                                       Received
                                     </p>
                                     <p class="uk-text-large uk-text-success uk-margin-remove-top">
-                                      <app-nano-amount [raw]="merchantModeRawReceivedTotal" context="inspect"></app-nano-amount>
+                                      <app-nano-amount [raw]="merchantModeRawReceivedTotal" context="inspect" precision="raw-detail"></app-nano-amount>
                                       </p>
                                       @if (merchantModeRawReceivedTotalHiddenRaw.gt(0)) {
                                         <div

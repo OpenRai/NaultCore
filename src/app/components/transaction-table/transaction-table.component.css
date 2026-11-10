@@ -286,11 +286,11 @@
 
 .tx-detail-primary {
   font-weight: 600;
-  /* Full text by default. The address is 65 characters of base32, so it is
-     ellipsized only when the column genuinely cannot fit it - never by a fixed
-     prefix that would truncate a wide layout too. min-inline-size:0 lets the
-     cell shrink inside the table's sizing instead of forcing it wider. */
   min-inline-size: 0;
+}
+
+.tx-counterparty-label {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

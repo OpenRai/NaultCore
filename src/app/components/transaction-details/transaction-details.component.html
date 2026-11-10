@@ -61,11 +61,8 @@
                     [class.uk-text-danger]="(blockType === 'send')"
                     [class.uk-text-success]="( (blockType === 'open') || (blockType === 'receive') )"
                     >
-                    <app-nano-amount [raw]="$safeNavigationMigration(transaction?.amount)" context="inspect"></app-nano-amount>
+                    <app-nano-amount [raw]="$safeNavigationMigration(transaction?.amount)" context="preview" precision="summary"></app-nano-amount>
                   </div>
-                }
-                @if (amountRaw.gt(0)) {
-                  <div class="uk-text-small text-half-muted" style="margin: 2px 0 -2px 0;">+{{ amountRaw.toString(10) }} raw</div>
                 }
               </div>
             }
@@ -199,12 +196,24 @@
               </div>
             </div>
           }
+          @if (transaction?.amount != null) {
+            <div class="uk-margin">
+              <label class="uk-form-label" for="exact-transaction-amount">Amount (XNO, exact):</label>
+              <div class="uk-form-controls">
+                <input id="exact-transaction-amount" class="uk-input" type="text" readonly
+                  [value]="exactXno(transaction.amount)" data-testid="transaction-exact-xno">
+                <button type="button" class="uk-button uk-button-default uk-button-small uk-margin-small-top"
+                  ngxClipboard [cbContent]="exactXno(transaction.amount)" (cbOnSuccess)="copied()"
+                  data-testid="transaction-copy-exact-xno">Copy exact XNO amount</button>
+              </div>
+            </div>
+          }
           @if (transaction?.contents?.balance) {
             <div class="uk-margin">
               <label class="uk-form-label">Balance:</label>
               <div class="uk-form-controls uk-text-truncate block-balance">
                 <div class="balance-amount-primary uk-text-truncate">
-                  <app-nano-amount [raw]="isStateBlock ? getBalanceFromDec($safeNavigationMigration(transaction?.contents?.balance)) : getBalanceFromHex($safeNavigationMigration(transaction?.contents?.balance))" context="inspect"></app-nano-amount>
+                  <app-nano-amount [raw]="isStateBlock ? getBalanceFromDec($safeNavigationMigration(transaction?.contents?.balance)) : getBalanceFromHex($safeNavigationMigration(transaction?.contents?.balance))" context="inspect" precision="raw-detail"></app-nano-amount>
                 </div>
                 <div class="uk-text-small block-hash-monospace"><span class="text-half-muted" style="margin-right: 4px;">=</span>{{ transaction?.contents?.balance }} raw</div>
               </div>

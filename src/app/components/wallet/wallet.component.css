@@ -3,3 +3,14 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* Match the persistent sidebar breakpoint in less/components/nav.less. */
+@media (min-width: 940px) {
+  .wallet-summary-totals {
+    display: none;
+  }
+
+  .wallet-summary-activity {
+    width: 100%;
+  }
+}

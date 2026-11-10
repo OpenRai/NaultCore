@@ -40,7 +40,7 @@
       </div>
       <div class="uk-card-body">
         <div class="uk-grid-large uk-child-width-1-2@s" uk-grid>
-          <div>
+          <div class="wallet-summary-totals">
             <div class="uk-form-label">{{ labels.totalBalance }}</div>
             <div class="wallet-balance uk-text-large uk-margin-small-top">
               @if (walletDataStatus) {
@@ -54,7 +54,7 @@
             }
             <a class="uk-display-inline-block uk-margin-small-top" routerLink="/accounts" [attr.data-testid]="testIds.wallet.accountsLink">{{ acrossAccountsLabel }}</a>
           </div>
-          <div>
+          <div class="wallet-summary-activity">
             <div>
               <div class="uk-form-label">{{ labels.pending }}</div>
               <div class="uk-margin-small-top">

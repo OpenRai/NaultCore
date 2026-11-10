@@ -1,16 +1,16 @@
 .block-amount-primary {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   line-height: 1;
 }
 
 .block-amount-primary > .amount-integer {
-  font-size: 32px;
+  font-size: var(--text-2xl);
   font-weight: 700;
 }
 
 .block-amount-primary > .amount-fractional,
 .block-amount-primary > .currency-name {
-  font-size: 21px;
+  font-size: var(--text-lg);
 }
 
 .block-amount-primary > .currency-name {
@@ -41,8 +41,8 @@
 .block-balance .balance-amount-primary .amount-integer,
 .block-balance .balance-amount-primary .amount-fractional,
 .block-balance .balance-amount-primary .currency-name {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-  font-size: 16px;
+
+  font-size: var(--text-base);
 }
 
 .block-balance .balance-amount-primary .amount-integer {
@@ -50,7 +50,7 @@
 }
 
 .block-balance .balance-amount-primary .amount-fractional {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .block-balance .balance-amount-primary .currency-name {

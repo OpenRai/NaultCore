@@ -1,4 +1,5 @@
 @import "components/_import.less";
+@import "components/typography.less";
 
 @nlt-intro-margin:                        40px;
 
@@ -110,12 +111,8 @@ app-root {
 	padding-left: 0;
 }
 
-h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list dt,
-.uk-table th, .uk-form-label, .uk-form-icon, .nano-card, .nav-representative-info,
-.accounts-dropdown, .nav-container .nav-action-receive, .left-nav > li, .mobile-top-bar,
-.uk-modal-dialog p, .tx-table-grid thead th, .tx-filters-toggle, .tx-table-grid td::before {
-	font-family: @global-secondary-font-family;
-}
+// Typeface roles and the shared size scale are defined in typography.less.
+
 
 .uk-card, .uk-card-default, .uk-table, .uk-list {
 	border-radius: @global-border-radius-medium;
@@ -170,7 +167,7 @@ h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list d
 	border-bottom: none;
 	color: #999;
 	text-transform: uppercase;
-	font-size: .875rem;
+	font-size: var(--text-sm);
 	font-weight: 400;
 }
 
@@ -261,9 +258,9 @@ h1, h2, h3, h4, h5, .uk-text-lead, .uk-button, .uk-alert, .uk-description-list d
 }
 
 a.fiat-currency-ticker {
-	font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+	font-family: @global-font-family;
 	color: #81809f !important;
-	font-weight: 500;
+	font-weight: 600;
 	padding-left: 7px;
 	height: 41px;
 	line-height: 1.1;
@@ -309,7 +306,7 @@ input[type=number] {
 			}
 
 			> .app-name {
-				font-size: 22px;
+				font-size: var(--text-lg);
 				font-weight: 600;
 				margin-top: -1px;
 			}
@@ -433,7 +430,7 @@ input[type=number] {
 	background: #F1F1F1;
 	border-radius: 6px;
 	padding: 2px 10px;
-	font-size: 13px;
+	font-size: var(--text-xs);
 	text-transform: uppercase;
 	border: 2px solid transparent;
 	transition: border-color 100ms ease-in-out;
@@ -528,13 +525,13 @@ input[type=number] {
 .account-container .account-index {
 	color: #676686;
 	display: inline-block;
-	font-size: 13px;
+	font-size: var(--text-xs);
 	margin-right: 7px;
 }
 
 .account-container .account-index span {
 	color: #AAA;
-	font-size: 15px;
+	font-size: var(--text-sm);
 	vertical-align: -1px;
 	margin-right: 1px;
 }
@@ -678,8 +675,8 @@ input[type=number] {
 	.menu-option {
 		padding: 10px 8px;
 		margin: 10px -8px 0 -8px;
-		font-size: 17px;
-		font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+		font-size: var(--text-base);
+		font-family: @global-font-family;
 		cursor: pointer;
 		border-radius: 2px;
 		user-select: none;
@@ -755,8 +752,8 @@ input[type=number] {
 			background: #4E91E0;
 			border-radius: 30px;
 			color: #FFF;
-			font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-			font-size: 17px;
+			font-family: @global-font-family;
+			font-size: var(--text-base);
 			font-weight: 400;
 			text-transform: uppercase;
 			cursor: pointer;
@@ -914,8 +911,8 @@ input[type=number] {
 			.amount-integer,
 			.amount-fractional,
 			.currency-name {
-				font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-				font-size: 16px;
+				font-family: @global-font-family;
+				font-size: var(--text-base);
 			}
 
 			.amount-integer {
@@ -923,7 +920,7 @@ input[type=number] {
 			}
 
 			.amount-fractional {
-				font-weight: 500;
+				font-weight: 600;
 			}
 
 			.currency-name {
@@ -936,7 +933,7 @@ input[type=number] {
 			display: inline-block;
 			background: #4A90E2;
 			border-radius: 20px;
-			font-size: 13px;
+			font-size: var(--text-xs);
 			padding: 2px 10px;
 			margin-right: 9px;
 			margin-top: 4px;
@@ -1039,7 +1036,7 @@ input[type=number] {
 				.amount-integer,
 				.amount-fractional,
 				.currency-name {
-					font-size: 13px;
+					font-size: var(--text-xs);
 				}
 
 				.currency-name {
@@ -1048,7 +1045,7 @@ input[type=number] {
 				}
 
 				.incoming-label {
-					font-size: 10px;
+					font-size: var(--text-xs);
 					padding: 2px 8px;
 					margin-right: 6px;
 					margin-bottom: 4px;
@@ -1056,7 +1053,7 @@ input[type=number] {
 			}
 
 			.account-amounts-converted {
-				font-size: 13px;
+				font-size: var(--text-xs);
 				margin-top: 10px;
 			}
 		}
@@ -1086,7 +1083,7 @@ input[type=number] {
 // Transactions list (mobile)
 .transactions-list-mobile {
 	.date-header {
-		font-size: 14px;
+		font-size: var(--text-sm);
 		margin: 15px 0 8px 20px;
 
 		&:first-child {
@@ -1245,8 +1242,8 @@ input[type=number] {
 		text-align: right;
 
 		.amount-integer, .amount-fractional, .currency-name {
-			font-family: 'Montserrat', Arial, Helvetica, sans-serif;
-			font-size: 16px;
+			font-family: @global-font-family;
+			font-size: var(--text-base);
 		}
 
 		.amount-integer {
@@ -1254,7 +1251,7 @@ input[type=number] {
 		}
 
 		.amount-fractional {
-			font-weight: 500;
+			font-weight: 600;
 		}
 
 		.currency-name {
@@ -1270,7 +1267,7 @@ input[type=number] {
 			margin-top: 20px;
 
 			button {
-				font-size: 12px;
+				font-size: var(--text-xs);
 				padding: 8px 20px;
 			}
 
@@ -1321,7 +1318,7 @@ input[type=number] {
 			display: block;
 
 			.transaction-date {
-				font-size: 15px;
+				font-size: var(--text-sm);
 			}
 		}
 	}
@@ -1332,7 +1329,7 @@ input[type=number] {
 
 	@media (max-width: 599px) {
 		th {
-			font-size: 0.9rem;
+			font-size: var(--text-sm);
 		}
 
 		.type-column {
@@ -1342,7 +1339,7 @@ input[type=number] {
 		.account-column {
 			// Not on table headings
 			td& {
-				font-size: 0.8rem;
+				font-size: var(--text-xs);
 			}
 
 			.nano-address-clickable > .uk-flex {
@@ -1364,22 +1361,22 @@ input[type=number] {
 		}
 
 		td.amount-column {
-			font-size: 12px;
+			font-size: var(--text-xs);
 
 			.amount-integer, .amount-fractional {
-				font-size: 13px;
+				font-size: var(--text-xs);
 				margin: 5px 0 -3px 0;
 			}
 
 			.currency-name {
-				font-size: 13px;
+				font-size: var(--text-xs);
 				margin-left: 0;
 				display: block;
 			}
 
 			.compact-actions-date {
 				.transaction-date {
-					font-size: 14px;
+					font-size: var(--text-sm);
 
 					.date, .time {
 						display: block;
@@ -1454,11 +1451,6 @@ input[type=number] {
 	background: #F4FAFF;
 }
 
-@media (max-width: 599px) {
-	.send-types-tab {
-		font-size: .8rem;
-	}
-}
 
 // Receive page
 .merchant-centered-container {
@@ -1570,16 +1562,16 @@ input[type=number] {
 			margin: 0;
 			font-weight: 400;
 			line-height: 1.2;
-			font-size: 25px;
+			font-size: var(--text-xl);
 			margin-bottom: 15px;
 			text-align: center;
 		}
 
 		> p {
-			font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+			font-family: @global-font-family;
 			margin: 0;
 			line-height: 1.6;
-			font-size: 16px;
+			font-size: var(--text-base);
 		}
 
 		> p + p {

@@ -21,7 +21,7 @@
 
 .label-block > .label-optional {
   margin-left: 6px;
-  font-size: 12px;
+  font-size: var(--text-xs);
 }
 
 .nano-address-actions {
@@ -212,7 +212,7 @@
 }
 
 .merchant-mode-exit .label {
-  font-size: 1.2em;
+  font-size: var(--text-lg);
 }
 
 .merchant-mode-logo {
@@ -269,8 +269,8 @@
 .merchant-mode-amount-integer,
 .merchant-mode-amount-fractional,
 .merchant-mode-currency-name {
-  font-family: "Montserrat", Arial, Helvetica, sans-serif;
-  font-size: 34px;
+
+  font-size: var(--text-2xl);
 }
 
 .merchant-mode-amount-integer {
@@ -278,7 +278,7 @@
 }
 
 .merchant-mode-amount-fractional {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .merchant-mode-currency-name {
@@ -304,7 +304,7 @@
   color: white;
   padding: 4px 12px;
   border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: 600;
   display: inline-block;
 }

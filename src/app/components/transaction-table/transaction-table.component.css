@@ -38,7 +38,7 @@
   cursor: pointer;
   list-style: none;
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -86,7 +86,7 @@
   border-radius: 999px;
   background: var(--surface-subtle);
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -184,7 +184,7 @@
   padding: 0.55rem 1rem;
   background: var(--surface-subtle);
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
@@ -217,7 +217,7 @@
 
 .tx-state-icon { color: var(--text-muted); opacity: 0.6; }
 .tx-state-title { margin: 0; color: var(--text-primary); font-weight: 600; }
-.tx-state-desc { font-size: 0.85rem; }
+.tx-state-desc { font-size: var(--text-sm); }
 
 /* ---------- Table ---------- */
 
@@ -233,7 +233,7 @@
   inline-size: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 /* Sticky column headers: the header stays visible however far the body scrolls,
@@ -245,7 +245,7 @@
   z-index: 1;
   background: var(--surface-subtle);
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -266,14 +266,14 @@
 
 .col-status { inline-size: 7.5rem; }
 .col-amount { inline-size: 9rem; text-align: end; white-space: nowrap; }
-.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--text-muted); font-size: 0.82rem; }
+.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--text-muted); font-size: var(--text-sm); }
 
 .tx-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -316,7 +316,7 @@
   align-items: center;
   gap: 0.35rem;
   margin-block-start: 0.15rem;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   min-inline-size: 0;
 }
@@ -356,7 +356,7 @@
 
 .tx-unit {
   margin-inline-start: 0.25rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -401,7 +401,7 @@
   .tx-table-grid td::before {
     content: var(--label-status) ': ' / var(--label-status);
     color: var(--text-muted);
-    font-size: 0.7rem;
+    font-size: var(--text-xs);
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -446,7 +446,7 @@
 
   .tx-table-grid .col-amount {
     margin-block-start: 0.35rem;
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .tx-table-grid .col-date {

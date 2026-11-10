@@ -11,7 +11,7 @@
 .recovery-material-hint {
   margin: 0.45rem 0 0;
   color: #f0506e;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 .recovery-word-statuses {
@@ -63,7 +63,7 @@
 .backup-warning-symbol span {
   display: block;
   margin-bottom: 6px;
-  font-size: 35px;
+  font-size: var(--text-2xl);
   font-weight: 900;
   line-height: 1;
 }
@@ -71,7 +71,7 @@
 .backup-warning-sticker p {
   margin: 0;
   color: inherit;
-  font-size: 19px;
+  font-size: var(--text-lg);
   line-height: 1.45;
 }
 
@@ -83,7 +83,7 @@
 .backup-stage-label {
   margin: 0 0 6px;
   color: #b8bacd;
-  font-size: 13px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -97,7 +97,7 @@
 .backup-seed-disclosure summary {
   margin: 0;
   color: #f5f5fb;
-  font-size: 20px;
+  font-size: var(--text-lg);
   font-weight: 600;
 }
 
@@ -127,7 +127,7 @@
   background: #2a2a34;
   border: 1px solid #3b3b49;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
@@ -135,13 +135,13 @@
   flex: 0 0 auto;
   width: auto;
   color: #a8aabc;
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 
 .clipboard-backup-note {
   margin: 10px 0 0;
   color: #a8aabc;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .backup-seed-disclosure {
@@ -155,7 +155,7 @@
 
 .backup-seed-disclosure summary {
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--text-base);
 }
 
 .backup-seed-disclosure[open] summary {
@@ -198,11 +198,11 @@
 
   .backup-warning-symbol span {
     margin-bottom: 4px;
-    font-size: 27px;
+    font-size: var(--text-xl);
   }
 
   .backup-warning-sticker p {
-    font-size: 17px;
+    font-size: var(--text-base);
   }
 
   .mnemonic-card-grid {
@@ -235,7 +235,7 @@ pre.mnemonic span.mnemonic-word::before {
   color: #CCC;
   display: inline-block;
   width: 13px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   text-align: left;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */
@@ -301,19 +301,19 @@ pre.mnemonic span.mnemonic-word::before {
 }
 
 .landing-container > div > .wallet-option > .icon > .seed {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   margin: 0;
   line-height: 1.2;
-  font-size: 24px;
-  font-weight: 300;
+  font-size: var(--text-xl);
+  font-weight: 400;
 }
 
 .landing-container > div > .wallet-option > .icon > .more-options {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   margin: 0;
   line-height: 1.2;
-  font-size: 36px;
-  font-weight: 300;
+  font-size: var(--text-2xl);
+  font-weight: 400;
 }
 
 .landing-container > div > .wallet-option > .icon > .mnemonic > .mnemonic-row {
@@ -327,20 +327,20 @@ pre.mnemonic span.mnemonic-word::before {
 .landing-container > div > .wallet-option > .icon > .mnemonic > .mnemonic-row > .number {
   width: 10px;
   text-align: right;
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   margin: 0;
   margin-bottom: 2px;
   margin-right: 5px;
   line-height: 1.2;
-  font-size: 11px;
-  font-weight: 300;
+  font-size: var(--text-xs);
+  font-weight: 400;
 }
 .landing-container > div > .wallet-option > .icon > .mnemonic > .mnemonic-row > .word {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   margin: 0;
   line-height: 1.2;
-  font-size: 16px;
-  font-weight: 300;
+  font-size: var(--text-base);
+  font-weight: 400;
 }
 
 .landing-container > div > .wallet-option > .icon > svg * {
@@ -349,22 +349,22 @@ pre.mnemonic span.mnemonic-word::before {
 
 .landing-container > div > .wallet-option > h2 {
   margin: 0;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.2;
-  font-size: 28px;
+  font-size: var(--text-xl);
   margin-bottom: 15px;
 }
 .landing-container > div > .wallet-option > h2.long-header {
   margin-top: 3px;
-  font-size: 17px;
-  font-weight: 500;
+  font-size: var(--text-xl);
+  font-weight: 600;
 }
 
 .landing-container > div > .wallet-option > p {
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
   margin: 0;
   line-height: 1.2;
-  font-size: 17px;
+  font-size: var(--text-base);
 }
 
 @media (max-width: 700px) {
@@ -383,7 +383,7 @@ pre.mnemonic span.mnemonic-word::before {
 .import-panel-navigation {
   display: inline-flex;
   align-items: center;
-  font-size: 24px;
+  font-size: var(--text-xl);
   cursor: pointer;
   margin: 10px 20px 20px 20px;
 }

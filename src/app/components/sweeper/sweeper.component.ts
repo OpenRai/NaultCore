@@ -607,7 +607,7 @@ export class SweeperComponent implements OnInit {
     // let user confirm account
     const UIkit = window['UIkit'];
     try {
-      const msg = '<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: 18px;">You are about to empty the source wallet, which will <b>transfer all funds from it to the destination address</b>.</span><br><br><b style="font-size: 18px;">Before continuing, make sure you (or someone) have saved the secret recovery seed and/or mnemonic of the specified destination address</b>.<br><br><span style="font-size: 18px;"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of the specified destination address.</span></p><br>';
+      const msg = '<p class="uk-alert uk-alert-danger"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span><span style="font-size: var(--text-base);">You are about to empty the source wallet, which will <b>transfer all funds from it to the destination address</b>.</span><br><br><b style="font-size: var(--text-base);">Before continuing, make sure you (or someone) have saved the secret recovery seed and/or mnemonic of the specified destination address</b>.<br><br><span style="font-size: var(--text-base);"><b>YOU WILL NOT BE ABLE TO RECOVER THE FUNDS</b><br>without a backup of the specified destination address.</span></p><br>';
       await UIkit.modal.confirm(msg);
       this.sweepContinue();
     } catch (err) {

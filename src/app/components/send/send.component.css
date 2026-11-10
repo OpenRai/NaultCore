@@ -6,7 +6,7 @@
 
 .max-amt-button {
   text-transform: uppercase;
-  font-size: 15px;
+  font-size: var(--text-sm);
 }
 
 .form-amount {
@@ -28,19 +28,19 @@
 }
 
 .block-amount-primary {
-  font-family: "Montserrat", Arial, Helvetica, sans-serif;
+
   line-height: 1;
   margin-top: 4px;
 }
 
 .block-amount-primary > .amount-integer {
-  font-size: 32px;
+  font-size: var(--text-2xl);
   font-weight: 700;
 }
 
 .block-amount-primary > .amount-fractional,
 .block-amount-primary > .currency-name {
-  font-size: 21px;
+  font-size: var(--text-lg);
 }
 
 .block-amount-primary > .currency-name {
@@ -51,12 +51,12 @@
 .block-balance .balance-amount-primary .amount-integer,
 .block-balance .balance-amount-primary .amount-fractional,
 .block-balance .balance-amount-primary .currency-name {
-  font-family: "Montserrat", Arial, Helvetica, sans-serif;
-  font-size: 16px;
+
+  font-size: var(--text-base);
 }
 
 .block-balance .balance-amount-primary .amount-sign {
-  font-weight: 500;
+  font-weight: 600;
   margin-right: 1px;
 }
 
@@ -65,7 +65,7 @@
 }
 
 .block-balance .balance-amount-primary .amount-fractional {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .block-balance .balance-amount-primary .currency-name {
@@ -82,10 +82,10 @@
   display: inline-block;
 }
 .send-types-tab {
-  width: 400px;
+  width: min(400px, calc(100% - 10px));
   margin: 5px;
   border-radius: 6px;
-  font-weight: 500;
+  font-weight: 600;
 }
 .send-types-tab-active {
   border-color: transparent;
@@ -97,8 +97,8 @@
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 0.85em;
-  font-weight: 500;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .stealth-account-done {

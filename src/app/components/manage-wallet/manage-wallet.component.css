@@ -70,7 +70,7 @@
 .backup-warning-symbol span {
   display: block;
   margin-bottom: 6px;
-  font-size: 35px;
+  font-size: var(--text-2xl);
   font-weight: 900;
   line-height: 1;
 }
@@ -78,7 +78,7 @@
 .backup-warning-sticker p {
   margin: 0;
   color: inherit;
-  font-size: 19px;
+  font-size: var(--text-lg);
   line-height: 1.45;
 }
 
@@ -91,7 +91,7 @@
 .backup-seed-disclosure summary {
   margin: 0;
   color: #f5f5fb;
-  font-size: 20px;
+  font-size: var(--text-lg);
   font-weight: 600;
 }
 
@@ -114,7 +114,7 @@
 .clipboard-backup-note {
   margin: 10px 0 0;
   color: #a8aabc;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 
 .backup-seed-disclosure {
@@ -127,7 +127,7 @@
 
 .backup-seed-disclosure summary {
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--text-base);
 }
 
 .backup-seed-disclosure[open] summary {
@@ -150,10 +150,10 @@
 
   .backup-warning-symbol span {
     margin-bottom: 4px;
-    font-size: 27px;
+    font-size: var(--text-xl);
   }
 
   .backup-warning-sticker p {
-    font-size: 17px;
+    font-size: var(--text-base);
   }
 }

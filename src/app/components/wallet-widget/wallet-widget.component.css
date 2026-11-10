@@ -15,5 +15,5 @@
 
 .unlock-explanation {
   color: var(--uk-muted-color, #777);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }

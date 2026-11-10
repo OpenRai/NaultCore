@@ -111,8 +111,8 @@
 
 	> .label {
 		color: @nav-half-muted-color;
-		font-weight: 500;
-		font-size: 13px;
+		font-weight: 600;
+		font-size: var(--text-xs);
 
 		> .uk-spinner {
 			margin-right: 6px;
@@ -196,8 +196,8 @@
 
 	> .header {
 		text-transform: uppercase;
-		font-size: 12px;
-		font-weight: 500;
+		font-size: var(--text-xs);
+		font-weight: 600;
 		color: @nav-half-muted-color;
 		padding: 8px;
 	}
@@ -238,15 +238,15 @@
 			overflow: hidden;
 
 			> .name {
-				font-size: 14px;
-				font-weight: 500;
+				font-size: var(--text-sm);
+				font-weight: 600;
 				padding-bottom: 4px;
 				transition: color 100ms ease-in-out;
 				.truncated-text();
 			}
 
 			> .address {
-				font-size: 12px;
+				font-size: var(--text-xs);
 				padding-bottom: 2px;
 				transition: color 100ms ease-in-out;
 				.truncated-text();
@@ -262,8 +262,8 @@
 
 			> .balance {
 				&.primary {
-					font-size: 14px;
-					font-weight: 500;
+					font-size: var(--text-sm);
+					font-weight: 600;
 					padding-bottom: 4px;
 					white-space: nowrap;
 					transition: color 100ms ease-in-out;
@@ -271,7 +271,7 @@
 					> .incoming-label {
 						background: @global-primary-background;
 						border-radius: 10px;
-						font-size: 10px;
+						font-size: var(--text-xs);
 						padding: 2px 8px;
 						margin-right: 3px;
 						vertical-align: 1px;
@@ -299,7 +299,7 @@
 				}
 
 				&.converted {
-					font-size: 12px;
+					font-size: var(--text-xs);
 					white-space: nowrap;
 					padding-bottom: 2px;
 					transition: color 100ms ease-in-out;
@@ -341,8 +341,8 @@
 
 		> h2 {
 			text-transform: uppercase;
-			font-size: 12px;
-			font-weight: 500;
+			font-size: var(--text-xs);
+			font-weight: 600;
 			color: @nav-half-muted-color;
 			margin-bottom: 5px;
 			.truncated-text();
@@ -357,7 +357,7 @@
 		> .name {
 			color: var(--nav-text);
 			font-weight: 600;
-			font-size: 18px;
+			font-size: var(--text-base);
 			margin-right: 6px;
 			text-decoration: none;
 			border-bottom: 2px dotted transparent;
@@ -383,7 +383,7 @@
 			min-width: 40px;
 			color: var(--nav-text);
 			font-weight: 400;
-			font-size: 17px;
+			font-size: var(--text-base);
 		}
 	}
 
@@ -426,7 +426,7 @@
 		}
 
 		> .label {
-			font-size: 14px;
+			font-size: var(--text-sm);
 			margin-bottom: -1px;
 		}
 	}
@@ -459,7 +459,7 @@
 			margin-bottom: 8px;
 
 			> h2 {
-				font-size: 12px;
+				font-size: var(--text-xs);
 				text-transform: uppercase;
 				color: #D8DDED;
 				margin: 0 10px;
@@ -479,10 +479,10 @@
 				margin-bottom: 0;
 			}
 
-			font-size: 0.9rem;
+			font-size: var(--text-sm);
 
 			&.primary {
-				font-size: 1rem;
+				font-size: var(--text-base);
 			}
 
 			> .uk-icon {
@@ -546,7 +546,7 @@
 		}
 
 		> .secondary {
-			font-size: 13px;
+			font-size: var(--text-xs);
 
 			> a {
 				text-decoration: none;
@@ -582,8 +582,8 @@
 	margin-top: -15px;
 
 	> li {
-		font-size: 16px;
-		font-weight: 500;
+		font-size: var(--text-base);
+		font-weight: 600;
 		color: var(--nav-text);
 		padding: 0;
 
@@ -632,7 +632,7 @@
 			> .uk-badge {
 				display: flex;
 				height: 22px;
-				font-size: 16px;
+				font-size: var(--text-base);
 				padding: 1px 0 0 0;
 			}
 		}
@@ -642,7 +642,7 @@
 			border-bottom: 1px solid @nav-border-color;
 			padding: 0 0 5px 40px;
 			font-weight: 400;
-			font-size: 16px;
+			font-size: var(--text-base);
 			position: relative;
 
 			&::after {
@@ -691,7 +691,7 @@
 .nav-search {
 	background: var(--nav-search-bg);
 	padding: 3px 12px 3px 8px;
-	font-size: 14px;
+	font-size: var(--text-sm);
 	border-radius: 10px;
 	margin: 10px 10px 5px 10px;
 
@@ -739,7 +739,7 @@
 
 		> .attribution {
 			color: var(--nav-text-faint);
-			font-size: 13px;
+			font-size: var(--text-xs);
 			margin-top: 15px;
 
 			> a {
@@ -769,7 +769,7 @@
 		display: block;
 		color: var(--nav-text-faint);
 		text-transform: uppercase;
-		font-size: 10px;
+		font-size: var(--text-xs);
 		margin-top: 4px;
 		white-space: nowrap;
 		border-bottom: 2px solid transparent;
@@ -929,8 +929,8 @@
 			border-radius: 28px;
 			background: @global-primary-background;
 			color: #FFF;
-			font-family: @global-secondary-font-family;
-			font-size: 12px;
+			font-family: @global-font-family;
+			font-size: var(--text-xs);
 			font-weight: 600;
 			letter-spacing: 0.02em;
 			cursor: pointer;

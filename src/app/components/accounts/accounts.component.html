@@ -5,7 +5,7 @@
       <div class="uk-width-expand@s uk-width-1-1">
         <h2 class="uk-heading-divider uk-text-truncate">
           {{ 'general.accounts' | transloco }}
-          <a (click)="viewAdvanced = !viewAdvanced" class="uk-text-truncate" style="font-size: 12px; margin-left: 25px;">{{ viewAdvanced ? ('accounts.simple-mode' | transloco | uppercase) : ('accounts.advanced-mode' | transloco | uppercase) }}</a>
+          <a (click)="viewAdvanced = !viewAdvanced" class="uk-text-truncate" style="font-size: var(--text-xs); margin-left: 25px;">{{ viewAdvanced ? ('accounts.simple-mode' | transloco | uppercase) : ('accounts.advanced-mode' | transloco | uppercase) }}</a>
         </h2>
       </div>
       <div class="uk-width-auto@m uk-width-1-1 uk-text-right">
@@ -178,7 +178,7 @@
         <div class="uk-margin-large-top" uk-grid>
           <div class="uk-width-expand@s uk-width-1-1">
             <h2 class="uk-heading-divider uk-text-truncate">
-              NanoNyms <span class="uk-badge" style="font-size: 12px; vertical-align: middle;">Privacy</span>
+              NanoNyms <span class="uk-badge" style="font-size: var(--text-xs); vertical-align: middle;">Privacy</span>
             </h2>
           </div>
           <div class="uk-width-auto@m uk-width-1-1 uk-text-right">
@@ -212,13 +212,13 @@
                               <div class="account-label">
                                 {{ account.label }}
                                 @if (account.nanoNym.status === 'active') {
-                                  <span class="uk-badge uk-badge-success" style="font-size: 10px; margin-left: 8px;">Active</span>
+                                  <span class="uk-badge uk-badge-success" style="font-size: var(--text-xs); margin-left: 8px;">Active</span>
                                 }
                                 @if (account.nanoNym.status === 'archived') {
-                                  <span class="uk-badge" style="font-size: 10px; margin-left: 8px; background-color: #999;">Archived</span>
+                                  <span class="uk-badge" style="font-size: var(--text-xs); margin-left: 8px; background-color: #999;">Archived</span>
                                 }
                               </div>
-                              <div class="uk-text-meta" style="font-size: 11px;">
+                              <div class="uk-text-meta" style="font-size: var(--text-xs);">
                                 {{ account.nanoNym.paymentCount }} {{ account.nanoNym.paymentCount === 1 ? 'payment' : 'payments' }}
                               </div>
                             </div>

@@ -6,7 +6,7 @@
         <h2 class="uk-heading-divider uk-text-truncate">
           {{ 'general.address-book' | transloco }}
           @if (activePanel !== 1) {
-            <a (click)="activePanel =  activePanel === 0 ? 2 : 0; addressBookShowFileExport = false;" style="font-size: 12px; margin-left: 25px;">{{ activePanel === 2 ? ('address-book.back-to-address-book' | transloco | uppercase) : ('address-book.import-export' | transloco | uppercase) }}</a>
+            <a (click)="activePanel =  activePanel === 0 ? 2 : 0; addressBookShowFileExport = false;" style="font-size: var(--text-xs); margin-left: 25px;">{{ activePanel === 2 ? ('address-book.back-to-address-book' | transloco | uppercase) : ('address-book.import-export' | transloco | uppercase) }}</a>
           }
         </h2>
       </div>

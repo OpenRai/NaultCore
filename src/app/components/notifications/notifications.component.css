@@ -1,5 +1,5 @@
 .wallet-notification {
-	font-size: 14px;
+	font-size: var(--text-sm);
 	padding: 12px 40px 12px 20px;
 	border-radius: 30px;
 	cursor: pointer;

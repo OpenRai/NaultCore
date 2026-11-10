@@ -34,7 +34,7 @@
 }
 
 .representative-health-status > .label {
-	font-size: 14px;
+	font-size: var(--text-sm);
 	margin-bottom: -1px;
 }
 
@@ -127,25 +127,25 @@
 }
 
 .delegating-account > .descendant-details > .descendant-address {
-	font-size: 0.8em;
+	font-size: var(--text-xs);
 }
 
 .voting-weight-column .amount-integer,
 .voting-weight-column .amount-fractional,
 .voting-weight-column .currency-name {
-	font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+
 }
 
 .representative-row .voting-weight-column .amount-integer,
 .representative-row .voting-weight-column .amount-fractional,
 .representative-row .voting-weight-column .currency-name {
-	font-size: 16px;
+	font-size: var(--text-base);
 }
 
 .delegating-account-row .voting-weight-column .amount-integer,
 .delegating-account-row .voting-weight-column .amount-fractional,
 .delegating-account-row .voting-weight-column .currency-name {
-	font-size: 14px;
+	font-size: var(--text-sm);
 }
 
 .voting-weight-column .amount-integer {
@@ -153,7 +153,7 @@
 }
 
 .voting-weight-column .amount-fractional {
-	font-weight: 500;
+	font-weight: 600;
 }
 
 .voting-weight-column .currency-name {
@@ -178,11 +178,11 @@
 	}
 
 	.representative-row .voting-weight-column .currency-name {
-		font-size: 13px;
+		font-size: var(--text-xs);
 	}
 
 	.delegating-account-row .voting-weight-column .currency-name {
-		font-size: 13px;
+		font-size: var(--text-xs);
 	}
 }
 

@@ -28,7 +28,7 @@
 }
 
 .account-amounts-primary .amount-fractional {
-	font-weight: 500;
+	font-weight: 600;
 }
 
 .account-amounts-primary .currency-name {
@@ -40,7 +40,7 @@
 	display: inline-block;
 	background: #4a90e2;
 	border-radius: 20px;
-	font-size: 13px;
+	font-size: var(--text-xs);
 	padding: 2px 10px;
 	margin-left: 9px;
 	vertical-align: 1px;

@@ -27,7 +27,7 @@ pre.mnemonic span.mnemonic-word::before {
   color: #CCC;
   display: inline-block;
   width: 13px;
-  font-size: 10px;
+  font-size: var(--text-xs);
   text-align: left;
   -webkit-touch-callout: none; /* iOS Safari */
   -webkit-user-select: none; /* Safari */

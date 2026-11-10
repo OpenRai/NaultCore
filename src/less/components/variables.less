@@ -30,7 +30,7 @@
 @global-font-size:                              1rem;
 @global-line-height:                            1.5;      // 24px
 
-@global-2xlarge-font-size:                      2.625rem; // 42px
+@global-2xlarge-font-size:                      2.5rem; // 40px
 @global-xlarge-font-size:                       2rem;     // 32px
 @global-large-font-size:                        1.5rem;   // 24px
 @global-medium-font-size:                       1.25rem;  // 20px
@@ -82,3 +82,13 @@
 @global-medium-box-shadow:                      0 0 0 rgba(0,0,0,0.08);
 @global-large-box-shadow:                       0 0 0 rgba(0,0,0,0.08);
 @global-xlarge-box-shadow:                      0 0 0 rgba(0,0,0,0.08);
+
+// UIkit heading defaults use the Nano heading role.
+@base-heading-font-family: @global-secondary-font-family;
+@base-heading-font-weight: 500;
+
+// Keep framework metadata on the same scale as application components.
+@base-small-font-size: @global-small-font-size;
+@badge-font-size: @global-small-font-size;
+@label-font-size: @global-small-font-size;
+@nav-header-font-size: @global-small-font-size;

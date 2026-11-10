@@ -311,6 +311,8 @@
               "src/app/components/configure-app/configure-app.component.spec.ts",
               "src/app/components/sweeper/sweeper.component.spec.ts",
               "src/app/components/send/send.component.spec.ts",
+              "src/app/components/receive/receive.component.spec.ts",
+              "src/app/components/transaction-account/transaction-account-picker.component.spec.ts",
               "src/app/components/wallet/wallet.component.spec.ts",
               "src/app/components/transaction-table/transaction-table.component.spec.ts"
             ],

@@ -2,6 +2,12 @@ import type { Page } from '@playwright/test';
 import { test, expect, unlockWalletThroughBridge } from './fixtures';
 
 async function navigate(page: Page, path: string): Promise<void> {
+  if (path === '/accounts') {
+    await page.getByRole('link', { name: 'Wallet accounts', exact: true }).click();
+    await page.getByRole('link', { name: 'Accounts', exact: true }).click();
+    await expect(page).toHaveURL(/\/accounts$/);
+    return;
+  }
   const target = page.locator(`a[href="${path}"]`).first();
   if (!await target.isVisible()) {
     const settingsPaths = new Set(['/configure-app', '/manage-wallet', '/representatives']);
@@ -31,7 +37,7 @@ test('opens an account and shows its account details', async ({ seededPage, test
 
   await seededPage.goto('/wallet');
   await unlockWalletThroughBridge(seededPage);
-  await expect(seededPage.getByTestId('wallet-account-selector')).toHaveValue(testWallet.accounts[0]);
+  await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
 
   await seededPage.goto('/accounts');
   await unlockWalletThroughBridge(seededPage);
@@ -39,32 +45,21 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[0]}$`));
 });
 
-test('opens the Wallet workspace and keeps actions scoped to the selected account', async ({ seededPage, testWallet }) => {
+test('starts global Send and Receive with an explicit account choice', async ({ seededPage, testWallet }) => {
   await seededPage.goto('/wallet');
   await unlockWalletThroughBridge(seededPage);
-  await expect(seededPage).toHaveURL(/\/wallet$/);
-  await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
-  await expect(seededPage.getByTestId('wallet-summary-card')).toBeVisible();
-  await expect(seededPage.locator('.wallet-summary-card .card-kicker')).toHaveText('Total Wallet Balance');
-  await expect(seededPage.locator('.wallet-activity-section h3')).toBeVisible();
-
-  const accountSelector = seededPage.getByTestId('wallet-account-selector');
-  await expect(accountSelector).toHaveValue(testWallet.accounts[0]);
-  await accountSelector.selectOption(testWallet.accounts[1]);
-
-  await expect(seededPage.locator('.action-context-addr')).toContainText(testWallet.accounts[1].slice(0, 10));
-  await expect(seededPage.getByTestId('wallet-send-button')).toBeVisible();
-  await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
-
+  await expect(seededPage.getByTestId('wallet-account-selector')).toHaveCount(0);
   await seededPage.getByTestId('wallet-send-button').click();
-  await expect(seededPage).toHaveURL(new RegExp(`/send\\?account=${testWallet.accounts[1]}$`));
-  await expect(seededPage.getByTestId('send-source-account-input')).toHaveValue(testWallet.accounts[1]);
+  await expect(seededPage).toHaveURL(/\/send$/);
+  await expect(seededPage.getByTestId('transaction.accountPicker')).toBeVisible();
+  await seededPage.locator(`button[data-account-id="${testWallet.accounts[1]}"]`).click();
+  await expect(seededPage.getByTestId('send.sourceSummary')).toContainText(testWallet.accounts[1]);
 
   await seededPage.goto('/wallet');
   await unlockWalletThroughBridge(seededPage);
-  await expect(seededPage.getByTestId('wallet-receive-button')).toBeVisible();
   await seededPage.getByTestId('wallet-receive-button').click();
-  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}$`));
+  await expect(seededPage).toHaveURL(/\/receive$/);
+  await seededPage.locator(`button[data-account-id="${testWallet.accounts[1]}"]`).click();
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);
 });
 
@@ -137,7 +132,7 @@ test('shows the selected account receive address', async ({ seededPage, testWall
   await unlockWalletThroughBridge(seededPage);
 
   await expect(seededPage.getByTestId('receive-page-root')).toBeVisible();
-  await seededPage.getByRole('combobox', { name: 'Account' }).selectOption(testWallet.accounts[0]);
+  await seededPage.locator(`button[data-account-id="${testWallet.accounts[0]}"]`).click();
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[0]);
 });
 
@@ -152,7 +147,7 @@ test('opens the wallet dashboard from its balance card and routes Quick Receive 
 
   await seededPage.locator('.accounts-dropdown .account').filter({ hasText: testWallet.accounts[1] }).click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[1]}`));
-  await expect(seededPage.getByRole('combobox', { name: 'Account' })).toHaveValue(testWallet.accounts[1]);
+  await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);
   await expect(seededPage.getByTestId('wallet-dashboard-link')).toBeVisible();
 });
 

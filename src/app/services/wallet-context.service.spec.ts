@@ -67,18 +67,23 @@ describe('WalletContextService', () => {
     expect(wallet.saveWalletExport).toHaveBeenCalledTimes(2);
   });
 
-  it('resolves explicit query, selected, fallback, and empty transaction contexts deterministically', () => {
+  it('resolves explicit and sole accounts without inheriting sidebar selection', () => {
     expect(service.resolveTransactionContext('send', 'nano_2')).toEqual({
       intent: 'send', accountId: 'nano_2', source: 'query', explicit: true,
     });
     expect(service.resolveTransactionContext('receive')).toEqual({
-      intent: 'receive', accountId: 'nano_1', source: 'selected', explicit: false,
+      intent: 'receive', accountId: null, source: 'none', explicit: false,
     });
 
     wallet.walletState = createWalletState(null, ['nano_2']);
     expect(service.resolveTransactionContext('receive')).toEqual({
       intent: 'receive', accountId: 'nano_2', source: 'fallback', explicit: false,
     });
+
+    expect(service.resolveTransactionContext('send', 'nano_missing')).toEqual({
+      intent: 'send', accountId: null, source: 'none', explicit: false,
+    });
+    expect(wallet.selectAccount).not.toHaveBeenCalled();
 
     wallet.walletState = createWalletState(null, []);
     expect(service.resolveTransactionContext('send', 'nano_missing')).toEqual({

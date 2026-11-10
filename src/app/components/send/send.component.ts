@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnInit, DestroyRef, ElementRef, Injector, ViewChild, afterNextRender, inject, ChangeDetectionStrategy } from "@angular/core";
 import BigNumber from "bignumber.js";
 import { AddressBookService } from "../../services/address-book.service";
 import { BehaviorSubject } from "rxjs";
@@ -8,7 +9,7 @@ import { ApiService } from "../../services/api.service";
 import { UtilService } from "../../services/util.service";
 import { WorkPoolService } from "../../services/work-pool.service";
 import { AppSettingsService } from "../../services/app-settings.service";
-import { ActivatedRoute } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { PriceService } from "../../services/price.service";
 import { NanoBlockService } from "../../services/nano-block.service";
 import { QrModalService } from "../../services/qr-modal.service";
@@ -39,6 +40,10 @@ const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 })
 export class SendComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private readonly navigation = inject(Router);
+  private readonly injector = inject(Injector);
+  @ViewChild('sourceHeading') private sourceHeading?: ElementRef<HTMLHeadingElement>;
+  private readonly destroyRef = inject(DestroyRef);
   private walletService = inject(WalletService);
   private walletContext = inject(WalletContextService);
   private addressBookService = inject(AddressBookService);
@@ -63,6 +68,60 @@ export class SendComponent implements OnInit {
   nano = 1000000000000000000000000;
 
   activePanel = "send";
+  choosingSource = true;
+  choosingDestination = false;
+  accountChoiceMessage = '';
+  private requestedAccountId: string | null | undefined;
+  private paymentQueryKey = '';
+
+  get selectedSource(): SpendableAccount | null {
+    return this.spendableAccounts.find(account => account.id === this.fromAccountID) || null;
+  }
+
+  get selectedDestination(): SpendableAccount | null {
+    return this.spendableAccounts.find(account => account.id === this.toOwnAccountID) || null;
+  }
+
+  chooseSource(accountId: string): void {
+    if (this.preparingTransaction || this.confirmingTransaction) return;
+    if (!this.spendableAccounts.some(account => account.id === accountId)) return;
+    this.fromAccountID = accountId;
+    this.onFromAccountChange();
+    this.choosingSource = false;
+    this.focusSource();
+    this.accountChoiceMessage = '';
+    this.activePanel = 'send';
+    if (this.toOwnAccountID === accountId) this.toOwnAccountID = '';
+    this.requestedAccountId = accountId;
+    void this.navigation.navigate([], {
+      relativeTo: this.route, queryParams: { account: accountId }, queryParamsHandling: 'merge', replaceUrl: true,
+    });
+  }
+
+  private focusSource(): void {
+    afterNextRender(() => this.sourceHeading?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  editPayment(): void {
+    if (this.confirmingTransaction) return;
+    this.activePanel = 'send';
+    this.focusSource();
+  }
+
+  changeSource(): void {
+    if (this.preparingTransaction || this.confirmingTransaction) return;
+    this.activePanel = 'send';
+    this.choosingDestination = false;
+    this.choosingSource = true;
+    this.fromAccountSelectionTouched = true;
+  }
+
+  chooseDestination(accountId: string): void {
+    if (accountId === this.fromAccountID || !this.spendableAccounts.some(account => account.id === accountId)) return;
+    this.toOwnAccountID = accountId;
+    this.choosingDestination = false;
+  }
+
   sendDestinationType = "external-address";
 
   accounts = this.walletService.walletState.accounts as any;
@@ -114,7 +173,6 @@ export class SendComponent implements OnInit {
   amountStatus = null;
   preparingTransaction = false;
   confirmingTransaction = false;
-  selAccountInit = false;
   private fromAccountSelectionTouched = false;
 
   // NanoNym-specific state (receiving)
@@ -145,11 +203,29 @@ export class SendComponent implements OnInit {
 
     // Subscribe to replayed regular-wallet and NanoNym projections. Both
     // streams emit immediately for late-mounted send views.
-    this.walletService.walletState$.subscribe(snapshot => {
+    this.walletService.walletState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(snapshot => {
       this.accounts = snapshot.accounts as any;
     });
-    this.walletService.spendableAccounts$.subscribe(accounts => {
-      this.spendableAccounts = accounts;
+    this.walletService.spendableAccounts$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(accounts => {
+      this.spendableAccounts = FEATURE_NANONYMS ? accounts : accounts.filter(account => account.type === 'regular');
+      this.selectedSpendableAccount = this.selectedSource;
+      if (this.fromAccountID && !this.selectedSource) {
+        this.fromAccountID = '';
+        this.activePanel = 'send';
+        this.choosingSource = true;
+        this.accountChoiceMessage = 'The source account is no longer available. Choose an account.';
+      }
+      // Account metadata can hydrate after a directly opened transaction route.
+      // Defer to the complete synchronous account publication batch.
+      queueMicrotask(() => {
+        if (!this.destroyRef.destroyed && this.choosingSource && !this.fromAccountSelectionTouched) {
+          this.applyRequestedAccount(this.requestedAccountId);
+        }
+      });
+      if (this.toOwnAccountID && !this.selectedDestination) {
+        this.toOwnAccountID = '';
+        this.activePanel = 'send';
+      }
     });
 
     // Refresh NanoNym balances independently; storage publishes its own
@@ -160,44 +236,23 @@ export class SendComponent implements OnInit {
     const dismissed = localStorage.getItem('nanonym-privacy-warning-dismissed');
     this.privacyWarningDismissed = dismissed === 'true';
 
-    // Set default From account
-    this.fromAccountID = this.accounts.length ? this.accounts[0].id : "";
-
-    // Update selected account if changed in the sidebar
-    this.walletService.selectedAccountState$.subscribe(async (acc) => {
-      if (this.activePanel !== "send") {
-        // Transaction details already finalized
-        return;
+    // Route context belongs to this draft, independently of sidebar selection.
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(queries => {
+      if (this.preparingTransaction || this.confirmingTransaction) return;
+      this.activePanel = 'send';
+      const paymentQueryKey = JSON.stringify([queries.to ?? null, queries.amount ?? null]);
+      if (paymentQueryKey !== this.paymentQueryKey) {
+        this.updateQueries(queries);
+        this.paymentQueryKey = paymentQueryKey;
       }
-
-      if (this.selAccountInit && !this.fromAccountSelectionTouched) {
-        if (acc) {
-          this.fromAccountID = acc.id;
-        } else {
-          this.findFirstAccount();
-        }
+      const requested = queries.account || null;
+      if (requested !== this.requestedAccountId) {
+        this.requestedAccountId = requested;
+        this.fromAccountSelectionTouched = false;
+        this.activePanel = 'send';
+        this.applyRequestedAccount(requested);
       }
-      this.selAccountInit = true;
     });
-
-    // Update the account if query params changes. For example donation button while active on this page
-    this.route.queryParams.subscribe((queries) => {
-      this.updateQueries(queries);
-      this.applyRequestedAccount(queries.account);
-    });
-
-    // Set the account selected in the sidebar as default
-    if (this.walletService.walletState.selectedAccount !== null) {
-      this.fromAccountID = this.walletService.walletState.selectedAccount.id;
-    } else {
-      // If "total balance" is selected in the sidebar, use the first account in the wallet that has a balance
-      await this.findFirstAccount();
-    }
-
-    // A Wallet action carries an explicit account query parameter. It has
-    // precedence over the aggregate/selected-account fallback, but only
-    // while the user has not changed the source selector in this view.
-    this.applyRequestedAccount(params.account);
   }
 
   updateQueries(params) {
@@ -225,29 +280,14 @@ export class SendComponent implements OnInit {
 
   private applyRequestedAccount(requestedAccountId: string | null | undefined): void {
     if (this.fromAccountSelectionTouched) return;
-
     const context = this.walletContext.resolveTransactionContext('send', requestedAccountId);
-    if (context.source === 'query' && context.accountId) {
-      this.fromAccountID = context.accountId;
-    }
-  }
-
-  async findFirstAccount() {
-    // Load balances before we try to find the right account
-    if (this.walletService.walletState.balance.isZero()) {
-      await this.walletService.refreshWalletState('send-selection');
-    }
-
-    // Look for the first account that has a balance
-    const accountIDWithBalance = this.accounts.reduce((previous, current) => {
-      if (previous) return previous;
-      if (current.balance.gt(0)) return current.id;
-      return null;
-    }, null);
-
-    if (accountIDWithBalance && !this.fromAccountSelectionTouched) {
-      this.fromAccountID = accountIDWithBalance;
-    }
+    const nanoNym = FEATURE_NANONYMS && this.spendableAccounts.find(account => account.type === 'nanonym' && account.id === requestedAccountId);
+    const accountId = nanoNym ? nanoNym.id : context.accountId;
+    this.fromAccountID = accountId || '';
+    this.selectedSpendableAccount = this.spendableAccounts.find(account => account.id === this.fromAccountID) || null;
+    this.choosingSource = !accountId;
+    this.accountChoiceMessage = requestedAccountId && !accountId
+      ? 'The requested source account is not available in this wallet. Choose an account.' : '';
   }
 
   // An update to the Nano amount, sync the fiat value
@@ -407,7 +447,7 @@ export class SendComponent implements OnInit {
       try {
         await UIkit.modal.confirm(
           `<p class="uk-alert uk-alert-warning"><br><span class="uk-flex"><span uk-icon="icon: warning; ratio: 3;" class="uk-align-center"></span></span>
-          <span style="font-size: 18px;">
+          <span style="font-size: var(--text-base);">
           ${this.translocoService.translate("configure-app.decentralized-aliases-require-external-requests")}
           </span>`,
           {
@@ -661,6 +701,11 @@ export class SendComponent implements OnInit {
   }
 
   async sendTransaction() {
+    if (this.preparingTransaction) return;
+    if (!this.fromAccountID || this.choosingSource) {
+      this.choosingSource = true;
+      return this.notificationService.sendWarning('Choose the account to send from');
+    }
     // Ensure the selected account is up-to-date before proceeding
     this.onFromAccountChange();
 
@@ -704,96 +749,111 @@ export class SendComponent implements OnInit {
 
     this.preparingTransaction = true;
 
-    const from = await this.nodeApi.accountInfo(this.fromAccountID);
-    const to = await this.nodeApi.accountInfo(destinationID);
+    const sourceId = this.fromAccountID;
+    try {
+      const from = await this.nodeApi.accountInfo(sourceId);
+      const to = await this.nodeApi.accountInfo(destinationID);
+      if (sourceId !== this.fromAccountID || this.choosingSource) return;
 
-    this.preparingTransaction = false;
-
-    if (!from) {
-      return this.notificationService.sendError(`From account not found`);
-    }
-
-    from.balanceBN = new BigNumber(from.balance || 0);
-    to.balanceBN = new BigNumber(to.balance || 0);
-
-    this.fromAccount = from;
-    this.toAccount = to;
-
-    const rawAmount = this.getAmountBaseValue(this.amount || 0);
-    this.rawAmount = rawAmount.plus(this.amountExtraRaw);
-
-    const nanoAmount = this.rawAmount.div(this.nano);
-
-    if (this.amount < 0 || rawAmount.lessThan(0)) {
-      return this.notificationService.sendWarning(`Amount is invalid`);
-    }
-    if (from.balanceBN.minus(rawAmount).lessThan(0)) {
-      // The cached on-chain balance may predate funds that arrived while the
-      // foreground was unreachable (sleep/wake with a silently dropped
-      // subscription). Re-fetch once before failing: if the node now covers
-      // the amount, an immediate whole-wallet refresh heals every stale
-      // selector as well.
-      const latest = await this.nodeApi.accountInfo(this.fromAccountID);
-      const latestBalance = new BigNumber(latest?.balance || 0);
-      if (latestBalance.gte(rawAmount)) {
-        from.balance = latest.balance;
-        from.balanceBN = latestBalance;
-        this.fromAccount = from;
-        void this.walletService.refreshWalletState('send-stale-balance').catch(() => {
-          // The send itself proceeds on the re-fetched balance; a failed
-          // background refresh must not block it.
-        });
-      } else {
-        return this.notificationService.sendError(
-          `From account does not have enough XNO`,
-        );
+      if (!from) {
+        return this.notificationService.sendError(`From account not found`);
       }
+
+      from.balanceBN = new BigNumber(from.balance || 0);
+      if (!to) return this.notificationService.sendError(`Destination account details unavailable`);
+      to.balanceBN = new BigNumber(to.balance || 0);
+
+      this.fromAccount = from;
+      this.toAccount = to;
+
+      const rawAmount = this.getAmountBaseValue(this.amount || 0);
+      this.rawAmount = rawAmount.plus(this.amountExtraRaw);
+
+      const nanoAmount = this.rawAmount.div(this.nano);
+
+      if (this.amount < 0 || rawAmount.lessThan(0)) {
+        return this.notificationService.sendWarning(`Amount is invalid`);
+      }
+      if (from.balanceBN.minus(this.rawAmount).lessThan(0)) {
+        // The cached on-chain balance may predate funds that arrived while the
+        // foreground was unreachable (sleep/wake with a silently dropped
+        // subscription). Re-fetch once before failing: if the node now covers
+        // the amount, an immediate whole-wallet refresh heals every stale
+        // selector as well.
+        const latest = await this.nodeApi.accountInfo(this.fromAccountID);
+        if (sourceId !== this.fromAccountID || this.choosingSource) return;
+        const latestBalance = new BigNumber(latest?.balance || 0);
+        if (latestBalance.gte(this.rawAmount)) {
+          from.balance = latest.balance;
+          from.balanceBN = latestBalance;
+          this.fromAccount = from;
+          void this.walletService.refreshWalletState('send-stale-balance').catch(() => {
+            // The send itself proceeds on the re-fetched balance; a failed
+            // background refresh must not block it.
+          });
+        } else {
+          return this.notificationService.sendError(
+            `From account does not have enough XNO`,
+          );
+        }
+      }
+
+      // Determine a proper raw amount to show in the UI, if a decimal was entered
+      this.amountExtraRaw = this.rawAmount.mod(this.nano);
+
+      // Determine fiat value of the amount
+      this.amountFiat = this.util.nano
+        .rawToMnano(rawAmount)
+        .times(this.price.price.lastPrice)
+        .toNumber();
+
+      this.fromAddressBook =
+        this.addressBookService.getAccountName(this.fromAccountID) ||
+        this.getAccountLabel(this.fromAccountID, "Account");
+
+      this.toAddressBook =
+        this.addressBookService.getAccountName(destinationID) ||
+        this.getAccountLabel(destinationID, null);
+
+      // Start precomputing the work...
+      this.workPool.addWorkToCache(this.fromAccount.frontier, 1, this.fromAccountID);
+
+      this.activePanel = "confirm";
+    } catch {
+      this.notificationService.sendError('Unable to prepare the payment. Please try again.');
+    } finally {
+      this.preparingTransaction = false;
     }
-
-    // Determine a proper raw amount to show in the UI, if a decimal was entered
-    this.amountExtraRaw = this.rawAmount.mod(this.nano);
-
-    // Determine fiat value of the amount
-    this.amountFiat = this.util.nano
-      .rawToMnano(rawAmount)
-      .times(this.price.price.lastPrice)
-      .toNumber();
-
-    this.fromAddressBook =
-      this.addressBookService.getAccountName(this.fromAccountID) ||
-      this.getAccountLabel(this.fromAccountID, "Account");
-
-    this.toAddressBook =
-      this.addressBookService.getAccountName(destinationID) ||
-      this.getAccountLabel(destinationID, null);
-
-    // Start precomputing the work...
-    this.workPool.addWorkToCache(this.fromAccount.frontier, 1, this.fromAccountID);
-
-    this.activePanel = "confirm";
   }
 
   async confirmTransaction() {
-    // Handle spending FROM NanoNym (Section 8)
+    if (this.confirmingTransaction) return;
+    this.confirmingTransaction = true;
+    // Freeze editing during unlock as well as during signing.
     if (this.isSpendingFromNanoNym) {
-      return await this.confirmNanoNymSpend();
-    }
-
-    const walletAccount = this.walletService.getWalletAccount(this.fromAccountID);
-    if (!walletAccount) {
-      throw new Error(`Unable to find sending account in wallet`);
-    }
-    if (this.walletService.isLocked()) {
-      const wasUnlocked = await this.walletService.requestWalletUnlock();
-
-      if (wasUnlocked === false) {
-        return;
+      try {
+        return await this.confirmNanoNymSpend();
+      } finally {
+        this.confirmingTransaction = false;
       }
     }
 
-    this.confirmingTransaction = true;
-
+    const sourceId = this.fromAccountID;
+    const destinationId = this.isNanoNymAddress ? this.stealthAddress : this.getDestinationID();
+    const amount = this.rawAmount;
     try {
+      const walletAccount = this.walletService.getWalletAccount(sourceId);
+      if (!walletAccount) throw new Error('Unable to find sending account in wallet');
+      if (this.walletService.isLocked()) {
+        const wasUnlocked = await this.walletService.requestWalletUnlock();
+        if (wasUnlocked === false) return;
+      }
+      if (sourceId !== this.fromAccountID || amount !== this.rawAmount ||
+        destinationId !== (this.isNanoNymAddress ? this.stealthAddress : this.getDestinationID())) {
+        this.activePanel = 'send';
+        return this.notificationService.sendWarning('The payment changed. Review it again before sending.');
+      }
+
       // Use stealth address for NanoNym, otherwise use regular destination
       const destinationID = this.isNanoNymAddress
         ? this.stealthAddress
@@ -838,9 +898,9 @@ export class SendComponent implements OnInit {
       this.notificationService.sendError(
         `There was an error sending your transaction: ${err.message}`,
       );
+    } finally {
+      this.confirmingTransaction = false;
     }
-
-    this.confirmingTransaction = false;
   }
 
   /**
@@ -958,6 +1018,9 @@ export class SendComponent implements OnInit {
    * Sends multiple transactions, one from each selected stealth account
    */
   async confirmNanoNymSpend() {
+    const sourceId = this.fromAccountID;
+    const requestedDestination = this.getDestinationID();
+    const requestedAmount = this.rawAmount;
     if (this.walletService.isLocked()) {
       const wasUnlocked = await this.walletService.requestWalletUnlock();
       if (wasUnlocked === false) {
@@ -965,7 +1028,11 @@ export class SendComponent implements OnInit {
       }
     }
 
-    const destinationID = this.getDestinationID();
+    if (sourceId !== this.fromAccountID || requestedDestination !== this.getDestinationID() || requestedAmount !== this.rawAmount) {
+      this.activePanel = 'send';
+      return this.notificationService.sendWarning('The payment changed. Review it again before sending.');
+    }
+    const destinationID = requestedDestination;
 
     this.confirmingTransaction = true;
 
@@ -1577,6 +1644,10 @@ export class SendComponent implements OnInit {
    */
   onFromAccountChange(): void {
     this.fromAccountSelectionTouched = true;
+    this.isSpendingFromNanoNym = false;
+    this.selectedStealthAccounts = [];
+    this.privacyWarningPending = false;
+    this.privacyWarningShown = false;
     const selected = this.spendableAccounts.find(acc => acc.id === this.fromAccountID);
     this.selectedSpendableAccount = selected || null;
 

@@ -1,3 +1,5 @@
+import { AccountSummaryComponent } from './components/transaction-account/account-summary.component';
+import { TransactionAccountPickerComponent } from './components/transaction-account/transaction-account-picker.component';
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
@@ -102,7 +104,6 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     AmountSplitPipe,
     ImportWalletComponent,
     NanoAccountIdComponent,
-    NanoIdenticonComponent,
     ImportAddressBookComponent,
     CurrencySymbolPipe,
     RepresentativesComponent,
@@ -127,6 +128,9 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NanoAmountComponent
   ],
   imports: [
+    NanoIdenticonComponent,
+    AccountSummaryComponent,
+    TransactionAccountPickerComponent,
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,

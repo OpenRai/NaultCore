@@ -2,7 +2,7 @@ import { AfterViewInit, Component, ElementRef, Input, OnChanges, HostBinding, Vi
 import { createIcon } from '../../../../assets/lib/nanoidenticons.min.js';
 
 @Component({
-  standalone: false,
+  standalone: true,
   selector: 'app-nano-identicon',
   templateUrl: './nano-identicon.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

@@ -52,14 +52,11 @@ export class WalletContextService {
       }
     }
 
-    const selectedAccount = this.walletService.walletState.selectedAccount;
-    if (selectedAccount) {
-      return { intent, accountId: selectedAccount.id, source: 'selected', explicit: false };
-    }
-
-    const fallback = this.walletService.walletState.accounts[0];
-    if (fallback) {
-      return { intent, accountId: fallback.id, source: 'fallback', explicit: false };
+    // A global action must not inherit an unrelated sidebar selection.
+    // An invalid explicit account never falls through to another account.
+    const accounts = this.walletService.walletState.accounts;
+    if (!requestedAccountId && accounts.length === 1) {
+      return { intent, accountId: accounts[0].id, source: 'fallback', explicit: false };
     }
 
     return { intent, accountId: null, source: 'none', explicit: false };

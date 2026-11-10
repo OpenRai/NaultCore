@@ -37,19 +37,18 @@ test.skip(!featureNanonyms, 'NanoNym features are disabled in this build (NaultC
 type SpendableOption = { value: string; label: string };
 
 async function readSpendableOptions(page: Page): Promise<SpendableOption[]> {
-  return page.locator('select.form-select-source option').evaluateAll(options => options.map(option => ({
-    value: (option as HTMLOptionElement).value,
+  return page.locator('button[data-account-id]').evaluateAll(options => options.map(option => ({
+    value: option.getAttribute('data-account-id') || '',
     label: option.textContent?.trim() || '',
   })));
 }
 
 async function sweepStealthToAccount0(page: Page, account0Address: string) {
   // Navigate to Send page
-  await page.locator('a[href="/send"]').click();
+  await page.goto('/send');
   await expect(page.locator('[data-testid="send-page-root"]')).toBeVisible();
 
-  const fromDropdown = page.locator('select.form-select-source');
-  await expect(fromDropdown).toBeVisible();
+  await expect(page.getByTestId('transaction.accountPicker')).toBeVisible();
 
   // Find all stealth/NanoNym accounts by their stable option values.
   const fromOptions = await readSpendableOptions(page);
@@ -65,8 +64,10 @@ async function sweepStealthToAccount0(page: Page, account0Address: string) {
   // Sweep each stealth account back to account #0
   for (const stealth of stealthOptions) {
     // Select the stealth account as source
-    await fromDropdown.selectOption(stealth.value);
-    await expect(fromDropdown).toHaveValue(stealth.value);
+    if (!await page.getByTestId('transaction.accountPicker').isVisible()) {
+      await page.getByTestId('send-source-account-input').click();
+    }
+    await page.locator(`button[data-account-id="${stealth.value}"]`).click();
     await page.waitForTimeout(1000);
 
     // Enter destination address (account #0)
@@ -77,7 +78,7 @@ async function sweepStealthToAccount0(page: Page, account0Address: string) {
     await page.locator('.max-amt-button').click();
     const amount = Number(await amountInput.inputValue());
     if (!Number.isFinite(amount) || amount <= 0) {
-      await page.locator('a[href="/send"]').click();
+      await page.goto('/send');
       await expect(page.locator('[data-testid="send-page-root"]')).toBeVisible();
       continue;
     }
@@ -100,7 +101,7 @@ async function sweepStealthToAccount0(page: Page, account0Address: string) {
     }
 
     // Navigate back to Send for the next sweep
-    await page.locator('a[href="/send"]').click();
+    await page.goto('/send');
     await expect(page.locator('[data-testid="send-page-root"]')).toBeVisible();
   }
 }
@@ -142,7 +143,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     expect(nnymAddress).toMatch(/^nnym_[a-z0-9]{50,}$/);
 
     // Step 3: Send to NanoNym address
-    await seededPage.locator('a[href="/send"]').click();
+    await seededPage.goto('/send');
     await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
 
     await seededPage.locator('[data-testid="send-address-input"]').fill(nnymAddress);
@@ -170,11 +171,10 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     await seededPage.waitForTimeout(5000);
 
     // Step 6: Spend from the stealth account back to a regular nano_ address
-    await seededPage.locator('a[href="/send"]').click();
+    await seededPage.goto('/send');
     await expect(seededPage.locator('[data-testid="send-page-root"]')).toBeVisible();
 
-    const fromDropdown = seededPage.locator('select.form-select-source');
-    await expect(fromDropdown).toBeVisible();
+    await expect(seededPage.getByTestId('transaction.accountPicker')).toBeVisible();
 
     const fromOptions = await readSpendableOptions(seededPage);
     const stealth = fromOptions.find(option =>
@@ -183,8 +183,7 @@ test.describe('nnym_ roundtrip: NanoNym stealth send/receive', () => {
     expect(stealth).toBeDefined();
 
     if (!stealth) return;
-    await fromDropdown.selectOption(stealth.value);
-    await expect(fromDropdown).toHaveValue(stealth.value);
+    await seededPage.locator(`button[data-account-id="${stealth.value}"]`).click();
 
     const nanoDest = fromOptions.find(option => option.value.startsWith('nano_'));
     expect(nanoDest).toBeDefined();

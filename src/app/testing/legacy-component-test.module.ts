@@ -1,3 +1,5 @@
+import { AccountSummaryComponent } from '../components/transaction-account/account-summary.component';
+import { TransactionAccountPickerComponent } from '../components/transaction-account/transaction-account-picker.component';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +20,6 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
   declarations: [
     SendComponent,
     SweeperComponent,
-    NanoIdenticonComponent,
     NanoAccountIdComponent,
     AccountPipe,
     AmountSplitPipe,
@@ -27,7 +28,12 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
     RaiPipe,
     SqueezePipe,
   ],
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [
+    NanoIdenticonComponent,
+    AccountSummaryComponent,
+    TransactionAccountPickerComponent,
+    CommonModule, FormsModule, RouterModule,
+  ],
   exports: [SendComponent, SweeperComponent],
 })
 export class LegacyComponentTestModule {}

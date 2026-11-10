@@ -2,8 +2,19 @@
   <div class="uk-width-1-1">
     <h2 class="uk-heading-divider">{{ (sendDestinationType === 'own-address') ? 'Transfer Nano Between Own Accounts' : 'Send Nano' }}</h2>
 
+    @if (activePanel === 'send' && choosingSource) {
+      <app-transaction-account-picker title="Choose the account to send from" [accounts]="spendableAccounts"
+        [selectedId]="selectedSource ? fromAccountID : ''" [message]="accountChoiceMessage"
+        (accountSelected)="chooseSource($event)" (cancelled)="choosingSource = false" />
+    }
+    @if (activePanel === 'send' && !choosingSource && choosingDestination) {
+      <app-transaction-account-picker title="Choose the account to transfer to" [accounts]="spendableAccounts"
+        [excludeId]="fromAccountID" [selectedId]="toOwnAccountID" [canCancel]="true" searchId="transfer-account-search"
+        (accountSelected)="chooseDestination($event)" (cancelled)="choosingDestination = false" />
+    }
     <!-- Send Panel -->
-    @if (activePanel == 'send') {
+    @if (activePanel === 'send' && !choosingSource && !choosingDestination) {
+      <fieldset class="uk-fieldset" [disabled]="preparingTransaction" [attr.inert]="preparingTransaction ? '' : null">
       <div uk-grid class="uk-animation-slide-left-small">
         <div class="send-types-wrapper uk-width-1-1 uk-text-center">
           <div class="send-types-frame">
@@ -15,15 +26,11 @@
           <div class="uk-card uk-card-default">
             <div class="uk-card-body">
               <div class="uk-form-horizontal">
-                <div class="uk-margin">
-                  <label class="uk-form-label" for="form-horizontal-select">From Account</label>
-                  <div class="uk-form-controls">
-                    <select class="form-select-source uk-select" [(ngModel)]="fromAccountID" (change)="resetRaw(); onFromAccountChange()" id="form-horizontal-select" [attr.data-testid]="testIds.send.sourceAccountInput">
-                      @for (account of spendableAccounts; track account.id) {
-                        <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
-                      }
-                    </select>
-                  </div>
+                <div class="uk-margin" data-testid="send.sourceSummary">
+                  <h3 #sourceHeading tabindex="-1" class="uk-card-title uk-margin-small-bottom">From account</h3>
+                  <app-account-summary [account]="selectedSource" />
+                  <button type="button" class="uk-button uk-button-default uk-margin-small-top" (click)="changeSource()"
+                    [attr.data-testid]="testIds.send.sourceAccountInput">Change source account</button>
                 </div>
                 @if (( sendDestinationType === 'external-address' )) {
                   <div class="uk-margin">
@@ -100,17 +107,10 @@
                 }
                 @if (( sendDestinationType === 'own-address' )) {
                   <div class="uk-margin">
-                    <label class="uk-form-label" for="form-horizontal-text2">To Account</label>
-                    <div class="uk-form-controls">
-                      <select required class="form-select-destination uk-select" [(ngModel)]="toOwnAccountID" id="form-horizontal-select" [attr.data-testid]="testIds.transfer.toAccountInput">
-                        <option value="" disabled selected hidden>Account to transfer to</option>
-                        @for (account of spendableAccounts; track account.id) {
-                          @if (account.id !== fromAccountID) {
-                            <option [value]="account.id">{{ formatAccountLabel(account) }}</option>
-                          }
-                        }
-                      </select>
-                    </div>
+                    <h3 class="uk-card-title uk-margin-small-bottom">To account</h3>
+                    @if (selectedDestination) { <app-account-summary [account]="selectedDestination" /> }
+                    <button class="uk-button uk-button-default uk-margin-small-top" type="button" (click)="choosingDestination = true"
+                      [attr.data-testid]="testIds.transfer.toAccountInput">{{ selectedDestination ? 'Change destination account' : 'Choose destination account' }}</button>
                   </div>
                 }
                 <div uk-grid>
@@ -148,7 +148,7 @@
               <div class="uk-text-right@s nlt-button-group">
                 @if (!preparingTransaction) {
                   <button class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m uk-float-right nlt-icon-button" type="button" (click)="sendTransaction()" [attr.data-testid]="(sendDestinationType === 'own-address') ? testIds.transfer.transferButton : testIds.send.sendButton">
-                    {{ (sendDestinationType === 'own-address') ? 'Transfer nano' : 'Send nano' }}
+                    Review payment
                   </button>
                 }
                 @if (preparingTransaction) {
@@ -172,6 +172,7 @@
           </div>
         </div>
       </div>
+      </fieldset>
     }
     <!-- End Send Panel -->
 
@@ -333,7 +334,7 @@
             </div>
           }
           <div class="uk-text-right@s nlt-button-group">
-            <button (click)="activePanel = 'send'" class="uk-button uk-button-danger uk-width-1-1@s uk-width-auto@m">Cancel</button>
+            <button type="button" [disabled]="confirmingTransaction" (click)="editPayment()" class="uk-button uk-button-default uk-width-1-1@s uk-width-auto@m">Edit payment</button>
             @if (!confirmingTransaction) {
               <button class="uk-button uk-button-primary uk-width-1-1@s uk-width-auto@m" (click)="confirmTransaction()">Confirm & Send</button>
             }

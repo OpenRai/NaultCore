@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from "@angular/core";
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, OnDestroy, OnInit, DestroyRef, ElementRef, Injector, ViewChild, afterNextRender, inject, ChangeDetectionStrategy } from "@angular/core";
 import { ActivatedRoute, ChildActivationEnd, Router } from "@angular/router";
 import { WalletService, WalletAccount } from "../../services/wallet.service";
 import { NotificationService } from "../../services/notification.service";
@@ -31,6 +32,9 @@ import { WalletContextService } from "../../services/wallet-context.service";
 })
 export class ReceiveComponent implements OnInit, OnDestroy {
   private route = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
+  @ViewChild('destinationHeading') private destinationHeading?: ElementRef<HTMLHeadingElement>;
   private activatedRoute = inject(ActivatedRoute);
   private walletService = inject(WalletService);
   private walletContext = inject(WalletContextService);
@@ -62,6 +66,56 @@ export class ReceiveComponent implements OnInit, OnDestroy {
 
   selectedAccountAddressBookName = "";
   pendingAccountModel = "0";
+  pendingFilterAccountId = '0';
+  spendableAccounts: SpendableAccount[] = [];
+  choosingAccount = true;
+  accountChoiceMessage = '';
+  private qrRevision = 0;
+  private accountSelectionTouched = false;
+  private requestedAccountId: string | null | undefined;
+
+  get selectedDestination(): SpendableAccount | null {
+    return this.spendableAccounts.find(account => account.id === this.pendingAccountModel) || null;
+  }
+
+  chooseAccount(accountId: string): void {
+    if (!this.spendableAccounts.some(account => account.id === accountId)) return;
+    this.accountSelectionTouched = true;
+    this.pendingAccountModel = accountId;
+    this.choosingAccount = false;
+    this.accountChoiceMessage = '';
+    this.onSelectedAccountChange(accountId);
+    this.focusDestination();
+    this.requestedAccountId = accountId;
+    void this.route.navigate([], {
+      relativeTo: this.activatedRoute, queryParams: { account: accountId }, queryParamsHandling: 'merge', replaceUrl: true,
+    });
+  }
+
+  private focusDestination(): void {
+    afterNextRender(() => this.destinationHeading?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  changeAccount(userInitiated = true): void {
+    if (userInitiated) this.accountSelectionTouched = true;
+    this.choosingAccount = true;
+    this.clearQR();
+  }
+
+  private applyRequestedAccount(requested: string | null): void {
+    const context = this.walletContext.resolveTransactionContext('receive', requested);
+    const nanoNym = FEATURE_NANONYMS && this.spendableAccounts.find(account => account.type === 'nanonym' && account.id === requested);
+    const accountId = nanoNym ? nanoNym.id : context.accountId;
+    if (accountId) {
+      this.chooseAccount(accountId);
+    } else {
+      this.pendingAccountModel = '0';
+      this.changeAccount(false);
+      this.filterPendingBlocksForDestinationAccount('0');
+      this.accountChoiceMessage = requested ? 'The requested destination account is not available in this wallet. Choose an account.' : '';
+    }
+  }
+
   pendingBlocks = [];
   pendingBlocksForSelectedAccount = [];
   qrCodeUri = null;
@@ -71,7 +125,6 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   recentlyCopiedAccountAddress = false;
   recentlyCopiedPaymentUri = false;
   walletAccount: WalletAccount = null;
-  selAccountInit = false;
   loadingIncomingTxList = false;
   amountNano = "";
   amountFiat = "";
@@ -115,6 +168,18 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     // Subscribe to spendable accounts for unified account dropdown
     this.spendableAccountsSub = this.walletService.spendableAccounts$.subscribe(
       (accounts) => {
+        this.spendableAccounts = FEATURE_NANONYMS ? accounts : accounts.filter(account => account.type === 'regular');
+        if (this.pendingAccountModel !== '0' && !this.selectedDestination) {
+          this.pendingAccountModel = '0';
+          this.changeAccount();
+          this.filterPendingBlocksForDestinationAccount('0');
+          this.accountChoiceMessage = 'The destination account is no longer available. Choose an account.';
+        }
+        queueMicrotask(() => {
+          if (!this.destroyRef.destroyed && !this.accountSelectionTouched && this.choosingAccount) {
+            this.applyRequestedAccount(this.activatedRoute.snapshot.queryParamMap.get('account'));
+          }
+        });
         this.nanoNymAccounts = accounts.filter(
           (acc) => acc.type === "nanonym"
         );
@@ -141,43 +206,26 @@ export class ReceiveComponent implements OnInit, OnDestroy {
 
     // Consume replayed account and receivable projections. The legacy pending
     // pulse remains only for compatibility with unmigrated views.
-    this.walletService.walletState$.subscribe(snapshot => {
+    this.walletService.walletState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(snapshot => {
       this.accounts = snapshot.accounts as any;
       void this.updatePendingBlocks(snapshot);
     });
 
-    // Update selected account if changed in the sidebar
-    this.walletService.selectedAccountState$.subscribe(async (acc) => {
-      if (this.selAccountInit) {
-        this.pendingAccountModel = acc ? acc.id : "0";
-        this.onSelectedAccountChange(this.pendingAccountModel);
-      }
-      this.selAccountInit = true;
-    });
-
     await this.updatePendingBlocks();
 
-    const requestedAccount = this.activatedRoute.snapshot.queryParamMap.get('account');
-    const context = this.walletContext.resolveTransactionContext('receive', requestedAccount);
-    if (context.source === 'query' && context.accountId) {
-      // Quick Receive navigation is an explicit account intent, separate from
-      // the wallet-scoped sidebar card's aggregate balance.
-      this.walletService.selectAccount(context.accountId);
-      this.pendingAccountModel = context.accountId;
-      this.onSelectedAccountChange(this.pendingAccountModel);
-    } else if (this.walletService.walletState.selectedAccount !== null) {
-      // Set the account selected in the sidebar as default
-      this.pendingAccountModel = this.walletService.walletState.selectedAccount.id;
-      this.onSelectedAccountChange(this.pendingAccountModel);
-    } else if (this.accounts.length === 1) {
-      // Auto-select account if it is the only account in the wallet
-      this.pendingAccountModel = this.accounts[0].id;
-      this.onSelectedAccountChange(this.pendingAccountModel);
-    }
+    // A transaction's destination never follows or changes sidebar selection.
+    this.activatedRoute.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const requested = params.get('account');
+      if (requested !== this.requestedAccountId) {
+        this.requestedAccountId = requested;
+        this.accountSelectionTouched = false;
+        this.applyRequestedAccount(requested);
+      }
+    });
 
     // Confirmations are non-replayed transport events, so only future events
     // can reach this page after the subscription is established.
-    this.websocket.newTransactions$.subscribe(async (transaction) => {
+    this.websocket.newTransactions$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (transaction) => {
       if (transaction) {
         const rawAmount = new BigNumber(transaction.amount);
         if (
@@ -185,7 +233,10 @@ export class ReceiveComponent implements OnInit, OnDestroy {
           rawAmount.gte(this.qrAmount || 0)
         ) {
           this.showQrConfirmation();
-          setTimeout(() => this.resetAmount(), 500);
+          const destination = this.qrAccount;
+          setTimeout(() => {
+            if (this.qrAccount === destination) this.resetAmount();
+          }, 500);
         }
         if (
           this.inMerchantModeQR === true &&
@@ -198,6 +249,8 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.qrRevision++;
+    clearTimeout(this.timeoutIdClearingRecentlyCopiedState);
     if (this.mobileTransactionMenuModal) {
       this.mobileTransactionMenuModal.hide();
     }
@@ -238,10 +291,11 @@ export class ReceiveComponent implements OnInit, OnDestroy {
         ),
       );
 
-    this.filterPendingBlocksForDestinationAccount(this.pendingAccountModel);
+    this.filterPendingBlocksForDestinationAccount(this.pendingFilterAccountId);
   }
 
   filterPendingBlocksForDestinationAccount(selectedAccountID) {
+    this.pendingFilterAccountId = selectedAccountID;
     if (selectedAccountID === "0") {
       // Blocks for all accounts
       this.pendingBlocksForSelectedAccount = [...this.pendingBlocks];
@@ -369,32 +423,42 @@ export class ReceiveComponent implements OnInit, OnDestroy {
     this.filterPendingBlocksForDestinationAccount(accountID);
   }
 
-  async changeQRAccount(account) {
+  private clearQR(): void {
+    this.qrRevision++;
+    this.qrAccount = '';
+    this.qrCodeUri = null;
+    this.qrCodeImage = null;
+    this.qrSuccessClass = '';
+    clearTimeout(this.timeoutIdClearingRecentlyCopiedState);
+    this.recentlyCopiedAccountAddress = false;
+    this.recentlyCopiedPaymentUri = false;
+  }
+
+  async changeQRAccount(account: string) {
+    this.clearQR();
     this.walletAccount = this.walletService.getWalletAccount(account);
-    this.qrAccount = "";
-    let qrCode = null;
-    if (account.length > 1) {
-      this.qrAccount = account;
-      this.qrCodeImage = null;
-      this.qrCodeUri = `nano:${account}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ""}`;
-      qrCode = await QRCode.toDataURL(this.qrCodeUri, { scale: 7 });
-    }
-    this.qrCodeImage = qrCode;
+    if (account.length <= 1) return;
+    this.qrAccount = account;
+    await this.renderQR();
   }
 
   async changeQRAmount(raw?) {
-    this.qrAmount = null;
-    let qrCode = null;
-    if (raw) {
-      if (this.util.account.isValidAmount(raw)) {
-        this.qrAmount = raw;
-      }
-    }
-    if (this.qrAccount.length > 1) {
-      this.qrCodeImage = null;
-      this.qrCodeUri = `nano:${this.qrAccount}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ""}`;
-      qrCode = await QRCode.toDataURL(this.qrCodeUri, { scale: 7 });
-      this.qrCodeImage = qrCode;
+    this.qrAmount = raw && this.util.account.isValidAmount(raw) ? raw : null;
+    await this.renderQR();
+  }
+
+  private async renderQR(): Promise<void> {
+    const revision = ++this.qrRevision;
+    this.qrCodeImage = null;
+    this.qrCodeUri = null;
+    if (!this.qrAccount) return;
+    const uri = `nano:${this.qrAccount}${this.qrAmount ? `?amount=${this.qrAmount.toString(10)}` : ''}`;
+    this.qrCodeUri = uri;
+    try {
+      const image = await QRCode.toDataURL(uri, { scale: 7 });
+      if (revision === this.qrRevision) this.qrCodeImage = image;
+    } catch {
+      if (revision === this.qrRevision) this.notificationService.sendError('Unable to generate the payment QR code. Please try again.');
     }
   }
 
@@ -514,8 +578,8 @@ export class ReceiveComponent implements OnInit, OnDestroy {
   }
 
   unsetSelectedAccount() {
-    this.pendingAccountModel = "0";
-    this.onSelectedAccountChange(this.pendingAccountModel);
+    this.merchantModeDisable();
+    this.changeAccount();
   }
 
   getRawAmountWithoutTinyRaws(rawAmountWithTinyRaws) {

@@ -2,10 +2,17 @@
   <div class="uk-width-1-1">
     <h2 class="uk-heading-divider">Receive</h2>
 
+    @if (choosingAccount) {
+      <app-transaction-account-picker title="Choose the account to receive to" [accounts]="spendableAccounts"
+        [selectedId]="selectedDestination ? pendingAccountModel : ''" [message]="accountChoiceMessage"
+        (accountSelected)="chooseAccount($event)" (cancelled)="chooseAccount(pendingAccountModel)" />
+    }
+
     <ng-template #switchToMerchantModeButton>
       <button
         class="uk-width-1-1 uk-width-auto@s uk-button uk-button-primary uk-text-center nlt-icon-button nlt-button-green"
         type="button"
+        [disabled]="choosingAccount"
         (click)="merchantModeEnable()"
         >
         <span class="nlt-icon" uk-icon="icon: cart;"></span>
@@ -15,7 +22,7 @@
     </ng-template>
 
     <ng-template #copyPaymentUriButton>
-      @if (pendingAccountModel !== '0' && qrAmount != null) {
+      @if (!choosingAccount && qrAccount && qrAmount != null) {
         <button
           class="uk-width-1-1 uk-width-5-6@s uk-button uk-button-primary uk-text-center nlt-icon-button"
           [class.nlt-button-success]="recentlyCopiedPaymentUri"
@@ -32,7 +39,7 @@
     </ng-template>
 
     <ng-template #copyPaymentAddressButton>
-      @if (pendingAccountModel !== '0') {
+      @if (!choosingAccount && qrAccount) {
         <button
           class="uk-width-1-1 uk-width-5-6@s uk-button uk-text-center nlt-icon-button"
           [class.uk-button-primary]="
@@ -55,6 +62,7 @@
     </ng-template>
 
     <div class="uk-animation-slide-left-small">
+      @if (!choosingAccount) {
       <div class="uk-margin-bottom uk-flex uk-flex-between">
         <div class="uk-flex-1"></div>
         <div
@@ -68,55 +76,13 @@
 
       <div class="uk-card uk-card-default uk-margin">
         <div class="uk-card-body">
-          <div class="uk-form-horizontal receive-columns">
+          <div class="uk-form-horizontal receive-columns" data-testid="receive.shareAddress">
             <div class="uk-flex-1">
               <div class="uk-margin">
-                <label
-                  for="form-horizontal-select"
-                  class="uk-form-label label-block"
-                  >Account</label
-                  >
-                  <div class="form-account">
-                    <select
-                      id="form-horizontal-select"
-                      class="uk-select"
-                      [(ngModel)]="pendingAccountModel"
-                      (change)="onSelectedAccountChange(pendingAccountModel)"
-                      >
-                      <option [value]="0">All Accounts</option>
-                      @for (account of accounts; track account) {
-                        <option
-                          [value]="account.id"
-                          >
-                          {{
-                          account.addressBookName
-                          ? account.addressBookName + " - "
-                          : "#" + account.index + " - "
-                          }}
-                          {{ account.id | squeeze }} ({{
-                          account.balance | rai: "mnano,true" | amountsplit: 0
-                          }}{{
-                          account.balance | rai: "mnano,true" | amountsplit: 1
-                          }}
-                          XNO)
-                        </option>
-                      }
-                      @if (featureNanonyms) {
-                        @for (nanoNym of nanoNymAccounts; track nanoNym) {
-                          <option
-                            [value]="nanoNym.id"
-                            >
-                            {{ nanoNym.label }} - {{ nanoNym.truncatedAddress }} ({{
-                            nanoNym.balance | rai: "mnano,true" | amountsplit: 0
-                            }}{{
-                            nanoNym.balance | rai: "mnano,true" | amountsplit: 1
-                            }}
-                            XNO)
-                          </option>
-                        }
-                      }
-                    </select>
-                  </div>
+                <h3 #destinationHeading tabindex="-1" class="uk-card-title uk-margin-small-bottom">Receiving account</h3>
+                <app-account-summary [account]="selectedDestination" />
+                <button class="uk-button uk-button-default uk-margin-small-top" type="button"
+                  (click)="changeAccount()">Change destination account</button>
                   <!-- NanoNym Badge -->
                   @if (featureNanonyms && isSelectedAccountNanoNym) {
                     <div class="uk-inline uk-width-auto uk-margin-small-top">
@@ -286,6 +252,17 @@
                   </div>
                 </div>
 
+      }
+                <hr>
+                <p class="uk-text-small uk-text-muted">Sharing an address lets someone pay you. Incoming funds below become available after a receive block is published.</p>
+                <div class="uk-margin-small-bottom">
+                  <button class="uk-button uk-button-default" type="button"
+                    (click)="filterPendingBlocksForDestinationAccount('0')" [disabled]="pendingFilterAccountId === '0'">All accounts' pending funds</button>
+                  @if (pendingAccountModel !== '0') {
+                    <button class="uk-button uk-button-default" type="button"
+                      (click)="filterPendingBlocksForDestinationAccount(pendingAccountModel)" [disabled]="pendingFilterAccountId === pendingAccountModel">This account's pending funds</button>
+                  }
+                </div>
                 <div
                   class="transactions-list-header uk-width-1-1 uk-flex uk-flex-center uk-flex-middle uk-margin-small-bottom"
                   >
@@ -316,7 +293,7 @@
                 <div uk-grid>
                   <div class="uk-width-1-1">
                     <div class="transactions-list-mobile only-on-small-viewports">
-                      @if (pendingAccountModel !== '0') {
+                      @if (pendingFilterAccountId !== '0') {
                         <div
                           class="date-header text-half-muted"
                           >
@@ -327,7 +304,7 @@
                         transaction of pendingBlocksForSelectedAccount; track
                         transaction; let transactionIdx = $index) {
                         @if (
-                          pendingAccountModel === '0' &&
+                          pendingFilterAccountId === '0' &&
                           (pendingBlocksForSelectedAccount[transactionIdx - 1] ==
                           null ||
                           transaction.destinationAddressBookName !==
@@ -356,7 +333,7 @@
                           >
                           <div style="text-align: center">
                             {{
-                            pendingAccountModel === "0"
+                            pendingFilterAccountId === "0"
                             ? "No new incoming transactions"
                             : "No new incoming transactions for selected account"
                             }}
@@ -461,7 +438,7 @@
                                 uk-tooltip
                                 >{{ pending.hash }}</a
                                 >
-                                @if (pendingAccountModel === '0') {
+                                @if (pendingFilterAccountId === '0') {
                                   <div class="arrow-down">
                                     <div
                                       class="icon"
@@ -582,7 +559,7 @@
                               >
                               <td colspan="4" style="text-align: center">
                                 {{
-                                pendingAccountModel === "0"
+                                pendingFilterAccountId === "0"
                                 ? "No new incoming transactions"
                                 : "No new incoming transactions for selected account"
                                 }}

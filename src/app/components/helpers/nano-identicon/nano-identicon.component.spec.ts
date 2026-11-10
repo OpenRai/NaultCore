@@ -8,7 +8,7 @@ describe('NanoIdenticonComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ NanoIdenticonComponent ]
+      imports: [ NanoIdenticonComponent ]
     })
     .compileComponents();
   }));

@@ -50,6 +50,8 @@
     "app/components/configure-app/configure-app.component.spec.ts",
     "app/components/sweeper/sweeper.component.spec.ts",
     "app/components/send/send.component.spec.ts",
+    "app/components/receive/receive.component.spec.ts",
+    "app/components/transaction-account/transaction-account-picker.component.spec.ts",
     "app/components/wallet/wallet.component.spec.ts",
     "app/components/transaction-table/transaction-table.component.spec.ts",
     "test-setup-vitest.ts",

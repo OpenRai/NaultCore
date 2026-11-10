@@ -113,6 +113,20 @@ describe('SendComponent - regular wallet balance refresh', () => {
     expect(component.notificationService.sendSuccess).toHaveBeenCalled();
     expect(component.notificationService.sendError).not.toHaveBeenCalled();
   });
+  it('blocks duplicate confirmation and source changes during wallet unlock', async () => {
+    const component = createRegularSendContext(vi.fn(() => Promise.resolve()));
+    component.walletService.isLocked = () => true;
+    component.walletService.requestWalletUnlock = vi.fn(async () => {
+      expect(component.confirmingTransaction).toBe(true);
+      component.fromAccountID = 'nano_removed_or_replaced';
+      return true;
+    });
+    await SendComponent.prototype.confirmTransaction.call(component);
+    expect(component.nanoBlock.generateSend).not.toHaveBeenCalled();
+    expect(component.notificationService.sendWarning).toHaveBeenCalledWith('The payment changed. Review it again before sending.');
+    expect(component.confirmingTransaction).toBe(false);
+  });
+
 });
 
 describe('SendComponent - stale balance re-verification', () => {
@@ -196,6 +210,23 @@ describe('SendComponent - stale balance re-verification', () => {
     expect(component.activePanel).toBe('send');
     expect(component.walletService.refreshWalletState).not.toHaveBeenCalled();
   });
+  it('includes additional raw units when checking the source balance', async () => {
+    const { component } = createStaleSendContext({ cachedBalance: '1000000000000000000000000000000', latestBalance: '1000000000000000000000000000000', amount: '1' });
+    component.amountExtraRaw = new BigNumber(1);
+    await SendComponent.prototype.sendTransaction.call(component);
+    expect(component.activePanel).toBe('send');
+    expect(component.notificationService.sendError).toHaveBeenCalledWith('From account does not have enough XNO');
+  });
+
+  it('returns to editable preparation when the RPC request fails', async () => {
+    const { component } = createStaleSendContext({ cachedBalance: '0', latestBalance: '0', amount: '1' });
+    component.nodeApi.accountInfo.mockRejectedValue(new Error('offline'));
+    await SendComponent.prototype.sendTransaction.call(component);
+    expect(component.preparingTransaction).toBe(false);
+    expect(component.activePanel).toBe('send');
+    expect(component.notificationService.sendError).toHaveBeenCalled();
+  });
+
 });
 
 describe('SendComponent - account selection race', () => {
@@ -209,6 +240,7 @@ describe('SendComponent - account selection race', () => {
           explicit: true,
         })),
       },
+      spendableAccounts: [],
       fromAccountID: 'nano_default',
       fromAccountSelectionTouched: false,
     };
@@ -222,23 +254,47 @@ describe('SendComponent - account selection race', () => {
     expect(component.fromAccountID).toBe('nano_user_choice');
   });
 
-  it('does not replace an explicit source selection after a balance refresh', async () => {
+  it('retains the draft when choosing another source and clears a conflicting own destination', () => {
     const component: any = {
-      walletService: {
-        walletState: { balance: new BigNumber(0) },
-        refreshWalletState: vi.fn(() => Promise.resolve()),
-      },
-      accounts: [{ id: 'nano_default', balance: new BigNumber(1) }],
-      spendableAccounts: [],
-      fromAccountID: 'nano_selected',
-      fromAccountSelectionTouched: false,
+      spendableAccounts: [{ id: 'nano_A' }, { id: 'nano_B' }],
+      fromAccountID: 'nano_A', toAccountID: 'nano_recipient', toOwnAccountID: 'nano_B',
+      amount: '1.25', amountExtraRaw: new BigNumber(7), activePanel: 'confirm',
+      onFromAccountChange: vi.fn(), choosingSource: true, focusSource: vi.fn(),
+      navigation: { navigate: vi.fn() }, route: {},
+      walletService: { selectAccount: vi.fn() },
     };
-
-    SendComponent.prototype.onFromAccountChange.call(component);
-    await SendComponent.prototype.findFirstAccount.call(component);
-
-    expect(component.fromAccountID).toBe('nano_selected');
+    SendComponent.prototype.chooseSource.call(component, 'nano_B');
+    expect(component.fromAccountID).toBe('nano_B');
+    expect(component.toAccountID).toBe('nano_recipient');
+    expect(component.amount).toBe('1.25');
+    expect(component.amountExtraRaw.toFixed()).toBe('7');
+    expect(component.toOwnAccountID).toBe('');
+    expect(component.activePanel).toBe('send');
+    expect(component.choosingSource).toBe(false);
+    expect(component.walletService.selectAccount).not.toHaveBeenCalled();
   });
+
+  it('does not change source during preparation or accept an unavailable account', () => {
+    const component: any = { spendableAccounts: [{ id: 'nano_A' }], fromAccountID: 'nano_A', preparingTransaction: true };
+    SendComponent.prototype.chooseSource.call(component, 'nano_B');
+    expect(component.fromAccountID).toBe('nano_A');
+    component.preparingTransaction = false;
+    SendComponent.prototype.chooseSource.call(component, 'nano_B');
+    expect(component.fromAccountID).toBe('nano_A');
+  });
+
+  it('clears an abandoned NanoNym review when selecting a different source', () => {
+    const component: any = {
+      fromAccountID: 'nano_regular', spendableAccounts: [{ id: 'nano_regular', type: 'regular', balance: new BigNumber(0) }],
+      isSpendingFromNanoNym: true, selectedStealthAccounts: [{ address: 'old_stealth' }],
+      privacyWarningPending: true, privacyWarningShown: true,
+    };
+    SendComponent.prototype.onFromAccountChange.call(component);
+    expect(component.isSpendingFromNanoNym).toBe(false);
+    expect(component.selectedStealthAccounts).toEqual([]);
+    expect(component.privacyWarningPending).toBe(false);
+  });
+
 });
 
 describe('SendComponent - Phase 3 (Just-in-Time Opening)', () => {

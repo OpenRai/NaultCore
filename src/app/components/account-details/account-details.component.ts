@@ -185,6 +185,11 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     });
 
     this.walletStateSub = this.wallet.walletState$.subscribe(snapshot => {
+      // Direct links can mount before persisted wallet accounts have hydrated.
+      if (this.accountID && !this.accountID.startsWith('nnym_')) {
+        this.walletAccount = this.wallet.getWalletAccount(this.accountID) || null;
+        this.accountType = this.walletAccount ? 'regular' : 'external';
+      }
       const signature = snapshot.pendingBlocks
         .map(block => `${block.account}:${block.hash}`)
         .join('|');

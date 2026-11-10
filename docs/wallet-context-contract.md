@@ -13,10 +13,13 @@ transaction form's temporary source as wallet selection.
 - A selected account is valid only when its ID is present in
   `walletState.accounts`.
 - A valid `?account=<id>` parameter is an explicit transaction context.
-- Without a valid query account, Send and Receive use the selected account.
-- With neither a query account nor a selected account, flows use the first
-  wallet account as a deterministic fallback; an empty wallet has no account
-  context.
+- Global Send and Receive actions show an account chooser when multiple accounts
+  exist. They do not inherit sidebar selection or choose the first funded account.
+- A global action may select the sole account when exactly one exists.
+- An invalid explicit account opens the chooser with an explanation, even when
+  there is only one other account. An empty wallet has no transaction context.
+- Draft account changes never modify shared wallet selection. Preparation retains
+  recipient and amount; review requires a fresh preparation after changes.
 - Invalid account parameters never clear a valid selected account.
 - Persisted selection is restored only when that account still exists.
 - Removing the selected account selects the remaining lowest derivation index,
@@ -37,3 +40,6 @@ transaction form's temporary source as wallet selection.
 The existing `/send` and `/receive` paths remain valid for bookmarks and
 browser history. The `account` query parameter is the compatibility bridge
 until all entry points use the Wallet workspace directly.
+
+The full interaction and research rationale is in
+[the transaction navigation brief](transaction-navigation-design-brief.md).

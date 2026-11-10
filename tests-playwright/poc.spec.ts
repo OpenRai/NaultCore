@@ -26,8 +26,8 @@ test('keeps navigation destinations separate from transaction actions', async ({
 
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(navigation).not.toHaveAttribute('aria-hidden', 'true');
-  await expect(primaryNavigation.locator('ul.left-nav > li').first().getByRole('link')).toHaveText('Accounts');
-  await expect(primaryNavigation.locator('a[href="/wallet"]')).toHaveCount(0);
+  await expect(primaryNavigation.locator('ul.left-nav > li').first().getByRole('link')).toHaveText('Wallet accounts');
+  await expect(primaryNavigation.locator('a[href="/wallet"]')).toHaveCount(1);
   await expect(page.getByTestId('wallet-dashboard-link')).toBeVisible();
   await expect(primaryNavigation.getByRole('link', { name: 'Send', exact: true })).toHaveCount(0);
   await expect(primaryNavigation.getByRole('link', { name: 'Receive', exact: true })).toHaveCount(0);
@@ -61,6 +61,9 @@ test('keeps QR scanning usable without camera access and dispatches recipients c
 
   await payloadInput.fill(testWallet.accounts[1]);
   await submitButton.click();
-  await expect(page).toHaveURL(new RegExp(`/send\\?to=${testWallet.accounts[1]}&account=${testWallet.accounts[0]}$`));
-  await expect(page.getByTestId('send-source-account-input')).toHaveValue(testWallet.accounts[0]);
+  await expect(page).toHaveURL(new RegExp(`/send\\?to=${testWallet.accounts[1]}$`));
+  await expect(page.getByTestId('transaction.accountPicker')).toBeVisible();
+  await page.locator(`button[data-account-id="${testWallet.accounts[0]}"]`).click();
+  await expect(page.getByTestId('send.sourceSummary')).toContainText(testWallet.accounts[0]);
+  await expect(page.getByTestId('send-address-input')).toHaveValue(testWallet.accounts[1]);
 });

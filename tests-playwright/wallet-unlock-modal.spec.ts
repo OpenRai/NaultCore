@@ -77,8 +77,8 @@ test('a locked wallet with a receivable shows an unlockable receivable card', as
   const receivableCard = page.getByTestId('incoming-balance-card');
   await expect(lockedWallet).toBeVisible({ timeout: 15000 });
   await expect(receivableCard).toBeVisible({ timeout: 15000 });
-  await expect(receivableCard).toContainText('Receivable');
-  await expect(receivableCard).toContainText('Confirmed');
+  await expect(receivableCard).toContainText('Pending');
+  await expect(receivableCard).toContainText('0.1 XNO');
 
   await receivableCard.click();
   await expect(page.locator('#unlock-wallet-modal input[type="password"]')).toBeVisible();
@@ -91,8 +91,9 @@ test('the Wallet workspace exposes a mobile-safe unlock response for receivable 
 
   const unlockReceivable = page.getByTestId('wallet-unlock-receivable-button');
   await expect(unlockReceivable).toBeVisible({ timeout: 15000 });
-  await expect(unlockReceivable).toContainText('Confirmed funds ready to receive');
-  await expect(unlockReceivable).toContainText('Unlock to sign the receive block and claim incoming Nano.');
+  const notice = page.getByRole('status').filter({ hasText: 'Confirmed funds ready to receive' });
+  await expect(notice).toContainText('Unlock to sign the receive block and claim incoming Nano.');
+  await expect(unlockReceivable).toHaveText('Unlock');
   await unlockReceivable.press('Enter');
 
   const unlockModal = page.locator('#unlock-wallet-modal');

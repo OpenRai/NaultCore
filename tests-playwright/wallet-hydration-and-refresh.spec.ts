@@ -10,10 +10,10 @@ type HistoryRow = {
   height: string;
 };
 
-test('uses Accounts as the first menu entry and the balance card as the dashboard link', async ({ seededPage }) => {
+test('uses Wallet accounts as the first menu entry and the balance card as the dashboard link', async ({ seededPage }) => {
   const navigation = seededPage.getByRole('navigation', { name: 'Main', exact: true });
-  await expect(navigation.locator('ul.left-nav > li').first().getByRole('link')).toHaveText('Accounts');
-  await expect(navigation.locator('a[href="/wallet"]')).toHaveCount(0);
+  await expect(navigation.locator('ul.left-nav > li').first().getByRole('link')).toHaveText('Wallet accounts');
+  await expect(navigation.locator('a[href="/wallet"]')).toHaveCount(1);
 
   const quickReceive = seededPage.getByTestId('quick-receive-button');
   await quickReceive.click();
@@ -28,7 +28,7 @@ test('uses Accounts as the first menu entry and the balance card as the dashboar
   await expect(seededPage).toHaveURL(/\/wallet$/);
   await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
 
-  await navigation.getByRole('link', { name: 'Accounts', exact: true }).click();
+  await seededPage.getByRole('navigation', { name: 'Wallet pages' }).getByRole('link', { name: 'Accounts', exact: true }).click();
   await expect(seededPage.getByTestId('accounts-page-root')).toBeVisible();
   await dashboard.focus();
   await seededPage.keyboard.press('Enter');
@@ -61,10 +61,10 @@ test('shows loading instead of zero while startup balance reconciliation is pend
 
   await page.goto('/wallet');
   await expect(page.getByTestId('wallet-page-root')).toBeVisible();
-  await expect(page.locator('.balance-int[role="status"]')).toHaveText('Loading…');
+  await expect(page.locator('.wallet-balance [role="status"]')).toHaveText('Loading…');
 
   releaseBalances();
-  const balance = page.locator('[data-testid="wallet-summary-card"] .summary-primary app-nano-amount');
+  const balance = page.locator('[data-testid="wallet-summary-card"] .wallet-balance app-nano-amount');
   await expect(balance.getByTestId('nano-amount-summary')).toHaveText('0 XNO');
 });
 
@@ -92,7 +92,7 @@ test('shows a numeric one-raw preview and links through to account details', asy
 
   await seededPage.goto('/wallet');
   await seededPage.evaluate(async () => { await (window as any).__NAULTCORE_E2E__.refreshWallet(); });
-  const balance = seededPage.locator('[data-testid="wallet-summary-card"] .summary-primary app-nano-amount');
+  const balance = seededPage.locator('[data-testid="wallet-summary-card"] .wallet-balance app-nano-amount');
   await expect(balance.getByTestId('nano-amount-summary')).toHaveText('1 × 10⁻³⁰ XNO');
   await expect(balance.locator('details')).toHaveCount(0);
   await balance.getByRole('link').click();
@@ -119,7 +119,7 @@ test('keeps identity card fiat visible unless currency is None and fits dashboar
   await expect(seededPage.locator('details.amount-details')).toHaveCount(0);
   for (const width of [1280, 390]) {
     await seededPage.setViewportSize({ width, height: 900 });
-    const balance = seededPage.locator('.balance-display-wrap');
+    const balance = seededPage.locator('.wallet-balance');
     await expect.poll(() => balance.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
   }
 });
@@ -197,6 +197,6 @@ test('selects the actual newly added account when opening Receive from its accou
 
   await newAccountRow.getByTestId('receive-account-button').click();
   await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${newAccountId}$`));
-  await expect(seededPage.getByRole('combobox', { name: 'Account' })).toHaveValue(newAccountId!);
+  await expect(seededPage.getByTestId('transaction.accountPicker')).toHaveCount(0);
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(newAccountId!);
 });

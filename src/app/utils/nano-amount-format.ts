@@ -97,6 +97,7 @@ export function formatNanoAmount(
   context: NanoAmountContext,
   minimumReceiveXno: string | null | undefined = '0.000001',
   numericCharacterBudget = SUMMARY_MAX_NUMERIC_CHARACTERS,
+  locale = 'en',
 ): NanoAmountPresentation {
   if (rawValue == null) return unavailable(context, 'unavailable');
   const raw = normalizeIntegerRaw(rawValue);
@@ -113,29 +114,26 @@ export function formatNanoAmount(
     return { context, relation: 'exact', display: '0 XNO', exactXno: '0', exactRaw: '0', negative: false };
   }
 
-  // Previews show the amount itself, regardless of the receive threshold.
-  // Use scientific notation only when a decimal would crowd the sidebar.
+  // Summaries never expose scientific notation or long fractional tails.
   if (context === 'preview') {
+    const tiny = BigInt(magnitude) < 10n ** 24n;
+    const smallRaw = BigInt(magnitude) < 1000000n;
+    if (tiny) {
+      return {
+        context, relation: smallRaw ? 'exact' : 'bounded',
+        display: smallRaw
+          ? `${negative ? '−' : ''}${new Intl.NumberFormat(locale).format(BigInt(magnitude))} raw`
+          : `${negative ? '−' : ''}<${new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(0.000001)} XNO`,
+        exactXno: signedXno, exactRaw: raw, negative,
+      };
+    }
     const xno = rawToXno(magnitude);
     const rounded = roundToSignificantDigits(xno, SUMMARY_SIGNIFICANT_DIGITS);
-    let display = rounded;
-    if (rounded.length > 14) {
-      const [integer, fraction = ''] = rounded.split('.');
-      const digits = `${integer}${fraction}`;
-      const first = digits.search(/[1-9]/);
-      const exponent = integer.length - first - 1;
-      const coefficient = digits.slice(first).replace(/0+$/, '');
-      const superscript = String(exponent).replace(/[-0-9]/g, digit => '⁻⁰¹²³⁴⁵⁶⁷⁸⁹'['-0123456789'.indexOf(digit)]);
-      display = `${coefficient[0]}${coefficient.length > 1 ? `.${coefficient.slice(1)}` : ''} × 10${superscript}`;
-    }
     const isExact = rounded === xno;
     return {
-      context,
-      relation: isExact ? 'exact' : 'approximate',
-      display: `${negative ? '−' : ''}${isExact ? '' : '≈'}${display} XNO`,
-      exactXno: signedXno,
-      exactRaw: raw,
-      negative,
+      context, relation: isExact ? 'exact' : 'approximate',
+      display: `${negative ? '−' : ''}${isExact ? '' : '≈'}${rounded} XNO`,
+      exactXno: signedXno, exactRaw: raw, negative,
     };
   }
 
@@ -167,3 +165,25 @@ export function formatNanoAmount(
   };
 }
 
+
+/** Exact display parts: six decimal XNO places plus the remaining raw atoms.
+ * Callers choose whether their widget needs this level of detail.
+ */
+export function splitNanoAmount(rawValue: unknown, locale = 'en'): { xno: string; rawRemainder: string | null } | null {
+  const normalized = normalizeIntegerRaw(rawValue);
+  if (normalized === null) return null;
+  const raw = BigInt(normalized);
+  const magnitude = raw < 0n ? -raw : raw;
+  const rai = magnitude / (10n ** 24n);
+  const remainder = magnitude % (10n ** 24n);
+  const integer = rai / 1000000n;
+  const fraction = (rai % 1000000n).toString().padStart(6, '0').replace(/0+$/, '');
+  const formatter = new Intl.NumberFormat(locale);
+  const separator = formatter.formatToParts(1.1).find(part => part.type === 'decimal')?.value || '.';
+  const localDigits = (digits: string) => digits.replace(/\d/g, digit => formatter.format(Number(digit)));
+  const value = `${raw < 0n && rai > 0n ? '−' : ''}${formatter.format(integer)}${fraction ? separator + localDigits(fraction) : ''} XNO`;
+  return {
+    xno: value,
+    rawRemainder: remainder === 0n ? null : `${raw < 0n ? '−' : '+'}${formatter.format(remainder)} raw`,
+  };
+}

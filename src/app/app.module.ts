@@ -103,7 +103,6 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     FiatPipe,
     AmountSplitPipe,
     ImportWalletComponent,
-    NanoAccountIdComponent,
     ImportAddressBookComponent,
     CurrencySymbolPipe,
     RepresentativesComponent,
@@ -128,6 +127,7 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NanoAmountComponent
   ],
   imports: [
+    NanoAccountIdComponent,
     NanoIdenticonComponent,
     AccountSummaryComponent,
     TransactionAccountPickerComponent,

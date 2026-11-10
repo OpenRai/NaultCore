@@ -1,4 +1,4 @@
-import { formatNanoAmount } from './nano-amount-format';
+import { formatNanoAmount, splitNanoAmount } from './nano-amount-format';
 import BigNumber from 'bignumber.js';
 
 const ONE_XNO_RAW = '1000000000000000000000000000000';
@@ -6,9 +6,9 @@ const ONE_XNO_RAW = '1000000000000000000000000000000';
 describe('formatNanoAmount', () => {
   it('shows numeric previews independent of the minimum receive setting', () => {
     expect(formatNanoAmount('1234567890123456789012345678901', 'preview', '10').display).toBe('≈1.23457 XNO');
-    expect(formatNanoAmount('10000000000000000000000', 'preview', '1').display).toBe('0.00000001 XNO');
-    expect(formatNanoAmount('1', 'preview', null).display).toBe('1 × 10⁻³⁰ XNO');
-    expect(formatNanoAmount('1234567', 'preview', '0').display).toBe('≈1.23457 × 10⁻²⁴ XNO');
+    expect(formatNanoAmount('10000000000000000000000', 'preview', '1').display).toBe('<0.000001 XNO');
+    expect(formatNanoAmount('1', 'preview', null).display).toBe('1 raw');
+    expect(formatNanoAmount('1234567', 'preview', '0').display).toBe('<0.000001 XNO');
     expect(formatNanoAmount('0', 'preview').display).toBe('0 XNO');
     expect(formatNanoAmount(null, 'preview').relation).toBe('unavailable');
   });
@@ -99,5 +99,22 @@ describe('formatNanoAmount', () => {
 
   it('rejects unsafe JavaScript numbers so imprecise raw input is never legitimized', () => {
     expect(formatNanoAmount(Number(ONE_XNO_RAW), 'authorize')).toMatchObject({ relation: 'invalid' });
+  });
+});
+
+describe('exact display parts selected by widgets', () => {
+  it('splits at the rai boundary without losing any raw units', () => {
+    expect(splitNanoAmount('1000000000000086118708102050', 'en-US')).toEqual({ xno: '0.001 XNO', rawRemainder: '+86,118,708,102,050 raw' });
+    expect(splitNanoAmount('1000000000000000000000000')).toEqual({ xno: '0.000001 XNO', rawRemainder: null });
+    expect(splitNanoAmount('1')).toEqual({ xno: '0 XNO', rawRemainder: '+1 raw' });
+  });
+  it('localizes grouping and decimals without converting raw integers to floats', () => {
+    expect(splitNanoAmount('1000000000000086118708102050', 'de-DE')).toEqual({ xno: '0,001 XNO', rawRemainder: '+86.118.708.102.050 raw' });
+    expect(splitNanoAmount('-86118708102050', 'en-US')).toEqual({ xno: '0 XNO', rawRemainder: '−86,118,708,102,050 raw' });
+  });
+  it('never uses scientific notation for valid summary amounts', () => {
+    for (const raw of ['1', '999999', '1000000', '2152970000000000', '340282366920938463463374607431768211455']) {
+      expect(formatNanoAmount(raw, 'preview').display).not.toMatch(/×|[⁰¹²³⁴⁵⁶⁷⁸⁹]|e[+-]\d/i);
+    }
   });
 });

@@ -1,6 +1,13 @@
 @if (presentation; as amount) {
   @if (amount.relation === 'invalid' || amount.relation === 'unavailable') {
     <span [attr.aria-label]="unavailableLabel">—</span>
+  } @else if (detailParts; as parts) {
+    <span class="amount-detail" data-testid="nano-amount-detail">
+      <span data-testid="nano-amount-summary">{{ parts.xno }}</span>
+      @if (parts.rawRemainder) {
+        <span class="amount-raw-remainder text-half-muted" data-testid="nano-amount-raw-remainder">{{ parts.rawRemainder }}</span>
+      }
+    </span>
   } @else if (detailsRoute) {
     <a class="amount-link" [routerLink]="detailsRoute"
       [attr.aria-label]="amount.display + ' · ' + detailsLabel"

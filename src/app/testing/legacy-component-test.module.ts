@@ -20,7 +20,6 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
   declarations: [
     SendComponent,
     SweeperComponent,
-    NanoAccountIdComponent,
     AccountPipe,
     AmountSplitPipe,
     CurrencySymbolPipe,
@@ -29,6 +28,7 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
     SqueezePipe,
   ],
   imports: [
+    NanoAccountIdComponent,
     NanoIdenticonComponent,
     AccountSummaryComponent,
     TransactionAccountPickerComponent,

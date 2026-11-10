@@ -17,13 +17,15 @@ const hasFundedSeed = Boolean(process.env.NANO_TEST_SEED?.trim());
 const isCI = !!process.env.CI;
 const isHeadless = isCI || process.env.PLAYWRIGHT_HEADLESS === 'true';
 const browserBin = process.env.CHROME_BIN || undefined;
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:4200';
+const serverPort = new URL(baseURL).port || '4200';
 
 function getWebServerCommand(): string {
   const featureFlag = featureNanonyms ? 'true' : 'false';
   const buildConfiguration = featureNanonyms ? 'nanonyms-e2e' : 'naultcore-e2e';
   return isCI
-    ? `FEATURE_NANONYMS=${featureFlag} pnpm exec ng serve --configuration ${buildConfiguration}`
-    : `unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=${featureFlag} nvm exec pnpm exec ng serve --configuration ${buildConfiguration}"`;
+    ? `FEATURE_NANONYMS=${featureFlag} pnpm run start --configuration ${buildConfiguration} --port ${serverPort}`
+    : `unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=${featureFlag} nvm exec pnpm run start --configuration ${buildConfiguration} --port ${serverPort}"`;
 }
 
 export default defineConfig({
@@ -36,7 +38,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     // CI and PLAYWRIGHT_HEADLESS=true run without opening a browser window.
@@ -69,7 +71,7 @@ export default defineConfig({
     // CI: pnpm is installed by the workflow.
     // Local: use nvm wrapper (AGENTS.md convention).
     command: getWebServerCommand(),
-    url: 'http://localhost:4200',
+    url: baseURL,
     reuseExistingServer: !isCI,
     timeout: 180000,
   },

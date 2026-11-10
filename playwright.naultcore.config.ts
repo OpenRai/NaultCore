@@ -27,7 +27,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=false nvm exec pnpm exec ng serve --configuration naultcore"',
+    command: 'unset npm_config_prefix && /bin/zsh -lc "source ~/.nvm/nvm.sh && FEATURE_NANONYMS=false nvm exec pnpm run start --configuration naultcore-e2e"',
     url: 'http://localhost:4200',
     reuseExistingServer: true,
     timeout: 180000,

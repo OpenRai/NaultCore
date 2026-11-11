@@ -95,7 +95,7 @@ test('shows a numeric one-raw preview and links through to account details', asy
   const balance = seededPage.locator('[data-testid="wallet-summary-card"] .wallet-balance app-nano-amount');
   await expect(balance.getByTestId('nano-amount-summary')).toHaveText('1 raw');
   await expect(balance.locator('details')).toHaveCount(0);
-  await balance.getByRole('link').click();
+  await seededPage.getByRole('navigation', { name: 'Wallet pages' }).getByRole('link', { name: 'Accounts', exact: true }).click();
   await expect(seededPage).toHaveURL(/\/accounts$/);
   await seededPage.locator(`[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`)
     .locator('[data-testid="nano-amount-summary"]:visible').first().click();
@@ -209,7 +209,12 @@ test('selects the actual newly added account when opening Receive from its accou
   const rows = seededPage.getByTestId('accounts-row');
   await expect(rows).toHaveCount(3);
 
-  await seededPage.getByTestId('accounts-create-account-button').click();
+  await seededPage.goto('/accounts/derive');
+  const accountCheckbox = seededPage.getByRole('checkbox', { name: 'Account #3' });
+  await expect(accountCheckbox).toBeVisible();
+  await accountCheckbox.check();
+  await seededPage.getByRole('button', { name: 'Add selected accounts (1)' }).click();
+  await expect(seededPage).toHaveURL(/\/accounts$/);
   await expect(rows).toHaveCount(4, { timeout: 15000 });
   const newAccountRow = rows.nth(3);
   const newAccountId = await newAccountRow.getAttribute('data-account-id');

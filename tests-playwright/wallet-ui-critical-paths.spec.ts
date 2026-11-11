@@ -212,6 +212,8 @@ test('keeps recovery-secret copying behind the backup warning', async ({ seededP
   const modal = seededPage.locator('#backup-secrets-modal');
   await expect(modal).toBeVisible();
   await expect(modal.locator('.backup-warning-sticker')).toBeVisible();
+  const mnemonicDisclosure = modal.locator('.backup-mnemonic');
+  await mnemonicDisclosure.locator('summary').click();
   await expect(seededPage.getByTestId('manage-wallet-copy-mnemonic-button')).toBeVisible();
 
   const seedDisclosure = modal.locator('.backup-seed-disclosure');

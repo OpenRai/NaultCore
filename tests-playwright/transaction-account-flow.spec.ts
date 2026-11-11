@@ -37,7 +37,7 @@ for (const [width, compact] of [[393, false], [393, true], [850, false], [1280, 
       expect(Math.abs(badge!.y - icon!.y)).toBeLessThan(5);
     }
 
-    await expect(actions.getByRole('link', { name: 'Send', exact: true })).toHaveAttribute('href', `/send?account=${testWallet.accounts[1]}`);
+    await expect(actions.getByRole('link', { name: 'Send', exact: true })).toHaveAttribute('href', `/send?account=${testWallet.accounts[1]}&origin=accounts`);
     await seededPage.screenshot({ path: testInfo.outputPath(`account-actions-${width}.png`), fullPage: true, animations: 'disabled' });
     await actions.getByRole('link', { name: 'Receive', exact: true }).click();
     await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);

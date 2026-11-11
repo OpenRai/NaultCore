@@ -1,6 +1,5 @@
 <div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.wallet.pageRoot">
   <div class="uk-width-1-1">
-    <h2 class="wallet-title uk-heading-divider">Wallet accounts</h2>
 
     <nav aria-label="Wallet pages">
       <ul class="uk-tab">
@@ -29,16 +28,11 @@
       </section>
     }
 
-    <section class="uk-card uk-card-default uk-margin" [attr.data-testid]="testIds.wallet.summaryCard" aria-labelledby="wallet-overview-title">
-      <div class="uk-card-header">
-        <div class="uk-grid-small uk-flex-middle" uk-grid>
-          <div class="uk-width-expand"><h3 class="uk-card-title" id="wallet-overview-title">Wallet overview</h3></div>
-          @if (walletState.lifecycle.locked) {
-            <div class="uk-width-auto"><span class="uk-label uk-label-warning" role="status">Locked</span></div>
-          }
-        </div>
-      </div>
-      <div class="uk-card-body">
+    <section class="uk-card uk-card-default uk-margin" [attr.data-testid]="testIds.wallet.summaryCard" aria-label="Wallet summary">
+      <div class="uk-card-body uk-position-relative">
+        @if (walletState.lifecycle.locked) {
+          <span class="uk-label uk-label-warning uk-position-top-right uk-margin-top uk-margin-right" role="status">Locked</span>
+        }
         <div class="uk-grid-large uk-child-width-1-2@s" uk-grid>
           <div class="wallet-summary-totals">
             <div class="uk-form-label">{{ labels.totalBalance }}</div>

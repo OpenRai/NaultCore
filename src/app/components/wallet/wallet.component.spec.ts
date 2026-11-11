@@ -198,13 +198,11 @@ describe('WalletComponent', () => {
     expect(card).toBeTruthy();
     expect(el.querySelector('[data-testid="wallet-summary-card"]')?.classList.contains('uk-card')).toBe(true);
 
-    // uk-heading-divider supplies the hairline rule; the heading spec supplies
-    // the Montserrat weight, colour, and 27.2px size. The page must not set any
-    // of those itself.
-    const title = el.querySelector('h2.wallet-title');
-    expect(title).toBeTruthy();
-    expect(title?.classList.contains('uk-heading-divider')).toBe(true);
-    expect(title?.getAttribute('style')).toBeNull();
+    expect(el.querySelector('h2.wallet-title')).toBeNull();
+    const summary = el.querySelector('[data-testid="wallet-summary-card"]');
+    expect(summary?.getAttribute('aria-label')).toBe('Wallet summary');
+    expect(summary?.querySelector('.uk-card-header')).toBeNull();
+
   });
 
   // The eyebrows and labels that only this page had. Removing them is what makes

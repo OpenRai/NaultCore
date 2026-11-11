@@ -295,3 +295,22 @@
 		right: calc(env(safe-area-inset-right, 0px) + 10px);
 	}
 }
+
+
+// Give the effect more room when both viewport dimensions can accommodate it.
+// Keep the existing compact and mobile layouts below this breakpoint.
+@media (min-width: 800px) and (min-height: 600px) {
+	.about-dialog {
+		width: min(720px, calc(100vw - 48px));
+		max-width: 720px;
+	}
+
+	.about-demo-stage {
+		height: clamp(330px, 42vh, 480px);
+		min-height: 330px;
+	}
+
+	.about-wordmark h1 {
+		font-size: clamp(calc(var(--text-xl) * 1.5), 1.5rem + 6vw, calc(var(--text-3xl) * 1.5));
+	}
+}

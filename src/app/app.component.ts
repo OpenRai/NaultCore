@@ -45,6 +45,13 @@ export class AppComponent implements OnInit {
   nodeService = inject(NodeService);
   private representative = inject(RepresentativeService);
   private router = inject(Router);
+
+  get walletSectionActive(): boolean {
+    return ['/wallet', '/accounts'].some(path => this.router.isActive(path, {
+      paths: 'exact', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored'
+    }));
+  }
+
   updates = inject(SwUpdate);
   private workPool = inject(WorkPoolService);
   private powRouting = inject(PowRoutingService);

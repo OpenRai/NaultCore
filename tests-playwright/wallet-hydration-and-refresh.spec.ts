@@ -209,7 +209,7 @@ test('selects the actual newly added account when opening Receive from its accou
   const rows = seededPage.getByTestId('accounts-row');
   await expect(rows).toHaveCount(3);
 
-  await seededPage.goto('/accounts/derive');
+  await seededPage.getByRole('link', { name: 'Add accounts…', exact: true }).click();
   const accountCheckbox = seededPage.getByRole('checkbox', { name: 'Account #3' });
   await expect(accountCheckbox).toBeVisible();
   await accountCheckbox.check();

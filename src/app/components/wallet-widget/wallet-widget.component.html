@@ -89,7 +89,7 @@
     </div>
     <div class="uk-modal-body">
       <p class="unlock-explanation">Unlocking permits NaultCore to sign a receive block for confirmed funds and spend funds from this wallet.</p>
-      @if (walletService.canUsePasskeyUnlock) {
+      @if (!passwordOnly && walletService.canUsePasskeyUnlock) {
         @if (passkeyUnlockInProgress) {
           <p class="uk-text-meta" role="status" aria-live="polite">Waiting for device authentication…</p>
         } @else if (passkeyFallbackVisible) {

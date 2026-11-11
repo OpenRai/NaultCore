@@ -18,7 +18,7 @@
             @if (!walletService.canEnrollPasskey) {
               <p>Passkeys aren't available for this wallet in this browser.</p>
             } @else if (!canManagePasskeys) {
-              <p>To change these settings, lock the wallet and unlock with your wallet password.</p>
+              <p><button type="button" class="unlock-wallet-link" (click)="requestPasswordSession()">{{ 'wallet-unlock.password-session' | transloco }}</button> {{ 'wallet-unlock.change-settings' | transloco }}</p>
             }
           }
           @if (passkeyCredentials.length) {

@@ -222,15 +222,12 @@
 /* ---------- Table ---------- */
 
 .tx-table-wrapper {
-  overflow: auto;
   max-inline-size: 100%;
-  /* Enables the @container queries below to react to this element's own width
-     rather than the viewport, so the table also behaves inside narrow panels. */
-  container-type: inline-size;
 }
 
 .tx-table-grid {
   inline-size: 100%;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: var(--text-sm);
@@ -264,9 +261,9 @@
 .tx-table-grid tbody tr:last-child td { border-block-end: none; }
 .tx-table-grid tbody tr:hover { background: var(--surface-hover); }
 
-.col-status { inline-size: 7.5rem; }
-.col-amount { inline-size: 9rem; text-align: end; white-space: nowrap; }
-.col-date { inline-size: 9.5rem; white-space: nowrap; color: var(--text-muted); font-size: var(--text-sm); }
+.col-status { inline-size: 6rem; }
+.col-amount { inline-size: 10rem; text-align: end; white-space: nowrap; }
+.col-date { inline-size: 7rem; white-space: nowrap; color: var(--text-muted); font-size: var(--text-sm); }
 
 .tx-badge {
   display: inline-flex;
@@ -285,9 +282,17 @@
 .tx-row-pending td { background: rgba(217, 119, 6, 0.05); }
 
 .tx-detail-primary {
-  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 400;
+  font-size: var(--text-sm);
   min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
+
+.tx-detail-primary > a { max-inline-size: 100%; }
 
 .tx-counterparty-label {
   display: block;
@@ -347,7 +352,8 @@
 .tx-hash:hover { text-decoration: underline; }
 
 .tx-amount {
-  font-weight: 700;
+  font-weight: 600;
+  font-size: var(--text-base);
   font-variant-numeric: tabular-nums;
 }
 
@@ -360,113 +366,31 @@
   color: var(--text-muted);
 }
 
-/* ---------- Stacked layout for narrow widths ---------- */
-
-/* Reached when the table itself is narrow, not when the viewport is. The
-   columns become labelled cards so the same rows stay readable instead of
-   being hidden or squeezed into horizontal scrolling. */
-@container (width < 620px) {
-  .tx-table-grid,
-  .tx-table-grid tbody,
-  .tx-table-grid tr,
-  .tx-table-grid td {
-    display: block;
-  }
-
-  /* Removed from layout AND from the accessibility tree; each cell carries its
-     own label via ::before below. */
-  .tx-table-grid thead {
-    display: none;
-  }
-
-  .tx-table-grid {
-    --label-status: 'Status';
-    --label-detail: 'Details';
-    --label-amount: 'Amount';
-    --label-date: 'Date';
-  }
-
+/* Match the app's large breakpoint: keep rows stacked through tablet and
+   sidebar layouts, then show columns when the desktop content has room. */
+@media (max-width: 1199px) {
+  .tx-table-grid, .tx-table-grid tbody { display: block; }
+  .tx-table-grid thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   .tx-table-grid tbody tr {
-    padding: 0.75rem 0.85rem;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.4rem 0.65rem;
+    padding: 0.85rem;
     border-block-end: 1px solid var(--border-subtle);
   }
-
-  .tx-table-grid tbody td {
-    padding: 0;
-    border: none;
-  }
-
-  /* The `"/ label"` form supplies the accessible name to screen readers, so the
-     injected text is announced as "Amount: 1.5" rather than trailing noise. */
-  .tx-table-grid td::before {
-    content: var(--label-status) ': ' / var(--label-status);
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .tx-table-grid .col-detail::before { content: var(--label-detail) ': ' / var(--label-detail); }
-  .tx-table-grid .col-amount::before { content: var(--label-amount) ': ' / var(--label-amount); }
-  .tx-table-grid .col-date::before { content: var(--label-date) ': ' / var(--label-date); }
-
-  .tx-table-grid .col-detail,
-  .tx-table-grid .col-amount,
-  .tx-table-grid .col-date {
-    inline-size: auto;
-    text-align: start;
-    white-space: normal;
-  }
-
-  .tx-table-grid .col-detail { margin-block-end: 0.3rem; }
-
-  /* A card has the full panel width to itself, so wrapping shows the entire
-     address and hash instead of hiding the tail behind an ellipsis. */
-  .tx-detail-primary {
-    white-space: normal;
-    overflow: visible;
-    overflow-wrap: anywhere;
-  }
-
-  .tx-detail-secondary {
-    flex-wrap: wrap;
-    white-space: normal;
-  }
-
-  .tx-detail-secondary > .tx-hash {
-    /* Fill the row rather than shrink to its first line, or a wrapping flex
-       item collapses to a 72px sliver and stacks the hash one character per
-       line. */
-    flex: 1 1 auto;
-    overflow: visible;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .tx-table-grid .col-amount {
-    margin-block-start: 0.35rem;
-    font-size: var(--text-base);
-  }
-
-  .tx-table-grid .col-date {
-    margin-block-start: 0.15rem;
-  }
-
-  /* Column labels sit inline above their value rather than on their own line,
-     which reads better in a narrow card. */
-  .tx-table-grid td {
-    display: grid;
-    grid-template-columns: 4.5rem 1fr;
-    gap: 0.5rem;
-    align-items: baseline;
-  }
+  .tx-table-grid tbody td { display: block; padding: 0; border: 0; inline-size: auto; }
+  .tx-table-grid .col-amount { text-align: end; white-space: normal; overflow-wrap: anywhere; }
+  .tx-table-grid .col-date, .tx-table-grid .col-detail { grid-column: 1 / -1; }
+  .tx-table-grid .col-date { font-size: var(--text-sm); }
 }
 
-/* Very narrow: the amount columns no longer need a label column of their own. */
-@container (width < 380px) {
-  .tx-table-grid td {
-    grid-template-columns: 1fr;
-    gap: 0.1rem;
-  }
+.tx-external {
+  border: 1px solid var(--border-strong);
+  border-radius: 0.25rem;
+  padding-inline: 0.3rem;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
 }
+.tx-counterparty-addr { min-inline-size: 0; overflow-wrap: anywhere; }
+
+.tx-row-pending .tx-amount { color: var(--status-warning); }

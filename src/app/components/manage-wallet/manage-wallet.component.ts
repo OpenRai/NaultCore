@@ -133,6 +133,12 @@ export class ManageWalletComponent implements OnInit {
     this.showQRExport = false;
   }
 
+  async requestPasswordSession() {
+    if (this.walletService.lockWallet()) {
+      await this.walletService.requestWalletUnlock({ passwordOnly: true });
+    }
+  }
+
   async unlockWallet() {
     await this.walletService.requestWalletUnlock();
   }

@@ -1,6 +1,6 @@
 <div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.receive.pageRoot">
   <div class="uk-width-1-1">
-    <h2 class="uk-heading-divider">Receive</h2>
+    <app-breadcrumb [current]="'general.receive' | transloco" />
 
     @if (choosingAccount) {
       <app-transaction-account-picker title="Choose the account to receive to" [accounts]="spendableAccounts"

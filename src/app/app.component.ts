@@ -260,7 +260,7 @@ get appearanceAutoLabel(): string {
 
     await this.startup.runPhase('readiness', async () => {
       if (this.walletService.isLocked() && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
-        this.notifications.sendWarning(`New incoming transaction(s) - Unlock the wallet to receive`, { length: 10000, identifier: 'pending-locked' });
+        this.notifications.sendWarning(`New incoming transaction(s) - `, { action: 'unlock-wallet', length: 10000, identifier: 'pending-locked' });
       } else if (this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption === 'manual') {
         this.notifications.sendWarning(`Incoming transaction(s) found - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
       }

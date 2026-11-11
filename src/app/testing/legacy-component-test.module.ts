@@ -1,3 +1,7 @@
+import { WalletUnlockLinkComponent } from '../components/wallet-unlock-link/wallet-unlock-link.component';
+import { ReceiveComponent } from '../components/receive/receive.component';
+import { TranslocoRootModule } from '../transloco/transloco-root.module';
+import { BreadcrumbComponent } from '../components/breadcrumb/breadcrumb.component';
 import { AccountSummaryComponent } from '../components/transaction-account/account-summary.component';
 import { TransactionAccountPickerComponent } from '../components/transaction-account/transaction-account-picker.component';
 import { CommonModule } from '@angular/common';
@@ -18,6 +22,7 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
 
 @NgModule({
   declarations: [
+    ReceiveComponent,
     SendComponent,
     SweeperComponent,
     AccountPipe,
@@ -28,6 +33,9 @@ import { SqueezePipe } from '../pipes/squeeze.pipe';
     SqueezePipe,
   ],
   imports: [
+    WalletUnlockLinkComponent,
+    BreadcrumbComponent,
+    TranslocoRootModule,
     NanoAccountIdComponent,
     NanoIdenticonComponent,
     AccountSummaryComponent,

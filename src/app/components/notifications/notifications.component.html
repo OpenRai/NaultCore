@@ -7,7 +7,11 @@
       uk-alert
       >
       <a class="uk-alert-close close-notification" uk-close></a>
-      <p [innerHTML]="notification.message"></p>
+      <p><span [innerHTML]="notification.message"></span>
+        @if (notification.action === 'unlock-wallet') {
+          <app-wallet-unlock-link labelKey="wallet-unlock.receive" />
+        }
+      </p>
     </div>
   }
 </div>

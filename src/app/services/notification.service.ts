@@ -12,6 +12,8 @@ export interface NotificationCue {
 }
 
 export interface NotificationOptions {
+  /** Render an Angular-bound action alongside the message. */
+  action?: 'unlock-wallet';
   /** Replaces an existing toast with the same identifier instead of stacking. */
   identifier?: string;
   /** Auto-expire in ms. 0 keeps the toast until removeNotification(). */

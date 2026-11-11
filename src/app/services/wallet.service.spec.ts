@@ -1,3 +1,5 @@
+import { WalletWidgetComponent } from '../components/wallet-widget/wallet-widget.component';
+import { DeriveAccountsComponent } from '../components/derive-accounts/derive-accounts.component';
 import { BehaviorSubject } from 'rxjs';
 import BigNumber from 'bignumber.js';
 
@@ -358,5 +360,220 @@ describe('WalletService receive work cancellation', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('WalletService read-only derivation preview', () => {
+  function previewService() {
+    const service: any = Object.create(WalletService.prototype);
+    service.util = { account: { isNonStandardAccountIndex: (n: number) => n < 0 || n > 4294967295 } };
+    service.isConfigured = () => true;
+    service.isSingleKeyWallet = () => false;
+    service.isLedgerWallet = () => false;
+    service.lifecycleGeneration = 1;
+    service.localWalletId = 'wallet';
+    return service;
+  }
+  it('returns only public metadata and wipes temporary seed credentials', async () => {
+    const service = previewService();
+    const secret = new Uint8Array([7]);
+    const account = { index: 4, id: 'nano_test', addressBookName: 'Test', secret, keyPair: {} };
+    service.createSeedAccount = async () => account;
+    expect(await service.previewAccount(4)).toEqual({ index: 4, id: 'nano_test', addressBookName: 'Test' });
+    expect(secret[0]).toBe(0);
+    expect(account.keyPair).toBeNull();
+  });
+  it('rejects invalid indexes before deriving', async () => {
+    const service = previewService();
+    for (const index of [-1, 0.5, NaN, 4294967296]) await expect(service.previewAccount(index)).rejects.toThrow();
+  });
+  it('uses Ledger indexes unchanged and rejects results from a replaced wallet', async () => {
+    const service = previewService();
+    service.isLedgerWallet = () => true;
+    service.createLedgerAccount = async (index: number) => {
+      expect(index).toBe(4294967295);
+      service.lifecycleGeneration++;
+      return { id: 'nano_ledger', index, secret: null, keyPair: null };
+    };
+    await expect(service.previewAccount(4294967295)).rejects.toThrow('Wallet changed');
+  });
+});
+
+describe('explicit derivation selection', () => {
+  function page(): any {
+    const component: any = Object.create(DeriveAccountsComponent.prototype);
+    Object.assign(component, { identity: 'wallet', request: 0, selected: new Set(), rows: [], added: [], max: 4294967295, start: 0, busy: false });
+    component.wallet = {
+      derivationIdentity: 'wallet', walletState: { accounts: [] }, isLocked: () => false,
+      isLedgerWallet: () => false,
+      previewAccount: async (index: number) => ({ index, id: `nano_${index}`, addressBookName: '' }),
+      addWalletAccount: vi.fn(async (index: number) => ({ id: `nano_${index}` })),
+    };
+    component.changeDetector = { markForCheck: vi.fn() };
+    component.api = { accountsBalances: async () => ({ balances: {} }) };
+    component.router = { navigate: vi.fn() };
+    return component;
+  }
+  it('preserves cross-page selection without adding accounts and distinguishes missing balances', async () => {
+    const component = page();
+    await component.page(0);
+    component.toggle(3);
+    await component.page(5);
+    component.toggle(7);
+    expect([...component.selected]).toEqual([3, 7]);
+    expect(component.rows[0].balance).toBeUndefined();
+    expect(component.wallet.addWalletAccount).not.toHaveBeenCalled();
+  });
+  it('waits neutrally for an explicit unlock and loads previews after unlocking', () => {
+    const component = page();
+    let locked = true;
+    component.wallet.isLocked = () => locked;
+    component.wallet.isConfigured = () => true;
+    component.wallet.isSingleKeyWallet = () => false;
+    component.wallet.lifecycle$ = new BehaviorSubject({});
+    component.wallet.requestWalletUnlock = vi.fn();
+    component.page = vi.fn();
+    component.error = true;
+    component.ngOnInit();
+    expect(component.error).toBe(false);
+    expect(component.page).not.toHaveBeenCalled();
+    expect(component.wallet.requestWalletUnlock).not.toHaveBeenCalled();
+    locked = false;
+    component.wallet.lifecycle$.next({});
+    expect(component.page).toHaveBeenCalledWith(0);
+    component.ngOnDestroy();
+  });
+
+  it('limits selection to remaining capacity and excludes tracked indexes', () => {
+    const component = page();
+    component.wallet.walletState.accounts = Array.from({ length: 19 }, (_, index) => ({ index }));
+    expect(component.remainingCapacity).toBe(1);
+    component.toggle(0); component.toggle(20); component.toggle(21);
+    expect([...component.selected]).toEqual([20]);
+    expect(component.remainingCapacity).toBe(0);
+    expect(component.capacity).toBe(1);
+    component.toggle(20);
+    expect(component.remainingCapacity).toBe(1);
+  });
+  it('preserves failed selections after partial addition without navigating', async () => {
+    const component = page();
+    component.selected = new Set([3, 4]);
+    component.wallet.addWalletAccount.mockRejectedValueOnce(new Error('Ledger failed'));
+    await component.add();
+    expect([...component.selected]).toEqual([3, 4]);
+    expect(component.router.navigate).not.toHaveBeenCalled();
+    component.wallet.addWalletAccount.mockResolvedValueOnce({ id: 'nano_3' }).mockRejectedValueOnce(new Error('Ledger failed'));
+    await component.add();
+    expect(component.added).toEqual(['nano_3']);
+    expect([...component.selected]).toEqual([4]);
+    expect(component.outcome).toBe('1:1');
+    expect(component.busy).toBe(false);
+  });
+  it('rejects invalid indexes and truncates the upper-bound page', async () => {
+    const component = page();
+    for (const jump of ['-1', '1.5', '4294967296', '1e3', '']) {
+      component.jump = jump; component.go(); expect(component.invalid).toBe(true);
+    }
+    await component.page(4294967295);
+    expect(component.rows.map((row: any) => row.index)).toEqual([4294967295]);
+  });
+  it('clears previews and selection after wallet replacement', async () => {
+    const component = page();
+    component.toggle(3);
+    component.wallet.derivationIdentity = 'replacement';
+    await component.add();
+    expect(component.selected.size).toBe(0);
+    expect(component.wallet.addWalletAccount).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('password-only wallet unlock requests', () => {
+  function serviceForUnlock(): any {
+    const service: any = Object.create(WalletService.prototype);
+    service.wallet = { unlockModalRequested$: new BehaviorSubject(false) };
+    service.lifecycleSubject = new BehaviorSubject({ kind: 'locked' });
+    service.lifecycle$ = service.lifecycleSubject.asObservable();
+    service.hasPassword = vi.fn(() => false);
+    return service;
+  }
+
+  it('transmits password-only mode and cannot complete from passkey authentication', async () => {
+    const service = serviceForUnlock();
+    let completed = false;
+    const request = service.requestWalletUnlock({ passwordOnly: true }).then((value: boolean) => { completed = true; return value; });
+    expect(service.wallet.unlockModalRequested$.value).toEqual({ passwordOnly: true });
+    service.lifecycleSubject.next({ kind: 'unlocked' });
+    await Promise.resolve();
+    expect(completed).toBe(false);
+    service.hasPassword.mockReturnValue(true);
+    service.lifecycleSubject.next({ kind: 'unlocked' });
+    expect(await request).toBe(true);
+  });
+
+  it('cancels password-only requests and preserves ordinary passkey unlock completion', async () => {
+    const service = serviceForUnlock();
+    const passwordRequest = service.requestWalletUnlock({ passwordOnly: true });
+    service.cancelWalletUnlockRequest();
+    expect(await passwordRequest).toBe(false);
+    const ordinaryRequest = service.requestWalletUnlock();
+    expect(service.wallet.unlockModalRequested$.value).toBe(true);
+    service.lifecycleSubject.next({ kind: 'unlocked' });
+    expect(await ordinaryRequest).toBe(true);
+  });
+});
+
+describe('password-only unlock modal', () => {
+  function widget(): any {
+    const component: any = Object.create(WalletWidgetComponent.prototype);
+    component.passwordOnly = false;
+    component.passkeyUnlockInProgress = false;
+    component.walletService = {
+      isLocked: () => true, canUsePasskeyUnlock: true,
+      unlockWalletWithPasskey: vi.fn(async () => false), cancelWalletUnlockRequest: vi.fn(),
+    };
+    component.modal = { show: vi.fn(), hide: vi.fn() };
+    return component;
+  }
+
+  it('shows password entry immediately, suppresses WebAuthn and resists ordinary request downgrades', async () => {
+    const component = widget();
+    component.showModal(true);
+    expect(component.passwordOnly).toBe(true);
+    expect(component.passkeyFallbackVisible).toBe(true);
+    expect(component.mayAttemptUnlock).toBe(true);
+    expect(component.modal.show).toHaveBeenCalledOnce();
+    await component.unlockWithPasskey();
+    component.showModal();
+    expect(component.passwordOnly).toBe(true);
+    expect(component.walletService.unlockWalletWithPasskey).not.toHaveBeenCalled();
+  });
+
+  it('resets mode after cancellation and restores normal passkey-first unlock', async () => {
+    const component = widget();
+    component.showModal(true);
+    component.onModalHidden();
+    expect(component.passwordOnly).toBe(false);
+    expect(component.walletService.cancelWalletUnlockRequest).toHaveBeenCalledOnce();
+    component.showModal();
+    expect(component.walletService.unlockWalletWithPasskey).toHaveBeenCalledOnce();
+    await Promise.resolve();
+  });
+
+  it('aborts any earlier device authentication when switching to password-only mode', async () => {
+    const component = widget();
+    let finish: (result: boolean) => void;
+    let signal: AbortSignal;
+    component.walletService.unlockWalletWithPasskey = vi.fn((incoming: AbortSignal) => {
+      signal = incoming;
+      return new Promise<boolean>(resolve => { finish = resolve; });
+    });
+    const previous = component.unlockWithPasskey();
+    component.showModal(true);
+    expect(signal!.aborted).toBe(true);
+    finish!(true);
+    await previous;
+    expect(component.modal.hide).not.toHaveBeenCalled();
+    expect(component.passkeyFallbackVisible).toBe(true);
   });
 });

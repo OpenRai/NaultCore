@@ -33,6 +33,7 @@ export class WalletWidgetComponent implements OnInit {
   mayAttemptUnlock = true;
   passkeyUnlockInProgress = false;
   passkeyFallbackVisible = false;
+  passwordOnly = false;
   private passkeyAbortController: AbortController|null = null;
   timeoutIdAllowingUnlock: any = null;
 
@@ -56,18 +57,23 @@ export class WalletWidgetComponent implements OnInit {
     });
 
     this.walletService.unlockModalRequested$.subscribe(async wasRequested => {
-      if (wasRequested === true) {
-        this.showModal();
+      if (wasRequested) {
+        this.showModal(typeof wasRequested === 'object' && wasRequested.passwordOnly);
       }
     });
   }
 
-  showModal() {
+  showModal(passwordOnly = false) {
+    // A second ordinary request must not weaken an active password-only prompt.
+    this.passwordOnly = passwordOnly || (this.passwordOnly && this.walletService.isLocked());
+    this.passkeyAbortController?.abort();
+    this.passkeyAbortController = null;
+    this.passkeyUnlockInProgress = false;
     this.unlockPassword = '';
-    this.passkeyFallbackVisible = !this.walletService.canUsePasskeyUnlock;
+    this.passkeyFallbackVisible = this.passwordOnly || !this.walletService.canUsePasskeyUnlock;
     this.mayAttemptUnlock = true;
     this.modal.show();
-    if (this.walletService.canUsePasskeyUnlock) {
+    if (!this.passwordOnly && this.walletService.canUsePasskeyUnlock) {
       void this.unlockWithPasskey();
     }
   }
@@ -77,6 +83,7 @@ export class WalletWidgetComponent implements OnInit {
     this.passkeyAbortController = null;
     this.passkeyUnlockInProgress = false;
     this.passkeyFallbackVisible = false;
+    this.passwordOnly = false;
     this.unlockPassword = '';
     this.walletService.cancelWalletUnlockRequest();
   }
@@ -161,7 +168,7 @@ export class WalletWidgetComponent implements OnInit {
   }
 
   async unlockWithPasskey() {
-    if (this.passkeyUnlockInProgress || !this.walletService.canUsePasskeyUnlock) return;
+    if (this.passwordOnly || this.passkeyUnlockInProgress || !this.walletService.canUsePasskeyUnlock) return;
     this.passkeyAbortController?.abort();
     const abortController = new AbortController();
     this.passkeyAbortController = abortController;

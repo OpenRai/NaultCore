@@ -1,3 +1,5 @@
+import { TestBed } from '@angular/core/testing';
+import { LegacyComponentTestModule } from '../../testing/legacy-component-test.module';
 import { ReceiveComponent } from './receive.component';
 import * as QRCode from 'qrcode';
 
@@ -20,7 +22,10 @@ function receiveContext(): any {
 }
 
 describe('Receive account and QR consistency', () => {
-  beforeEach(() => vi.mocked(QRCode.toDataURL).mockReset());
+  beforeEach(() => {
+    TestBed.configureTestingModule({ imports: [LegacyComponentTestModule] });
+    vi.mocked(QRCode.toDataURL).mockReset();
+  });
 
   it('discards a late QR result for the previous destination', async () => {
     let finishA: (value: string) => void;

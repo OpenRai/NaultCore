@@ -1,3 +1,8 @@
+import { ManageWalletComponent } from '../components/manage-wallet/manage-wallet.component';
+import { BehaviorSubject } from 'rxjs';
+import { WalletUnlockLinkComponent } from '../components/wallet-unlock-link/wallet-unlock-link.component';
+import { WalletService } from './wallet.service';
+import { NotificationsComponent } from '../components/notifications/notifications.component';
 import { TestBed } from '@angular/core/testing';
 
 import { AppSettingsService } from './app-settings.service';
@@ -154,5 +159,59 @@ describe('NotificationService', () => {
       service.sendInfo('No length given');
       expect(emitted[0].options.length).toBe(5000);
     });
+  });
+});
+
+describe('wallet unlock links', () => {
+  it('requests unlock immediately, prevents toast dismissal and suppresses repeated requests until cancellation', async () => {
+    let cancel: (result: boolean) => void;
+    const wallet = {
+      isLocked: () => true,
+      requestWalletUnlock: vi.fn(() => new Promise<boolean>(resolve => { cancel = resolve; })),
+    };
+    TestBed.configureTestingModule({ providers: [{ provide: WalletService, useValue: wallet }] });
+    const link = TestBed.runInInjectionContext(() => new WalletUnlockLinkComponent());
+    const event = { stopPropagation: vi.fn() } as unknown as Event;
+    const pending = link.requestUnlock(event);
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
+    await link.requestUnlock(event);
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
+    cancel!(false);
+    await pending;
+    expect(link.pending).toBe(false);
+  });
+
+  it('does not reopen unlock for an already unlocked wallet', async () => {
+    const wallet = { isLocked: () => false, requestWalletUnlock: vi.fn() };
+    TestBed.configureTestingModule({ providers: [{ provide: WalletService, useValue: wallet }] });
+    const link = TestBed.runInInjectionContext(() => new WalletUnlockLinkComponent());
+    await link.requestUnlock(new Event('click'));
+    expect(wallet.requestWalletUnlock).not.toHaveBeenCalled();
+  });
+
+  it('retains the notification action when building the visible toast', () => {
+    const service = { notifications$: new BehaviorSubject(null), removeNotification$: new BehaviorSubject(null) };
+    TestBed.configureTestingModule({ providers: [{ provide: NotificationService, useValue: service }] });
+    const component = TestBed.runInInjectionContext(() => new NotificationsComponent());
+    component.ngOnInit();
+    service.notifications$.next({ type: 'warning', message: 'Incoming funds', options: { action: 'unlock-wallet', length: 0 } });
+    expect(component.notifications[0].action).toBe('unlock-wallet');
+  });
+});
+
+
+describe('password session unlock prompt', () => {
+  it('locks the current session before requesting unlock and stops when locking is unavailable', async () => {
+    const component: any = Object.create(ManageWalletComponent.prototype);
+    const wallet = { lockWallet: vi.fn(() => true), requestWalletUnlock: vi.fn(async () => false) };
+    component.walletService = wallet;
+    await component.requestPasswordSession();
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledWith({ passwordOnly: true });
+    expect(wallet.lockWallet).toHaveBeenCalledOnce();
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
+    wallet.lockWallet.mockReturnValue(false);
+    await component.requestPasswordSession();
+    expect(wallet.requestWalletUnlock).toHaveBeenCalledOnce();
   });
 });

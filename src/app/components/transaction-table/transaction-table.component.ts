@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { interval } from 'rxjs';
 import BigNumber from 'bignumber.js';
 import { TranslocoService } from '@jsverse/transloco';
 import { TestIds } from '../../testing/test-ids';
@@ -20,7 +22,7 @@ import {
  *
  * Layout follows the responsive-table standard: the table adapts to its own
  * width with container queries, keeps its header visible while scrolling, and
- * stacks into labelled cards when narrow. It never hides itself on small
+ * stacks the same reading order into cards when narrow. It never hides itself on small
  * screens - dropping the data would be worse than rearranging it.
  *
  * The filter controls sit in a disclosure that is collapsed by default, so any
@@ -143,6 +145,10 @@ export class TransactionTableComponent {
     this.cdr.markForCheck();
   }
 
+  constructor() {
+    interval(60_000).pipe(takeUntilDestroyed()).subscribe(() => this.cdr.markForCheck());
+  }
+
   /**
    * Resolved here rather than through the pipe because most of these strings
    * feed property bindings, which would re-run the pipe on every change
@@ -155,6 +161,10 @@ export class TransactionTableComponent {
   get labels() {
     return {
       caption: this.t('transaction-table.caption'),
+      external: this.t('transaction-table.external'),
+      on: this.t('transaction-table.on'),
+      from: this.t('transaction-table.from'),
+      to: this.t('transaction-table.to'),
       status: this.t('transaction-table.status'),
       details: this.t('transaction-table.details'),
       amount: this.t('transaction-table.amount'),
@@ -209,20 +219,29 @@ export class TransactionTableComponent {
     return this.accounts.find(a => a.id === id)?.label ?? id;
   }
 
+  isOwned(account: string): boolean {
+    return this.accounts.some(a => a.id === account);
+  }
+
+  isoDate(timestamp: number | null): string | null {
+    return timestamp === null ? null : new Date(timestamp * 1000).toISOString();
+  }
+
+  exactDate(timestamp: number | null): string {
+    return timestamp === null ? '' : new Date(timestamp * 1000).toLocaleString();
+  }
+
   formatDate(timestamp: number | null): string {
     if (timestamp === null) return this.translate.translate('transaction-table.awaiting-receive');
-    const date = new Date(timestamp * 1000);
-    const now = new Date();
-    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    if (date.toDateString() === now.toDateString()) {
-      return this.translate.translate('transaction-table.today-at', { time });
-    }
-    const day = date.toLocaleDateString([], {
-      month: 'short',
-      day: 'numeric',
-      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-    });
-    return this.translate.translate('transaction-table.date-at', { day, time });
+    const seconds = Math.round(timestamp - Date.now() / 1000);
+    const [unit, divisor]: [Intl.RelativeTimeFormatUnit, number] = Math.abs(seconds) < 60
+      ? ['second', 1] : Math.abs(seconds) < 3600
+        ? ['minute', 60] : Math.abs(seconds) < 86400
+          ? ['hour', 3600] : Math.abs(seconds) < 2592000
+            ? ['day', 86400] : Math.abs(seconds) < 31536000
+              ? ['month', 2592000] : ['year', 31536000];
+    return new Intl.RelativeTimeFormat(this.translate.getActiveLang(), { numeric: 'auto' })
+      .format(Math.round(seconds / divisor), unit);
   }
 
   trackByHash(_index: number, transaction: WalletTransaction): string {

@@ -108,6 +108,13 @@ export interface Block {
   source: string;
 }
 
+export interface WalletUnlockOptions {
+  /** Require the wallet password instead of offering device/passkey authentication. */
+  passwordOnly?: boolean;
+}
+
+export type WalletUnlockRequest = boolean | { passwordOnly: true };
+
 export interface FullWallet {
   balance: BigNumber;
   pending: BigNumber;
@@ -119,7 +126,7 @@ export interface FullWallet {
   accounts: WalletAccount[];
   selectedAccountId: string|null;
   selectedAccount: WalletAccount|null;
-  unlockModalRequested$: BehaviorSubject<boolean|false>;
+  unlockModalRequested$: BehaviorSubject<WalletUnlockRequest>;
   pendingBlocks: Block[];
 }
 
@@ -184,7 +191,7 @@ export class WalletService {
     accounts: [],
     selectedAccountId: null,
     selectedAccount: null,
-    unlockModalRequested$: new BehaviorSubject(false),
+    unlockModalRequested$: new BehaviorSubject<WalletUnlockRequest>(false),
     pendingBlocks: [],
   };
 
@@ -244,7 +251,7 @@ export class WalletService {
   }
 
   /** Read-only transient unlock-modal request stream for UI coordination. */
-  get unlockModalRequested$(): Observable<boolean> {
+  get unlockModalRequested$(): Observable<WalletUnlockRequest> {
     return this.wallet.unlockModalRequested$.asObservable();
   }
 
@@ -414,7 +421,7 @@ export class WalletService {
       if (isConfirmedIncomingTransactionForOwnWalletAccount === true) {
         if (shouldNotify === true) {
           if (this.isLocked() && this.appSettings.settings.pendingOption !== 'manual') {
-            this.notifications.sendWarning(`New incoming transaction - Unlock the wallet to receive`, { length: 10000, identifier: 'pending-locked' });
+            this.notifications.sendWarning(`New incoming transaction - `, { action: 'unlock-wallet', length: 10000, identifier: 'pending-locked' });
           } else if (this.appSettings.settings.pendingOption === 'manual') {
             this.notifications.sendWarning(`New incoming transaction - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
           }
@@ -1387,8 +1394,29 @@ export class WalletService {
     return newAccount;
   }
 
-  async addWalletAccount(accountIndex: number|null = null, refreshState: boolean = true) {
+  get derivationIdentity(): string {
+    return `${this.lifecycleGeneration}:${this.localWalletId}`;
+  }
+
+  async previewAccount(index: number): Promise<{ index: number; id: string; addressBookName: string }> {
+    if (!Number.isInteger(index) || this.util.account.isNonStandardAccountIndex(index)) throw new Error('Invalid account index');
+    if (!this.isConfigured() || this.isSingleKeyWallet()) throw new Error('Wallet cannot derive accounts');
+    const identity = this.derivationIdentity;
+    const account = this.isLedgerWallet() ? await this.createLedgerAccount(index) : await this.createSeedAccount(index);
+    try {
+      if (identity !== this.derivationIdentity) throw new Error('Wallet changed');
+      return { index, id: account.id, addressBookName: account.addressBookName };
+    } finally {
+      if (account.secret instanceof Uint8Array) account.secret.fill(0);
+      account.secret = null;
+      account.keyPair = null;
+    }
+  }
+
+  async addWalletAccount(accountIndex: number|null = null, refreshState: boolean = true, derivationIdentity?: string) {
     // if (!this.wallet.seedBytes) return;
+    const identity = this.derivationIdentity;
+    if (derivationIdentity !== undefined && (identity !== derivationIdentity || this.wallet.accounts.length >= 20)) throw new Error('Wallet changed or capacity exceeded');
     let index = accountIndex;
     if (index === null) {
       index = 0; // Use the existing number, then increment it
@@ -1397,6 +1425,7 @@ export class WalletService {
       while (this.wallet.accounts.find(a => a.index === index)) index++;
     }
 
+    if (this.util.account.isNonStandardAccountIndex(index)) throw new Error('Invalid account index');
     let newAccount: WalletAccount|null;
 
     if (this.isSingleKeyWallet()) {
@@ -1419,6 +1448,9 @@ export class WalletService {
 
     }
 
+    if (identity !== this.derivationIdentity) throw new Error('Wallet changed');
+    if (derivationIdentity !== undefined && this.wallet.accounts.length >= 20) throw new Error('Account capacity exceeded');
+    if (this.wallet.accounts.some(a => a.index === index)) throw new Error('Account already added');
     this.wallet.accounts.push(newAccount);
     this.publishWalletState();
 
@@ -1637,8 +1669,9 @@ export class WalletService {
     );
   }
 
-  requestWalletUnlock() {
-    this.wallet.unlockModalRequested$.next(true);
+  requestWalletUnlock(options: WalletUnlockOptions = {}) {
+    const passwordOnly = options.passwordOnly === true;
+    this.wallet.unlockModalRequested$.next(passwordOnly ? { passwordOnly: true } : true);
 
     return new Promise(
       (resolve, reject) => {
@@ -1657,7 +1690,7 @@ export class WalletService {
 
         subscriptionForUnlock =
           this.lifecycle$.subscribe(async lifecycle => {
-            if (lifecycle.kind === 'unlocked' || lifecycle.kind === 'ledger') {
+            if ((lifecycle.kind === 'unlocked' && (!passwordOnly || this.hasPassword())) || (lifecycle.kind === 'ledger' && !passwordOnly)) {
               removeSubscriptions();
 
               const wasUnlocked = true;

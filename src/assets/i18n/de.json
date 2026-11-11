@@ -27,5 +27,47 @@
     "send": "Senden",
     "settings": "Einstellungen",
     "unknown": "Unbekannt"
+  },
+  "derive": {
+    "title": "Konten ableiten",
+    "link": "Konten hinzufügen…",
+    "instructions": "Diese Konten werden aus Ihrer bestehenden Wallet abgeleitet. Wählen Sie aus, welche hinzugefügt werden sollen.",
+    "capacity": "Verbleibende Kapazität: {{count}}",
+    "selected": "Ausgewählt: {{count}}",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "go": "Zu Index wechseln",
+    "invalid": "Geben Sie einen ganzzahligen Index zwischen 0 und {{max}} ein.",
+    "loading": "Wird geladen…",
+    "unavailable": "Nicht verfügbar",
+    "error": "Konten konnten nicht abgeleitet werden. Prüfen Sie gegebenenfalls die Ledger-Verbindung und versuchen Sie es erneut.",
+    "index": "Index",
+    "already": "Bereits hinzugefügt",
+    "balance": "Guthaben",
+    "receivable": "Empfangbar",
+    "raw": "raw",
+    "outcome": "{{added}} Konten hinzugefügt. {{failed}} ausgewählte Konten verbleiben für einen erneuten Versuch.",
+    "add": "Ausgewählte Konten hinzufügen ({{count}})",
+    "back": "Zurück zu Konten",
+    "added": "{{count}} Konten hinzugefügt",
+    "retry": "Erneut versuchen",
+    "help": "Konten aus dem Wallet-Seed ableiten",
+    "breadcrumb": "Hinzufügen",
+    "account": "Konto #{{index}}",
+    "unlock-to-derive": "um Kontoschlüssel und Adressen ableiten zu können."
+  },
+  "wallet-unlock": {
+    "action": "Wallet entsperren",
+    "receive": "Wallet zum Empfangen entsperren",
+    "receive-block": "Entsperren Sie die Wallet, um den Empfangsblock zu signieren und eingehende Nano zu empfangen.",
+    "password-session": "Mit Ihrem Wallet-Passwort sperren und entsperren",
+    "change-settings": "um diese Einstellungen zu ändern."
+  },
+  "accounts": {
+    "edit-accounts": "Konten bearbeiten",
+    "done": "Fertig",
+    "hide-account": "Konto ausblenden",
+    "account-hidden": "Konto ausgeblendet: {{ account }}",
+    "unable-to-hide-account": "Konto konnte nicht ausgeblendet werden: {{ error }}"
   }
 }

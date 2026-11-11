@@ -3,11 +3,15 @@
     class="uk-width-1-1"
     >
 
+    @if (walletAccount) {
+      <app-breadcrumb origin="accounts" [current]="getAccountDisplayLabel()" />
+    }
+
     <ng-template #accountActions>
       @if (walletAccount) {
         <div class="account-actions uk-margin-top" data-testid="accountDetails.transactionActions">
-          <a class="uk-button uk-button-primary" routerLink="/send" [queryParams]="{ account: accountID }">{{ 'general.send' | transloco }}</a>
-          <a class="uk-button uk-button-secondary" routerLink="/receive" [queryParams]="{ account: accountID }">{{ 'general.receive' | transloco }}</a>
+          <a class="uk-button uk-button-primary" routerLink="/send" [queryParams]="{ account: accountID, origin: 'accounts' }">{{ 'general.send' | transloco }}</a>
+          <a class="uk-button uk-button-secondary" routerLink="/receive" [queryParams]="{ account: accountID, origin: 'accounts' }">{{ 'general.receive' | transloco }}</a>
         </div>
       }
     </ng-template>
@@ -67,10 +71,9 @@
           <ng-container *ngTemplateOutlet="accountActions"></ng-container>
         </div>
       }
-      <h2
-        class="uk-heading-divider"
-        [class.hide-on-small-viewports]="walletAccount && (showFullDetailsOnSmallViewports === false)"
-      >{{ walletAccount ? ('account-details.account-details' | transloco) : ('account-details.network-explorer' | transloco) }}</h2>
+      @if (!walletAccount) {
+        <h2 class="uk-heading-divider">{{ 'account-details.network-explorer' | transloco }}</h2>
+      }
       <div
         class="uk-card uk-card-default uk-margin"
         [class.hide-on-small-viewports]="walletAccount && (showFullDetailsOnSmallViewports === false)"
@@ -183,7 +186,7 @@
                               <ul class="uk-iconnav">
                                 @if (repDonationAddress) {
                                   <li>
-                                    <a class="rep-donation-icon" uk-icon="icon: heart;" [title]="'account-details.donate-to-representative' | transloco" uk-tooltip routerLink="/send" [queryParams]="{ to: repDonationAddress }"></a>
+                                    <a class="rep-donation-icon" uk-icon="icon: heart;" [title]="'account-details.donate-to-representative' | transloco" uk-tooltip routerLink="/send" [queryParams]="{ to: repDonationAddress, origin: walletAccount ? 'accounts' : null }"></a>
                                   </li>
                                 }
                                 @if (walletAccount) {
@@ -1254,6 +1257,7 @@
                               class="menu-option"
                               routerLink="/send"
               [queryParams]="{
+                origin: walletAccount ? 'accounts' : null,
                 to: mobileTransactionData.account,
                 amount: util.nano.rawToMnano(mobileTransactionData.amount)
               }"

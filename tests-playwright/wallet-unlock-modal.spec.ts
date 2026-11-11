@@ -114,6 +114,6 @@ test('an account Receive entry point uses unlock while the wallet is locked', as
 
   await page.locator('#unlock-wallet-modal input[type="password"]').fill(e2eWalletPassword);
   await page.getByTestId('wallet-widget-unlock-button').click();
-  await expect(page).toHaveURL(new RegExp(`/receive\\?account=${getE2ETestWallet().accounts[0]}$`));
+  await expect(page).toHaveURL(new RegExp(`/receive\\?account=${getE2ETestWallet().accounts[0]}&origin=accounts$`));
   await expect(page.getByTestId('receive-page-root')).toBeVisible({ timeout: 15000 });
 });

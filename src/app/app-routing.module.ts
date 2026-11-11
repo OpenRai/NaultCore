@@ -1,3 +1,4 @@
+import { DeriveAccountsComponent } from './components/derive-accounts/derive-accounts.component';
 import { NgModule } from "@angular/core";
 import { RouterModule, Routes } from "@angular/router";
 import { WelcomeComponent } from "./welcome/welcome.component";
@@ -28,6 +29,7 @@ import { WalletComponent } from "./components/wallet/wallet.component";
 const routes: Routes = [
   { path: "", component: WelcomeComponent },
   { path: "wallet", component: WalletComponent },
+  { path: "accounts/derive", component: DeriveAccountsComponent },
   { path: "accounts", component: AccountsComponent },
   { path: "account/:account", component: AccountDetailsComponent },
   { path: "address-book", component: AddressBookComponent },

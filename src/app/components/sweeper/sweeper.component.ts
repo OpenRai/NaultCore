@@ -29,6 +29,7 @@ const SWEEP_MAX_PENDING = 100; // max pending blocks to process per run
 
 export class SweeperComponent implements OnInit {
   private walletService = inject(WalletService);
+  get walletLocked(): boolean { return this.walletService.isLocked(); }
   private notificationService = inject(NotificationService);
   private appSettings = inject(AppSettingsService);
   modal = inject(ModalService);

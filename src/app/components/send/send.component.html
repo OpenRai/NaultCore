@@ -1,6 +1,6 @@
 <div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.send.pageRoot">
   <div class="uk-width-1-1">
-    <h2 class="uk-heading-divider">{{ (sendDestinationType === 'own-address') ? 'Transfer Nano Between Own Accounts' : 'Send Nano' }}</h2>
+    <app-breadcrumb [current]="'general.send' | transloco" />
 
     @if (activePanel === 'send' && choosingSource) {
       <app-transaction-account-picker title="Choose the account to send from" [accounts]="spendableAccounts"

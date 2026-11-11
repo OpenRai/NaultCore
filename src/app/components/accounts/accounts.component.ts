@@ -48,8 +48,8 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   accounts = this.walletService.walletState.accounts as any;
   isLedgerWallet = this.walletService.isLedgerWallet();
   isSingleKeyWallet = this.walletService.isSingleKeyWallet();
-  viewAdvanced = false;
-  newAccountIndex = null;
+  editingAccounts = false;
+  addedAnnouncement = "";
 
   // When we change the accounts, redetect changable reps (Debounce by 5 seconds)
   accountsChanged$ = new Subject();
@@ -104,6 +104,23 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    const ids: string[] = history.state?.addedAccounts || [];
+    if (ids.length) {
+      history.replaceState({ ...history.state, addedAccounts: [] }, '');
+      setTimeout(() => {
+        const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-account-id]'))
+          .filter(row => ids.includes(row.dataset.accountId));
+        rows.forEach(row => row.classList.add('account-added'));
+        if (rows[0]) {
+          rows[0].tabIndex = -1;
+          rows[0].scrollIntoView({ block: 'center' });
+          rows[0].focus({ preventScroll: true });
+        }
+        this.addedAnnouncement = this.translocoService.translate('derive.added', { count: ids.length });
+        setTimeout(() => rows.forEach(row => row.classList.remove('account-added')), 5000);
+      });
+    }
+
     const UIkit = window['UIkit'];
 
     // Initialize Generate NanoNym modal
@@ -121,47 +138,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async createAccount() {
-    if (this.walletService.isLocked()) {
-      const wasUnlocked = await this.walletService.requestWalletUnlock();
-
-      if (wasUnlocked === false) {
-        return;
-      }
-    }
-
-    if ((this.isLedgerWallet) && (this.ledger.ledger.status !== LedgerStatus.READY)) {
-      return this.notificationService.sendWarning(this.translocoService.translate('accounts.ledger-device-must-be-ready'));
-    }
-    if (!this.walletService.isConfigured()) return this.notificationService.sendError(this.translocoService.translate('accounts.wallet-is-not-configured'));
-    if (this.walletService.walletState.accounts.length >= 20) return this.notificationService.sendWarning(this.translocoService.translate('accounts.you-can-only-track-up-to-x-accounts-at-a-time', { accounts: 20 }));
-    // Advanced view, manual account index?
-    let accountIndex = null;
-    if (this.viewAdvanced && this.newAccountIndex != null) {
-      const index = parseInt(this.newAccountIndex, 10);
-      if (index < 0) return this.notificationService.sendWarning(this.translocoService.translate('accounts.invalid-account-index-must-be-positive-number'));
-      if (index > this.util.account.ACCOUNT_INDEX_MAX) {
-        return this.notificationService.sendWarning(
-          `Account index must be between 0 and ${this.util.account.ACCOUNT_INDEX_MAX}`
-        );
-      }
-      const existingAccount = this.walletService.walletState.accounts.find(a => a.index === index);
-      if (existingAccount) {
-        return this.notificationService.sendWarning(
-          this.translocoService.translate('accounts.the-account-at-this-index-is-already-loaded')
-        );
-      }
-      accountIndex = index;
-    }
-    try {
-      const newAccount = await this.walletService.addWalletAccount(accountIndex);
-      this.notificationService.sendSuccess(
-        this.translocoService.translate('accounts.successfully-created-new-account', { account: newAccount.id })
-      );
-      this.newAccountIndex = null;
-      this.accountsChanged$.next(newAccount.id);
-    } catch (err) {
-      this.notificationService.sendError(this.translocoService.translate('accounts.unable-to-add-new-account', { error: err.message }));
-    }
+    await this.router.navigate(['/accounts/derive']);
   }
 
   sortAccounts() {
@@ -190,7 +167,7 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
       const unlocked = await this.walletService.requestWalletUnlock();
       if (!unlocked) return;
     }
-    this.router.navigate(['/receive'], { queryParams: { account: accountId } });
+    this.router.navigate(['/receive'], { queryParams: { account: accountId, origin: 'accounts' } });
   }
 
   navigateToNanoNym(account: any) {
@@ -225,11 +202,11 @@ export class AccountsComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       await this.walletService.removeWalletAccount(account.id);
       this.notificationService.sendSuccess(
-        this.translocoService.translate('accounts.successfully-removed-account', { account: account.id })
+        this.translocoService.translate('accounts.account-hidden', { account: account.id })
       );
       this.accountsChanged$.next(account.id);
     } catch (err) {
-      this.notificationService.sendError(this.translocoService.translate('accounts.unable-to-delete-account', { error: err.message }));
+      this.notificationService.sendError(this.translocoService.translate('accounts.unable-to-hide-account', { error: err.message }));
     }
   }
 

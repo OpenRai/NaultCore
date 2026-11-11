@@ -35,13 +35,13 @@ test('uses Wallet accounts as the first menu entry and the balance card as the d
   await expect(seededPage).toHaveURL(/\/wallet$/);
 });
 
-function historyRow(hash: string, account: string, timestamp: number): HistoryRow {
+function historyRow(hash: string, timestamp: number): HistoryRow {
   return {
     hash,
     subtype: 'receive',
     amount: '1000000000000000000000000',
-    account: 'nano_1counterparty',
-    link_as_account: account,
+    account: 'nano_377ek7uu895gbkyss6sf75ip8gddq84w3no7ur7emtn6yg65po9krfib66ni',
+    link_as_account: 'nano_377ek7uu895gbkyss6sf75ip8gddq84w3no7ur7emtn6yg65po9krfib66ni',
     local_timestamp: String(timestamp),
     height: String(timestamp),
   };
@@ -124,9 +124,9 @@ test('keeps identity card fiat visible unless currency is None and fits dashboar
   }
 });
 
-test('shows cached activity while fetching, then refreshes it after wallet reconciliation', async ({ seededPage, testWallet }) => {
-  const cachedRow = historyRow('cached-history-hash', testWallet.accounts[0], 1700000000);
-  const newlyRegisteredRow = historyRow('newly-registered-history-hash', testWallet.accounts[0], 1700000001);
+test('shows cached activity while fetching, then refreshes it after wallet reconciliation', async ({ seededPage, testWallet }, testInfo) => {
+  const cachedRow = historyRow('A'.repeat(64), 1700000000);
+  const newlyRegisteredRow = historyRow('newly-registered-history-hash', 1700000001);
 
   await seededPage.evaluate(async ({ accounts, row }) => {
     await new Promise<void>((resolve, reject) => {
@@ -172,6 +172,26 @@ test('shows cached activity while fetching, then refreshes it after wallet recon
   await expect(seededPage.getByTestId('wallet-page-root')).toBeVisible();
   const cachedLink = seededPage.getByTestId('transaction-table-hash-link').filter({ hasText: cachedRow.hash });
   await expect(cachedLink).toBeVisible();
+  const activityRow = cachedLink.locator('xpath=ancestor::tr');
+  await expect(activityRow.locator('.tx-badge')).toHaveText('Received');
+  await expect(activityRow.locator('.tx-external')).toHaveText('External');
+  await expect(activityRow.locator('.tx-detail-primary')).toHaveCSS('font-weight', '400');
+  await expect(activityRow.locator('time')).toHaveAttribute('datetime', new Date(1700000000 * 1000).toISOString());
+  const cells = await activityRow.locator('td').evaluateAll(elements => elements.map(element => element.className));
+  expect(cells).toEqual(['col-status', 'col-amount', 'col-date', 'col-detail']);
+  await activityRow.screenshot({ path: testInfo.outputPath('history-desktop.png'), animations: 'disabled' });
+  for (const width of [320, 390, 639, 640, 939, 940, 959, 960, 1199, 1200, 1599, 1600]) {
+    await seededPage.setViewportSize({ width, height: 844 });
+    await expect(activityRow.locator('.col-amount')).toBeVisible();
+    await expect(activityRow.locator('.tx-local-account')).toBeVisible();
+    await expect(activityRow).toHaveCSS('display', width < 1200 ? 'grid' : 'table-row');
+    const wrapper = seededPage.locator('.tx-table-wrapper');
+    expect(await wrapper.evaluate(element => element.scrollWidth <= element.clientWidth), `table fits at ${width}px`).toBe(true);
+    expect(await seededPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `page fits at ${width}px`).toBe(true);
+  }
+  await seededPage.setViewportSize({ width: 390, height: 844 });
+  await activityRow.screenshot({ path: testInfo.outputPath('history-mobile.png'), animations: 'disabled' });
+
   await expect(seededPage.getByTestId('transaction-table-loading')).toBeHidden();
 
   releaseFirstHistoryRequest();
@@ -196,7 +216,7 @@ test('selects the actual newly added account when opening Receive from its accou
   expect(newAccountId).toBeTruthy();
 
   await newAccountRow.getByTestId('receive-account-button').click();
-  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${newAccountId}$`));
+  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${newAccountId}&origin=accounts$`));
   await expect(seededPage.getByTestId('transaction.accountPicker')).toHaveCount(0);
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(newAccountId!);
 });

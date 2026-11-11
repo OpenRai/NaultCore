@@ -1,4 +1,8 @@
 {
+  "navigation": {
+    "breadcrumb": "Breadcrumb",
+    "dashboard": "Dashboard"
+  },
   "account-details": {
     "account-details": "Account Details",
     "address-book-name-leave-blank-to-remove": "Address Book Name (Leave blank to remove)",
@@ -70,7 +74,11 @@
       "1": "You don't have any accounts yet,",
       "2-link": "click here to create one",
       "3": "."
-    }
+    },
+    "edit-accounts": "Edit accounts",
+    "done": "Done",
+    "account-hidden": "Account hidden: {{ account }}",
+    "unable-to-hide-account": "Unable to hide account: {{ error }}"
   },
   "address-book": {
     "a-notification-will-be-shown-whenever-the-address-has-a-new": "A notification will be shown whenever the address has a new incoming transaction, sends or receives funds, or changes its representative.",
@@ -214,7 +222,6 @@
     "leave-blank-to-use-a-recommended-one": "Leave blank to use a recommended one",
     "lock-after-inactivity": "Lock After Inactivity",
     "play-a-sound-for-confirmed-sends-receives-and": "Play sounds for confirmed transactions and wallet actions",
-    "play-a-sound-for-confirmed-sends-receives-and": "Play sounds for confirmed transactions and wallet actions",
     "min-receive-amount": "Min. Receive Amount",
     "minimum-nano-amount-to-receive-transactions-below-this": "Minimum XNO amount to receive. Transactions below this amount will be ignored by the wallet both for receiving and in the transactions list.  Set to blank or 0 to accept all transactions.",
     "multiplier-options": {
@@ -256,7 +263,7 @@
     "server-configuration": "Server Configuration",
     "sound": "Sound",
     "sound-description": "Play a short sound when a send or receive is confirmed, when something is copied, and when a hardware wallet is waiting for you. Validation messages and background status updates stay silent.",
-    "server-settings": "Server Settings",
+    "server-settings": "Nano RPC Settings",
     "server-settings-successfully-updated": "Server settings successfully updated!",
     "storage-options": {
       "browser-local-storage": "Browser Local Storage",
@@ -295,7 +302,6 @@
     "saved": "Saved",
     "server-connected-success": "Connected to {{ server }}. Server is now active.",
     "server-connection-failed": "Could not connect to this server. Your current server is unchanged.",
-    "server-settings": "Nano RPC Settings",
     "test-and-use": "Test & Use",
     "testing": "Testing...",
     "update-display-settings": "Update Display Settings",
@@ -417,6 +423,10 @@
     "you-will-not-be-able-to-recover-the-funds-without-a-backup": "YOU WILL NOT BE ABLE TO RECOVER THE FUNDS without a backup of your currently configured wallet."
   },
   "transaction-table": {
+    "external": "External",
+    "on": "On",
+    "from": "From",
+    "to": "to",
     "caption": "Recent transactions",
     "status": "Status",
     "details": "Details",
@@ -517,5 +527,40 @@
     "spend-from": "Spend from",
     "recent-activity": "Recent activity",
     "manage-accounts": "Manage accounts"
+  },
+  "derive": {
+    "title": "Derive accounts",
+    "link": "Add accounts…",
+    "instructions": "These accounts are derived from your existing wallet. Select which ones to add.",
+    "capacity": "Remaining capacity: {{count}}",
+    "selected": "Selected: {{count}}",
+    "previous": "Previous",
+    "next": "Next",
+    "go": "Go to index",
+    "invalid": "Enter a whole index between 0 and {{max}}.",
+    "loading": "Loading…",
+    "unavailable": "Unavailable",
+    "error": "Unable to derive accounts. Check your Ledger connection if applicable, then try again.",
+    "index": "Index",
+    "already": "Already added",
+    "balance": "Balance",
+    "receivable": "Receivable",
+    "raw": "raw",
+    "outcome": "Added {{added}} accounts. {{failed}} selected accounts remain to retry.",
+    "add": "Add selected accounts ({{count}})",
+    "back": "Return to Accounts",
+    "added": "Added {{count}} accounts",
+    "retry": "Try again",
+    "help": "Derive accounts from wallet seed",
+    "breadcrumb": "Add",
+    "account": "Account #{{index}}",
+    "unlock-to-derive": "to enable deriving account keys and addresses."
+  },
+  "wallet-unlock": {
+    "action": "Unlock your wallet",
+    "receive": "Unlock your wallet to receive",
+    "receive-block": "Unlock to sign the receive block and claim incoming Nano.",
+    "password-session": "Lock and unlock with your wallet password",
+    "change-settings": "to change these settings."
   }
 }

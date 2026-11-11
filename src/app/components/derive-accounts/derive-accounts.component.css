@@ -1,0 +1,4 @@
+.derive-account-details { min-width: 0; }
+.derive-address { overflow-wrap: anywhere; }
+.derive-account .uk-checkbox { flex-shrink: 0; }
+.uk-text-muted app-nano-amount { opacity: .55; }

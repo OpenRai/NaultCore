@@ -1,3 +1,4 @@
+import { WalletUnlockLinkComponent } from '../wallet-unlock-link/wallet-unlock-link.component';
 import { NanoAccountIdComponent } from '../helpers/nano-account-id/nano-account-id.component';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
@@ -103,7 +104,7 @@ function toTransaction(row: any, accountId: string, label: string) {
  */
 @NgModule({
   declarations: [WalletComponent, TransactionTableComponent, NanoAmountComponent, FiatPipeStub],
-  imports: [NanoAccountIdComponent, CommonModule, FormsModule, RouterModule.forRoot([]), TranslocoRootModule, ClipboardModule],
+  imports: [WalletUnlockLinkComponent, NanoAccountIdComponent, CommonModule, FormsModule, RouterModule.forRoot([]), TranslocoRootModule, ClipboardModule],
 })
 class WalletTestModule {}
 
@@ -212,12 +213,12 @@ describe('WalletComponent', () => {
     expect(fixture.nativeElement.querySelector('.eyebrow')).toBeFalsy();
   });
 
-  it('offers ordinary transaction page links without an account selector or forced context', () => {
+  it('offers transaction page links with Dashboard origin and no forced account', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-testid="wallet-account-selector"]')).toBeNull();
-    expect(el.querySelector('[data-testid="wallet-send-button"]')?.getAttribute('href')).toBe('/send');
-    expect(el.querySelector('[data-testid="wallet-receive-button"]')?.getAttribute('href')).toBe('/receive');
+    expect(el.querySelector('[data-testid="wallet-send-button"]')?.getAttribute('href')).toBe('/send?origin=dashboard');
+    expect(el.querySelector('[data-testid="wallet-receive-button"]')?.getAttribute('href')).toBe('/receive?origin=dashboard');
     expect(wallet.requestWalletUnlock).not.toHaveBeenCalled();
   });
 

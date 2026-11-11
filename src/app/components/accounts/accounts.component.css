@@ -78,3 +78,5 @@ th.hidden-column, td.hidden-column {
 .clickable-row:hover {
 	background-color: rgba(0, 123, 255, 0.08);
 }
+
+.account-added { background: var(--account-added-background, #d5efcf); color: #162b16; }

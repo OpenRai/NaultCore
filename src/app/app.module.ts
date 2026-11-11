@@ -1,3 +1,6 @@
+import { WalletUnlockLinkComponent } from './components/wallet-unlock-link/wallet-unlock-link.component';
+import { DeriveAccountsComponent } from './components/derive-accounts/derive-accounts.component';
+import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
 import { AccountSummaryComponent } from './components/transaction-account/account-summary.component';
 import { TransactionAccountPickerComponent } from './components/transaction-account/transaction-account-picker.component';
 import { BrowserModule } from '@angular/platform-browser';
@@ -92,6 +95,7 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     RaiPipe,
     SqueezePipe,
     AccountsComponent,
+    DeriveAccountsComponent,
     SendComponent,
     AddressBookComponent,
     ReceiveComponent,
@@ -127,6 +131,8 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NanoAmountComponent
   ],
   imports: [
+    WalletUnlockLinkComponent,
+    BreadcrumbComponent,
     NanoAccountIdComponent,
     NanoIdenticonComponent,
     AccountSummaryComponent,

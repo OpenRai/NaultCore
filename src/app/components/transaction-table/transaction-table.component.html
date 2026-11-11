@@ -140,8 +140,7 @@
       </button>
     </div>
   } @else {
-    <!-- Container queries, not media queries: this adapts to the width it is
-         actually given, whether that is a full page or a narrow panel. -->
+    <!-- Rows stack below the shared desktop breakpoint. -->
     <div class="tx-table-wrapper">
       <table class="tx-table-grid">
         <caption class="uk-hidden">{{ labels.caption }}</caption>
@@ -150,9 +149,9 @@
             <th scope="col" class="col-status">
               <span class="uk-hidden">{{ labels.status }}</span>
             </th>
-            <th scope="col" class="col-detail">{{ labels.details }}</th>
             <th scope="col" class="col-amount">{{ labels.amount }}</th>
             <th scope="col" class="col-date">{{ labels.date }}</th>
+            <th scope="col" class="col-detail">{{ labels.details }}</th>
           </tr>
         </thead>
         <tbody>
@@ -177,9 +176,28 @@
                 }
               </td>
 
+              <td class="col-amount">
+                <span
+                  class="tx-amount"
+                  [class.tx-amount-in]="tx.direction === 'received'"
+                  [class.tx-amount-out]="tx.direction === 'sent'"
+                >
+                  {{ tx.direction === 'received' ? '+' : '−' }}<app-nano-amount [raw]="tx.amount" [detailsRoute]="'/transaction/' + tx.hash" context="preview"></app-nano-amount>
+                </span>
+              </td>
+
+              <td class="col-date"><time [attr.datetime]="isoDate(tx.timestamp)" [title]="exactDate(tx.timestamp)">{{ formatDate(tx.timestamp) }}</time></td>
               <td class="col-detail">
                 <div class="tx-detail-primary">
-                  @if (tx.counterpartyLabel) {
+                  <span>{{ tx.direction === 'received' ? labels.on : labels.from }}</span>
+                  <a class="tx-local-account" [routerLink]="'/account/' + tx.accountId">{{ tx.accountLabel }}</a>
+                  <span>{{ tx.direction === 'received' ? labels.from : labels.to }}</span>
+                  @if (tx.counterparty && !isOwned(tx.counterparty)) {
+                    <span class="tx-external">{{ labels.external }}</span>
+                  }
+                  @if (tx.counterparty && isOwned(tx.counterparty)) {
+                    <a class="tx-counterparty-label" [routerLink]="'/account/' + tx.counterparty">{{ accountLabel(tx.counterparty) }}</a>
+                  } @else if (tx.counterpartyLabel) {
                     <a class="tx-counterparty-label" [routerLink]="'/account/' + tx.counterparty">{{ tx.counterpartyLabel }}</a>
                   } @else if (tx.counterparty) {
                     <a
@@ -193,12 +211,6 @@
                   }
                 </div>
                 <div class="tx-detail-secondary">
-                  <!-- Which of our accounts moved. Hidden on a single-account
-                       view where it would only ever say the same thing. -->
-                  @if (showAccountFilter) {
-                    <a class="tx-local-account" [routerLink]="'/account/' + tx.accountId">{{ tx.accountLabel }}</a>
-                    <span class="tx-dot" aria-hidden="true">·</span>
-                  }
                   <a
                     class="tx-hash nano-address-monospace"
                     [routerLink]="'/transaction/' + tx.hash"
@@ -207,18 +219,6 @@
                   >{{ tx.hash }}</a>
                 </div>
               </td>
-
-              <td class="col-amount">
-                <span
-                  class="tx-amount"
-                  [class.tx-amount-in]="tx.direction === 'received'"
-                  [class.tx-amount-out]="tx.direction === 'sent'"
-                >
-                  {{ tx.direction === 'received' ? '+' : '−' }}<app-nano-amount [raw]="tx.amount" [detailsRoute]="'/transaction/' + tx.hash" context="preview"></app-nano-amount>
-                </span>
-              </td>
-
-              <td class="col-date">{{ formatDate(tx.timestamp) }}</td>
             </tr>
           }
         </tbody>

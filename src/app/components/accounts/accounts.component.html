@@ -1,22 +1,20 @@
+<p role="status" aria-live="polite">{{ addedAnnouncement }}</p>
 <div class="uk-animation-slide-left-small" uk-grid [attr.data-testid]="testIds.accounts.pageRoot">
   <div class="uk-width-1-1">
 
     <div class="uk-margin-bottom" uk-grid>
       <div class="uk-width-expand@s uk-width-1-1">
         <div class="uk-text-truncate">
-          <a (click)="viewAdvanced = !viewAdvanced" class="uk-text-truncate" style="font-size: var(--text-xs); margin-left: 25px;">{{ viewAdvanced ? ('accounts.simple-mode' | transloco | uppercase) : ('accounts.advanced-mode' | transloco | uppercase) }}</a>
+          <button type="button" (click)="editingAccounts = !editingAccounts" [attr.aria-pressed]="editingAccounts" class="uk-button uk-button-text uk-text-truncate">{{ (editingAccounts ? 'accounts.done' : 'accounts.edit-accounts') | transloco }}</button>
         </div>
       </div>
       <div class="uk-width-auto@m uk-width-1-1 uk-text-right">
         <div class="uk-grid-small uk-child-width-expand" uk-grid>
           <div>
-            @if (viewAdvanced) {
-              <input type="number" class="uk-input uk-form-width-small uk-width-1-1@m" [(ngModel)]="newAccountIndex" placeholder="Account #">
-            }
           </div>
           <div class="uk-width-auto@m">
-            <button class="uk-button uk-button-secondary uk-width-1-1@m" (click)="createAccount()" [attr.data-testid]="testIds.accounts.createAccountButton">
-              {{ 'accounts.add-new-account' | transloco }}
+            <button class="uk-button uk-button-secondary uk-width-1-1@m" (click)="createAccount()" [disabled]="isSingleKeyWallet" [attr.data-testid]="testIds.accounts.createAccountButton">
+              {{ 'derive.link' | transloco }}
             </button>
           </div>
         </div>
@@ -44,7 +42,7 @@
             'uk-width-1-5@m': true,
             'uk-width-1-4': true,
             'uk-text-right': true,
-            'hidden-column': ( isSingleKeyWallet || !viewAdvanced )
+            'hidden-column': ( isSingleKeyWallet || !editingAccounts )
           }"></th>
           </tr>
         </thead>
@@ -75,7 +73,7 @@
               </ng-template>
               <ng-template #accountActions>
                 <!-- Icon for regular view -->
-                <a (click)="deleteAccount(account)" class="icon-delete-account uk-text-danger" [title]="'accounts.hide-account' | transloco" uk-tooltip><span uk-icon="icon: close;"></span></a>
+                <button type="button" (click)="deleteAccount(account)" class="icon-delete-account uk-button uk-button-text uk-text-danger" [title]="'accounts.hide-account' | transloco" [attr.aria-label]="'accounts.hide-account' | transloco" uk-tooltip><span uk-icon="icon: close;" aria-hidden="true"></span></button>
                 <!-- Button for compact view -->
                 <button
                   (click)="deleteAccount(account)"
@@ -97,7 +95,7 @@
                         }
                         <div class="uk-width-expand">
                           <div class="uk-width-1-1">
-                            @if (viewAdvanced) {
+                            @if (editingAccounts) {
                               <div class="account-index"><span>#</span>{{ account.index }}</div>
                             }
                             <div class="account-label">{{ getAccountLabel(account) }}</div>
@@ -125,7 +123,7 @@
                     </a>
                     <div class="nano-address-actions uk-width-auto copy-container">
                       <ul class="uk-iconnav copy-icons">
-                        <li><a [routerLink]="walletLocked ? null : ['/receive']" [queryParams]="{ account: account.id }" (click)="receiveToAccount(account.id, $event)" uk-icon="icon: arrow-up" title="Receive to this account" uk-tooltip [attr.data-testid]="testIds.accounts.receiveAccountButton"></a></li>
+                        <li><a [routerLink]="walletLocked ? null : ['/receive']" [queryParams]="{ account: account.id, origin: 'accounts' }" (click)="receiveToAccount(account.id, $event)" uk-icon="icon: arrow-up" title="Receive to this account" uk-tooltip [attr.data-testid]="testIds.accounts.receiveAccountButton"></a></li>
                         <li><a ngxClipboard [cbContent]="account.id" (cbOnSuccess)="copied()" uk-icon="icon: copy" [title]="'general.copy' | transloco" uk-tooltip [attr.data-testid]="testIds.accounts.copyAccountIdButton"></a></li>
                         @if (isLedgerWallet) {
                           <li><a uk-icon="icon: commenting" [title]="'accounts.confirm-address-on-ledger' | transloco" (click)="showLedgerAddress(account)" uk-tooltip></a></li>
@@ -136,7 +134,7 @@
                   <div class="compact-account-amounts">
                     <ng-template [ngTemplateOutlet]="accountAmounts"></ng-template>
                   </div>
-                  <div class="compact-account-actions" [class.hidden-section]="( isSingleKeyWallet || !viewAdvanced )">
+                  <div class="compact-account-actions" [class.hidden-section]="( isSingleKeyWallet || !editingAccounts )">
                     <ng-template [ngTemplateOutlet]="accountActions"></ng-template>
                   </div>
                 </td>
@@ -146,7 +144,7 @@
           <td [class]="{
             'account-actions-column': true,
             'uk-text-right': true,
-            'hidden-column': ( isSingleKeyWallet || !viewAdvanced )
+            'hidden-column': ( isSingleKeyWallet || !editingAccounts )
           }">
                   <div class="uk-float-right">
                     <ng-template [ngTemplateOutlet]="accountActions"></ng-template>
@@ -156,7 +154,7 @@
             }
             @if (!regularAccounts.length) {
               <tr>
-                <td colspan="4" style="text-align: center;">{{ 'accounts.you-dont-have-any-accounts-yet.1' | transloco }} <a (click)="createAccount()">{{ 'accounts.you-dont-have-any-accounts-yet.2-link' | transloco }}</a> {{ 'accounts.you-dont-have-any-accounts-yet.3' | transloco }}</td>
+                <td colspan="4" style="text-align: center;">{{ 'accounts.you-dont-have-any-accounts-yet.1' | transloco }} <a routerLink="/accounts/derive">{{ 'derive.link' | transloco }}</a> {{ 'accounts.you-dont-have-any-accounts-yet.3' | transloco }}</td>
               </tr>
             }
           </tbody>
@@ -165,7 +163,7 @@
           <table class="uk-table uk-table-striped uk-table-small">
             <thead>
               <tr class="uk-alert uk-alert-primary missing-accounts-hint">
-                <td colspan="4" style="text-align: center;"><span uk-icon="icon: info"></span> {{ 'accounts.missing-accounts.1' | transloco }} <a class="hint-action" (click)="createAccount()">{{ 'accounts.missing-accounts.2-link' | transloco }}</a> {{ 'accounts.missing-accounts.3' | transloco }}</td>
+                <td colspan="4" style="text-align: center;"><span uk-icon="icon: info"></span> {{ 'accounts.missing-accounts.1' | transloco }} <a class="hint-action" routerLink="/accounts/derive">{{ 'derive.link' | transloco }}</a> {{ 'accounts.missing-accounts.3' | transloco }}</td>
               </tr>
             </thead>
           </table>

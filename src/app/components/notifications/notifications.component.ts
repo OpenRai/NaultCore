@@ -32,6 +32,7 @@ export class NotificationsComponent implements OnInit {
       const newNotification = {
         type: notification.type,
         message: notification.message,
+        action: notification.options.action,
         cssClass: this.getCssClass(notification.type),
         identifier: identifier,
         length: length,

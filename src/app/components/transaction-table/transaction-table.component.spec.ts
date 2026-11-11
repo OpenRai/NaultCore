@@ -60,6 +60,7 @@ describe('TransactionTableComponent', () => {
         {
           provide: TranslocoService,
           useValue: {
+            getActiveLang: () => 'en',
             translate: (key: string, params?: any) =>
               params?.time ? `${key}:${params.time}` : params ? `${key}:${JSON.stringify(params)}` : key,
           },
@@ -91,6 +92,42 @@ describe('TransactionTableComponent', () => {
     expect(renderer.querySelector('.nano-address-prefix').textContent).toBe(address.slice(0, 10));
     expect(renderer.querySelector('.nano-address-suffix').textContent).toBe(address.slice(-5));
     expect(link.getAttribute('href')).toBe(`/account/${address}`);
+  });
+
+  it('leads with action, amount and time before account identifiers', () => {
+    const cells = Array.from(fixture.nativeElement.querySelectorAll('tbody tr:first-child td')) as HTMLElement[];
+    expect(cells.map(cell => cell.className)).toEqual(['col-status', 'col-amount', 'col-date', 'col-detail']);
+    expect(cells[1].textContent).toContain('+');
+    const time = cells[2].querySelector('time');
+    expect(time.getAttribute('datetime')).toBe(new Date(1600000000 * 1000).toISOString());
+    expect(time.title).toBeTruthy();
+    expect(time.textContent).toContain('ago');
+    expect(cells[3].querySelector('.tx-local-account').textContent).toBe('Primary');
+  });
+
+  it('marks named external accounts explicitly, without treating an address-book name as ownership', () => {
+    fixture.componentRef.setInput('accounts', [{ id: 'nano_local', label: 'Primary' }]);
+    fixture.componentRef.setInput('transactions', [makeTransaction({ counterpartyLabel: 'Alice' })]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tx-external').textContent).toBe('transaction-table.external');
+    expect(fixture.nativeElement.querySelector('.tx-counterparty-label').textContent).toBe('Alice');
+    fixture.componentRef.setInput('accounts', [
+      { id: 'nano_local', label: 'Primary' }, { id: 'nano_remote', label: 'Savings' },
+    ]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tx-external')).toBeNull();
+  });
+
+  it('distinguishes pending funds and preserves transaction drill-in and hash search', () => {
+    fixture.componentRef.setInput('transactions', [makeTransaction({ status: 'pending', timestamp: null })]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.tx-badge-pending').textContent).toBe('transaction-table.pending');
+    expect(fixture.nativeElement.querySelector('time').hasAttribute('datetime')).toBe(false);
+    expect(fixture.nativeElement.querySelector('time').textContent).toBe('transaction-table.awaiting-receive');
+    expect(byTestId('transaction-table-hash-link').getAttribute('href')).toBe('/transaction/hash_a');
+    component.setFilter({ search: 'hash_a' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 
   it('collapses the filters by default and keeps the summary and table visible', () => {

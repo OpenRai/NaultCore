@@ -42,7 +42,7 @@ test('opens an account and shows its account details', async ({ seededPage, test
   await seededPage.goto('/accounts');
   await unlockWalletThroughBridge(seededPage);
   await seededPage.locator(`[data-testid="accounts-row"][data-account-id="${testWallet.accounts[0]}"]`).getByTestId('receive-account-button').click();
-  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[0]}$`));
+  await expect(seededPage).toHaveURL(new RegExp(`/receive\\?account=${testWallet.accounts[0]}&origin=accounts$`));
 });
 
 test('starts global Send and Receive with an explicit account choice', async ({ seededPage, testWallet }) => {
@@ -50,7 +50,7 @@ test('starts global Send and Receive with an explicit account choice', async ({ 
   await unlockWalletThroughBridge(seededPage);
   await expect(seededPage.getByTestId('wallet-account-selector')).toHaveCount(0);
   await seededPage.getByTestId('wallet-send-button').click();
-  await expect(seededPage).toHaveURL(/\/send$/);
+  await expect(seededPage).toHaveURL(/\/send\?origin=dashboard$/);
   await expect(seededPage.getByTestId('transaction.accountPicker')).toBeVisible();
   await seededPage.locator(`button[data-account-id="${testWallet.accounts[1]}"]`).click();
   await expect(seededPage.getByTestId('send.sourceSummary')).toContainText(testWallet.accounts[1]);
@@ -58,7 +58,7 @@ test('starts global Send and Receive with an explicit account choice', async ({ 
   await seededPage.goto('/wallet');
   await unlockWalletThroughBridge(seededPage);
   await seededPage.getByTestId('wallet-receive-button').click();
-  await expect(seededPage).toHaveURL(/\/receive$/);
+  await expect(seededPage).toHaveURL(/\/receive\?origin=dashboard$/);
   await seededPage.locator(`button[data-account-id="${testWallet.accounts[1]}"]`).click();
   await expect(seededPage.getByTestId('receive-address-value')).toContainText(testWallet.accounts[1]);
 });

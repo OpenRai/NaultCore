@@ -23,7 +23,7 @@ import { TranslocoService } from '@jsverse/transloco';
     </nav>
   `,
   styles: [`
-    :host { display: block; margin-block-end: .75rem; font-size: var(--text-lg); line-height: 1.3; }
+    :host { display: block; margin-block-end: .75rem; font-family: 'Montserrat', Arial, Helvetica, sans-serif; font-size: var(--text-lg); line-height: 1.3; }
     ol { display: flex; align-items: baseline; gap: .5rem; list-style: none; margin: 0; padding: 0; }
     li { min-width: 0; }
     li:first-child { flex-shrink: 0; }

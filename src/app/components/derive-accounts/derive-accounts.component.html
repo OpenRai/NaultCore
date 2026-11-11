@@ -10,31 +10,37 @@
         <div class="uk-width-auto"><button class="uk-button uk-button-default" [disabled]="busy || wallet.isLocked()">{{ t('go') }}</button></div>
       </div>
     </form>
-    <p id="derive-index-error" *ngIf="invalid" class="uk-text-danger" role="alert">{{ t('invalid', {max: max}) }}</p>
-    <p *ngIf="loading" role="status">{{ t('loading') }}</p>
-    <p *ngIf="wallet.isLocked()" role="status">
-      <app-wallet-unlock-link /> {{ t('unlock-to-derive') }}
-    </p>
-    <p *ngIf="error && !wallet.isLocked()" class="uk-text-warning" role="alert">{{ t('error') }}</p>
-    <button class="uk-button uk-button-default" *ngIf="error && !wallet.isLocked()" (click)="ngOnInit()" [disabled]="busy || loading">{{ t('retry') }}</button>
+    @if (invalid) { <p id="derive-index-error" class="uk-text-danger" role="alert">{{ t('invalid', {max: max}) }}</p> }
+    @if (loading) { <p role="status">{{ t('loading') }}</p> }
+    @if (wallet.isLocked()) {
+      <p role="status"><app-wallet-unlock-link /> {{ t('unlock-to-derive') }}</p>
+    }
+    @if (error && !wallet.isLocked()) {
+      <p class="uk-text-warning" role="alert">{{ t('error') }}</p>
+      <button class="uk-button uk-button-default" (click)="ngOnInit()" [disabled]="busy || loading">{{ t('retry') }}</button>
+    }
     <ul class="uk-list uk-list-divider uk-margin">
-      <li *ngFor="let row of rows" [class.uk-text-muted]="tracked(row.index)" [attr.data-account-index]="row.index">
+      @for (row of rows; track row.index) {
+      <li [class.uk-text-muted]="tracked(row.index)" [attr.data-account-index]="row.index">
         <label class="derive-account uk-flex uk-flex-middle uk-padding-small">
           <span class="derive-account-details uk-width-expand">
             <span class="uk-text-bold uk-display-block">{{ accountLabel(row) }}</span>
             <span class="derive-address uk-display-block uk-text-small">{{ row.id }}</span>
             <span class="uk-display-block uk-text-small uk-margin-small-top">
               {{ t('balance') }}:
-              <ng-container *ngIf="!balanceLoading && row.balance !== undefined; else balanceStatus"><app-nano-amount [raw]="row.balance" context="preview" /></ng-container>
-              <ng-template #balanceStatus>{{ balanceLoading ? t('loading') : t('unavailable') }}</ng-template>
+              @if (!balanceLoading && row.balance !== undefined) {
+                <app-nano-amount [raw]="row.balance" context="preview" />
+              } @else { {{ balanceLoading ? t('loading') : t('unavailable') }} }
               · {{ t('receivable') }}:
-              <ng-container *ngIf="!balanceLoading && row.pending !== undefined; else pendingStatus"><app-nano-amount [raw]="row.pending" context="preview" /></ng-container>
-              <ng-template #pendingStatus>{{ balanceLoading ? t('loading') : t('unavailable') }}</ng-template>
+              @if (!balanceLoading && row.pending !== undefined) {
+                <app-nano-amount [raw]="row.pending" context="preview" />
+              } @else { {{ balanceLoading ? t('loading') : t('unavailable') }} }
             </span>
           </span>
           <input class="uk-checkbox uk-margin-left" type="checkbox" [attr.aria-label]="accountLabel(row)" [attr.aria-description]="tracked(row.index) ? t('already') : null" [checked]="tracked(row.index) || selected.has(row.index)" (change)="toggle(row.index)" [disabled]="busy || tracked(row.index) || (!selected.has(row.index) && selected.size >= capacity)">
         </label>
       </li>
+      }
     </ul>
     <div class="uk-flex uk-flex-between uk-flex-middle uk-margin">
       <button class="uk-button uk-button-default" (click)="page(start > 5 ? start - 5 : 0)" [disabled]="busy || wallet.isLocked() || start === 0">{{ t('previous') }}</button>
@@ -42,7 +48,7 @@
       <button class="uk-button uk-button-default" (click)="page(start + 5)" [disabled]="busy || wallet.isLocked() || start + 5 > max">{{ t('next') }}</button>
     </div>
     <p class="uk-text-small uk-text-muted">{{ t('capacity', {count: remainingCapacity}) }}</p>
-    <p *ngIf="outcome" role="status">{{ t('outcome', {added: outcome.split(':')[0], failed: outcome.split(':')[1]}) }}</p>
+    @if (outcome) { <p role="status">{{ t('outcome', {added: outcome.split(':')[0], failed: outcome.split(':')[1]}) }}</p> }
     <div class="uk-grid-small uk-margin" uk-grid>
       <div class="uk-width-1-1 uk-width-auto@s"><button class="uk-button uk-button-primary uk-width-1-1" (click)="add()" [disabled]="busy || !selected.size || selected.size > capacity">{{ t('add', {count: selected.size}) }}</button></div>
       <div class="uk-width-1-1 uk-width-auto@s"><button class="uk-button uk-button-default uk-width-1-1" (click)="back()" [disabled]="busy || wallet.isLocked()">{{ t('back') }}</button></div>

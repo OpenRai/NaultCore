@@ -5,10 +5,14 @@ for (const width of [393, 1280]) {
     await seededPage.setViewportSize({ width, height: 900 });
     for (const route of ['wallet', 'accounts', 'send', 'receive', 'configure-app']) {
       await seededPage.goto(`/${route}${['send', 'receive'].includes(route) ? `?account=${testWallet.accounts[0]}` : ''}`);
-      const heading = seededPage.locator('.content-container h2').first();
+      const breadcrumbPage = ['send', 'receive'].includes(route);
+      const heading = breadcrumbPage
+        ? seededPage.getByRole('navigation', { name: 'Breadcrumb', exact: true }).locator('[aria-current="page"]')
+        : seededPage.locator('.content-container h2').first();
       await expect(heading).toBeVisible();
       await expect(heading).toHaveCSS('font-family', /Montserrat/);
-      await expect(heading).toHaveCSS('font-size', '32px');
+      await expect(heading).toHaveCSS('font-size', breadcrumbPage ? '20px' : '32px');
+      if (breadcrumbPage) await expect(seededPage.locator('.content-container h2.uk-heading-divider')).toHaveCount(0);
       const button = seededPage.locator('.content-container .uk-button:visible').first();
       await expect(button).toHaveCSS('font-family', /Open Sans/);
       await expect(button).toHaveCSS('font-size', '14px');

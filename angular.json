@@ -278,6 +278,7 @@
             "buildTarget": "nault:build:vitest",
             "tsConfig": "src/tsconfig.vitest.json",
             "include": [
+              "src/app/app-update-checks.spec.ts",
               "src/app/services/startup.service.spec.ts",
               "src/app/services/api.service.spec.ts",
               "src/app/pipes/account.pipe.spec.ts",

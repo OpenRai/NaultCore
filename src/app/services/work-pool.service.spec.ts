@@ -8,7 +8,7 @@ import { PowRoutingService } from './pow-routing.service';
 const sendThreshold = 'SEND-THRESHOLD';
 const receiveThreshold = 'RECEIVE-THRESHOLD';
 
-function partial<T extends object>(value: T): any {
+function partial(value: Record<string, unknown>): any {
   return expect.objectContaining(value);
 }
 

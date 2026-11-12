@@ -4,7 +4,7 @@ import { RecoveryCandidate } from './recovery-import.service';
 import { RecoveryVerificationService } from './recovery-verification.service';
 import { UtilService } from './util.service';
 
-function partial<T extends object>(value: T): any {
+function partial(value: Record<string, unknown>): any {
   return expect.objectContaining(value);
 }
 

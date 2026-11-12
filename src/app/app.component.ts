@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector, inject, ChangeDetectionStrategy, ApplicationRef, DestroyRef } from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {WalletService} from './services/wallet.service';
 import {AddressBookService} from './services/address-book.service';
@@ -11,8 +11,10 @@ import {AudioFeedbackService} from './services/audio-feedback.service';
 import {ThemeService} from './services/theme.service';
 import {WorkPoolService} from './services/work-pool.service';
 import {Router} from '@angular/router';
-import {SwUpdate, VersionReadyEvent, VersionInstallationFailedEvent} from '@angular/service-worker';
-import {filter} from 'rxjs/operators';
+import {SwUpdate} from '@angular/service-worker';
+import {debounceTime, filter, first, switchMap} from 'rxjs/operators';
+import {Subject, interval} from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {RepresentativeService} from './services/representative.service';
 import {NodeService} from './services/node.service';
 import { DesktopService, LedgerService } from './services';
@@ -53,6 +55,10 @@ export class AppComponent implements OnInit {
   }
 
   updates = inject(SwUpdate);
+  private appRef = inject(ApplicationRef);
+  private destroyRef = inject(DestroyRef);
+  private readonly versionClicks = new Subject<void>();
+  private updateCheckInFlight = false;
   private workPool = inject(WorkPoolService);
   private powRouting = inject(PowRoutingService);
   theme = inject(ThemeService);
@@ -135,6 +141,42 @@ get appearanceAutoLabel(): string {
 
   openAboutOverlay(): void {
     this.showAboutOverlay = true;
+    this.versionClicks.next();
+  }
+
+  private initializeUpdateChecks(): void {
+    if (!this.updates.isEnabled) return;
+
+    this.updates.versionUpdates.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event.type === 'VERSION_READY') {
+        console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
+        this.updateAvailable = true;
+      } else if (event.type === 'VERSION_INSTALLATION_FAILED') {
+        console.error(`SW update failed: ${event.error}`);
+      }
+    });
+    this.versionClicks.pipe(
+      debounceTime(60 * 1000),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => void this.checkForUpdate());
+    this.appRef.isStable.pipe(
+      first(stable => stable),
+      switchMap(() => interval(60 * 60 * 1000)),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => void this.checkForUpdate());
+    void this.checkForUpdate();
+  }
+
+  private async checkForUpdate(): Promise<void> {
+    if (this.updateCheckInFlight) return;
+    this.updateCheckInFlight = true;
+    try {
+      await this.updates.checkForUpdate();
+    } catch (error) {
+      console.debug('SW update check failed:', error);
+    } finally {
+      this.updateCheckInFlight = false;
+    }
   }
 
   closeAboutOverlay(): void {
@@ -277,14 +319,7 @@ get appearanceAutoLabel(): string {
       });
       this.desktop.send('deeplink-ready');
 
-      this.updates.versionUpdates.pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')).subscribe((event) => {
-        console.log(`SW update available. Current: ${event.currentVersion.hash}. New: ${event.latestVersion.hash}`);
-        this.updateAvailable = true;
-      });
-      if (this.updates.isEnabled) this.updates.checkForUpdate().catch((err) => console.debug('SW update check failed:', err));
-      this.updates.versionUpdates.pipe(filter((evt): evt is VersionInstallationFailedEvent => evt.type === 'VERSION_INSTALLATION_FAILED')).subscribe((event) => {
-        console.error(`SW update failed: ${event.error}`);
-      });
+      this.initializeUpdateChecks();
 
       setInterval(() => {
         this.inactiveSeconds += 1;

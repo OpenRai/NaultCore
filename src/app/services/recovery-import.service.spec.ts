@@ -1,6 +1,6 @@
 import { RecoveryImportService } from './recovery-import.service';
 
-function partial<T extends object>(value: T): any {
+function partial(value: Record<string, unknown>): any {
   return expect.objectContaining(value);
 }
 

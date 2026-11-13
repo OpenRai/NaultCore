@@ -257,7 +257,7 @@
           <div class="uk-card-header uk-form-horizontal">
             <div class="details-header advanced-options-link" (click)="showAdvancedOptions = !showAdvancedOptions">
               {{ 'account-details.advanced-options' | transloco }}
-              <div [class]="['chevron', ( showAdvancedOptions ? 'chevron-up' : 'chevron-down' )]"></div>
+              <app-chevron class="chevron" [expanded]="showAdvancedOptions" />
             </div>
             @if (showAdvancedOptions) {
               <div class="advanced-options">
@@ -368,7 +368,7 @@
             @if (accountHistory.length + 1 >= pageSize && pageSize <= maxPageSize) {
               <div class="rounded-area interactable more-results" (click)="loadMore()">
                 {{ 'general.show-more' | transloco }}<br>
-                <div class="chevron chevron-down"></div>
+                <app-chevron class="chevron" />
               </div>
             }
           }
@@ -599,7 +599,7 @@
                   <td colspan="4" class="more-results">
                     <a (click)="loadMore()" class="uk-link-text">
                       {{ 'general.show-more' | transloco }}<br>
-                      <div class="chevron chevron-down"></div>
+                      <app-chevron class="chevron" />
                     </a>
                   </td>
                 </tr>
@@ -766,7 +766,7 @@
       <div class="uk-card-header uk-form-horizontal">
         <div class="details-header advanced-options-link" (click)="showAdvancedOptions = !showAdvancedOptions">
           {{ 'account-details.advanced-options' | transloco }}
-          <div [class]="['chevron', ( showAdvancedOptions ? 'chevron-up' : 'chevron-down' )]"></div>
+          <app-chevron class="chevron" [expanded]="showAdvancedOptions" />
         </div>
         @if (showAdvancedOptions) {
           <div class="advanced-options">

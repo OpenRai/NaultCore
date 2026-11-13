@@ -1,3 +1,6 @@
+import { ChevronComponent } from './components/chevron/chevron.component';
+import { RecoveryDisclosureComponent } from './components/recovery-disclosure/recovery-disclosure.component';
+import { RecoveryWarningComponent } from './components/recovery-warning/recovery-warning.component';
 import { WalletUnlockLinkComponent } from './components/wallet-unlock-link/wallet-unlock-link.component';
 import { DeriveAccountsComponent } from './components/derive-accounts/derive-accounts.component';
 import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
@@ -131,6 +134,9 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NanoAmountComponent
   ],
   imports: [
+    ChevronComponent,
+    RecoveryDisclosureComponent,
+    RecoveryWarningComponent,
     WalletUnlockLinkComponent,
     BreadcrumbComponent,
     NanoAccountIdComponent,

@@ -26,7 +26,7 @@
         <div class="account-amounts-primary uk-width-1-1">
           <div class="details-header advanced-options-link" (click)="showAdvancedOptions = !showAdvancedOptions">
             {{ 'address-book.show-total-tracked-balance' | transloco }}
-            <div [class]="['chevron', ( showAdvancedOptions ? 'chevron-up' : 'chevron-down' )]"></div>
+            <app-chevron class="chevron" [expanded]="showAdvancedOptions" />
           </div>
           @if (showAdvancedOptions) {
             <div class="advanced-options">

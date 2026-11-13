@@ -43,69 +43,11 @@
   max-width: 720px;
 }
 
-.backup-warning-sticker {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin: 18px 0 28px;
-  padding: 22px 26px;
-  color: #1f1f26;
-  background: linear-gradient(180deg, #ffdc16 0%, #ffd000 100%);
-  border: 4px solid #1f1f26;
-  border-radius: 18px;
-  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-}
-
-.backup-warning-symbol {
-  display: grid;
-  place-items: end center;
-  flex: 0 0 auto;
-  width: 58px;
-  height: 52px;
-  color: #ffd400;
-  background: #1f1f26;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-}
-
-.backup-warning-symbol span {
-  display: block;
-  margin-bottom: 6px;
-  font-size: var(--text-2xl);
-  font-weight: 900;
-  line-height: 1;
-}
-
-.backup-warning-sticker p {
-  margin: 0;
-  color: inherit;
-  font-size: var(--text-lg);
-  line-height: 1.45;
-}
-
-.backup-warning-sticker strong {
-  color: inherit;
-  font-weight: 800;
-}
-
-.backup-mnemonic h3,
-.backup-seed-disclosure summary {
-  margin: 0;
-  color: #f5f5fb;
-  font-size: var(--text-lg);
-  font-weight: 600;
-}
-
-.backup-mnemonic > p,
-.backup-seed-disclosure > p {
-  margin: 8px 0 16px;
-  color: #b8bacd;
-}
-
 .backup-secret-value {
   margin-bottom: 18px;
   padding: 12px;
-  color: #ededf5;
-  background: #1d1d24;
+  color: var(--text-primary);
+  background: var(--surface-subtle);
   border-radius: 6px;
   font-family: monospace;
   overflow-wrap: anywhere;
@@ -113,47 +55,6 @@
 
 .clipboard-backup-note {
   margin: 10px 0 0;
-  color: #a8aabc;
+  color: var(--text-muted);
   font-size: var(--text-sm);
-}
-
-.backup-seed-disclosure {
-  margin-top: 24px;
-  padding: 16px 18px;
-  background: #25252e;
-  border: 1px solid #3b3b49;
-  border-radius: 8px;
-}
-
-.backup-seed-disclosure summary {
-  cursor: pointer;
-  font-size: var(--text-base);
-}
-
-.backup-seed-disclosure[open] summary {
-  margin-bottom: 4px;
-}
-
-@media (max-width: 640px) {
-  .backup-warning-sticker {
-    align-items: flex-start;
-    gap: 14px;
-    padding: 18px;
-    border-width: 3px;
-    border-radius: 14px;
-  }
-
-  .backup-warning-symbol {
-    width: 45px;
-    height: 40px;
-  }
-
-  .backup-warning-symbol span {
-    margin-bottom: 4px;
-    font-size: var(--text-xl);
-  }
-
-  .backup-warning-sticker p {
-    font-size: var(--text-base);
-  }
 }

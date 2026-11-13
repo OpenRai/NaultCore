@@ -28,7 +28,7 @@
             </div>
             <div class="details-header advanced-options-link" (click)="showAdvancedOptions = !showAdvancedOptions">
               MORE INFO
-              <div [class]="['chevron', ( showAdvancedOptions ? 'chevron-up' : 'chevron-down' )]"></div>
+              <app-chevron class="chevron" [expanded]="showAdvancedOptions" />
             </div>
             @if (showAdvancedOptions) {
               <div>

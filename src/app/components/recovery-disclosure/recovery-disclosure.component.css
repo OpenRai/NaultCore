@@ -1,0 +1,1 @@
+:host{display:block}.backup-seed-disclosure{margin-top:24px;padding:16px 18px;background:var(--surface-subtle);border:1px solid var(--border-strong);border-radius:8px}summary{cursor:pointer;font-size:var(--text-base);font-weight:600;color:var(--text-primary)}details[open] summary{margin-bottom:4px}p{margin:8px 0 16px;color:var(--text-muted)}

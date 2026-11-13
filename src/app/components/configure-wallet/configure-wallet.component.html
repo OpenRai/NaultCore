@@ -561,19 +561,9 @@
       <div class="uk-card-body">
         <p>{{ 'configure-wallet.new-wallet.please-take-some-time-to-write-down-recovery-phrases' | transloco }}</p>
         <div>
-          <div class="backup-warning-sticker" role="alert">
-            <div class="backup-warning-symbol" aria-hidden="true">
-              <span>!</span>
-            </div>
-            <p>
-              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.1' | transloco }}<strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.2-strong' | transloco }}</strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.3' | transloco }}<br>
-              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.2' | transloco }}
-            </p>
-          </div>
+          <app-recovery-warning />
         </div>
-        <details class="backup-mnemonic backup-seed-disclosure">
-          <summary>{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</summary>
-          <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
+        <app-recovery-disclosure [summary]="'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco" [guidance]="'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco" [mnemonic]="true">
           <ol class="mnemonic-card-grid">
             @for (line of newWalletMnemonicLines; track line; let l = $index) {
               @for (word of line; track word; let i = $index) {
@@ -593,10 +583,8 @@
             {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
           </button>
           <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
-        </details>
-        <details class="backup-seed-disclosure">
-          <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>
-          <p>{{ 'configure-wallet.new-wallet.seed-backup-guidance' | transloco }}</p>
+        </app-recovery-disclosure>
+        <app-recovery-disclosure [summary]="'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco" [guidance]="'configure-wallet.new-wallet.seed-backup-guidance' | transloco" [mnemonic]="false">
           <div class="new-wallet-seed uk-margin-small-bottom">{{ newWalletSeed }}</div>
           <button
             class="uk-button uk-button-secondary uk-text-center nlt-icon-button"
@@ -609,7 +597,7 @@
             <span class="nlt-icon" uk-icon="icon: copy;"></span>
             {{ 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco }}
           </button>
-        </details>
+        </app-recovery-disclosure>
           <hr/>
           <div class="uk-width-1-1">
             <label class="backup-confirmation"><input type="checkbox" class="uk-checkbox" [(ngModel)]="hasConfirmedBackup"> <span>{{ 'configure-wallet.new-wallet.i-have-securely-stored-recovery-phrases' | transloco }}</span></label>

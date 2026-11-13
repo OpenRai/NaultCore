@@ -119,17 +119,9 @@
           <button class="uk-modal-close-default" type="button" uk-close aria-label="Close recovery phrases"></button>
           <h2 id="backup-secrets-modal-title" class="uk-modal-title">Secret recovery phrases</h2>
 
-          <div class="backup-warning-sticker" role="alert">
-            <div class="backup-warning-symbol" aria-hidden="true"><span>!</span></div>
-            <p>
-              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.1' | transloco }}<strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.2-strong' | transloco }}</strong>{{ 'configure-wallet.new-wallet.recovery-phrases-alert.1.3' | transloco }}<br>
-              {{ 'configure-wallet.new-wallet.recovery-phrases-alert.2' | transloco }}
-            </p>
-          </div>
+          <app-recovery-warning />
 
-          <details class="backup-mnemonic backup-seed-disclosure">
-            <summary>{{ 'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco }}</summary>
-            <p>{{ 'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco }}</p>
+          <app-recovery-disclosure [summary]="'configure-wallet.new-wallet.secret-recovery-mnemonic' | transloco" [guidance]="'configure-wallet.new-wallet.mnemonic-backup-guidance' | transloco" [mnemonic]="true">
             <div class="backup-secret-value">{{ seedMnemonic() }}</div>
             <button
               type="button"
@@ -143,11 +135,9 @@
               {{ 'configure-wallet.new-wallet.copy-secret-recovery-mnemonic' | transloco }}
             </button>
             <p class="clipboard-backup-note">{{ 'configure-wallet.new-wallet.clipboard-is-not-a-backup' | transloco }}</p>
-          </details>
+          </app-recovery-disclosure>
 
-          <details class="backup-seed-disclosure">
-            <summary>{{ 'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco }}</summary>
-            <p>{{ 'configure-wallet.new-wallet.seed-backup-guidance' | transloco }}</p>
+          <app-recovery-disclosure [summary]="'configure-wallet.new-wallet.advanced-secret-recovery-seed' | transloco" [guidance]="'configure-wallet.new-wallet.seed-backup-guidance' | transloco" [mnemonic]="false">
             <div class="backup-secret-value">{{ walletService.getRecoverySecret() }}</div>
             <button
               type="button"
@@ -160,7 +150,7 @@
               <span class="nlt-icon" uk-icon="icon: copy;"></span>
               {{ 'configure-wallet.new-wallet.copy-secret-recovery-seed' | transloco }}
             </button>
-          </details>
+          </app-recovery-disclosure>
         </div>
       </div>
     }

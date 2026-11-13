@@ -2,26 +2,13 @@
   word-wrap: anywhere;
 }
 
-pre.mnemonic {
-  white-space: pre-wrap;
-}
 
-pre.mnemonic:before {
-  counter-reset: listing;
-}
 
-pre.mnemonic span.mnemonic-word {
-  counter-increment: listing;
-}
 
-pre.mnemonic span.mnemonic-word::before {
-  content: counter(listing) ". ";
-  display: inline-block;
-  width: 8em;         /* doesn't work */
-  padding-left: auto; /* doesn't work */
-  margin-left: auto;  /* doesn't work */
-  text-align: right;  /* doesn't work */
-}
+
+
+
+
 
 .mne-num {
   color: #CCC;

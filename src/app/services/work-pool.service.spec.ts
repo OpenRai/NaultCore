@@ -446,4 +446,38 @@ describe('WorkPoolService', () => {
     expect(status.cached).toBe(true);
     expect(Object.prototype.hasOwnProperty.call(status, 'work')).toBe(false);
   });
+
+  it('does not republish unchanged account statuses for a 25-account wallet', () => {
+    const service = TestBed.inject(WorkPoolService);
+    const accountCount = 25;
+    const iterations = 5_000;
+    const demands = Array.from({ length: accountCount }, (_, index) => ({
+      account: `nano_${index}`,
+      root: String.fromCharCode(65 + index).repeat(64),
+      multiplier: 1,
+    }));
+    localStorage.setItem(service.storeKey, JSON.stringify({
+      version: 2,
+      entries: demands.map(demand => ({
+        account: demand.account,
+        root: demand.root,
+        work: `${sendThreshold}-WORK`,
+        threshold: sendThreshold,
+        createdAt: 0,
+      })),
+    }));
+    service.loadWorkCache();
+    service.syncAccountRoots(demands);
+
+    let emissions = 0;
+    const subscription = service.accountStatus$.subscribe(() => emissions++);
+    emissions = 0;
+    service['publishState']();
+
+    for (let index = 0; index < iterations; index++) service['publishState']();
+    subscription.unsubscribe();
+
+    // Baseline: this fixture emitted 5,000 identical maps in 5,000 publishes.
+    expect(emissions).toBe(0);
+  });
 });

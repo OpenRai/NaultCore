@@ -809,6 +809,21 @@ export class WorkPoolService {
         completed,
       }));
     }
+    const previous = this.accountStatusSubject.value;
+    if (previous.size === statuses.size && [...statuses].every(([account, status]) => {
+      const oldStatus = previous.get(account);
+      return oldStatus !== undefined &&
+        oldStatus.account === status.account &&
+        oldStatus.root === status.root &&
+        oldStatus.purpose === status.purpose &&
+        oldStatus.activity === status.activity &&
+        oldStatus.phase === status.phase &&
+        oldStatus.active === status.active &&
+        oldStatus.queued === status.queued &&
+        oldStatus.cached === status.cached &&
+        oldStatus.activeElapsedMs === status.activeElapsedMs &&
+        oldStatus.lastError === status.lastError;
+    })) return;
     this.accountStatusSubject.next(statuses);
   }
 }

@@ -23,6 +23,7 @@ import { NostrNotificationService } from '../../services/nostr-notification.serv
 import { TestIds } from '../../testing/test-ids';
 import { branding } from 'environments/branding';
 import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.service';
+import { AccountLoadGeneration } from './account-load-generation';
 
 @Component({
   standalone: false,
@@ -81,6 +82,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   timeoutIdAllowingManualRefresh: any = null;
   timeoutIdAllowingInstantAutoRefresh: any = null;
   timeoutIdQueuedAutoRefresh: any = null;
+  private readonly accountLoadGeneration = new AccountLoadGeneration();
   qrModal: any = null;
   mobileAccountMenuModal: any = null;
   mobileTransactionMenuModal: any = null;
@@ -444,14 +446,17 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   async loadAccountDetails() {
+    const accountID = this.router.snapshot.params.account;
+    const generation = this.accountLoadGeneration.begin(accountID);
     this.onAccountDetailsLoadStart();
 
     this.pendingBlocks = [];
 
     this.clearAccountVars();
     this.loadingAccountDetails = true;
+    this.loadingIncomingTxList = false;
+    this.loadingTxList = false;
 
-    const accountID = this.router.snapshot.params.account;
     this.accountID = accountID;
     this.workStatus = this.workPool.getAccountStatus(accountID);
 
@@ -459,27 +464,44 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     if (accountID.startsWith('nnym_')) {
       if (!FEATURE_NANONYMS) {
         this.notifications.sendError('NanoNym addresses are not supported in this build.');
+        this.loadingAccountDetails = false;
+        this.onAccountDetailsLoadDone();
         return;
       }
       this.accountType = 'nanonym';
-      await this.loadNanoNymDetails(accountID);
+      try {
+        await this.loadNanoNymDetails(accountID, generation);
+      } catch (error) {
+        this.finishAccountLoadAfterError(generation, accountID);
+        throw error;
+      }
+      if (this.isCurrentAccountLoad(generation, accountID)) {
+        this.loadingAccountDetails = false;
+        this.onAccountDetailsLoadDone();
+      }
       return;
     }
 
-    this.generateReceiveQR(accountID);
+    void this.generateReceiveQR(accountID, generation);
 
     this.addressBookEntry = this.addressBook.getAccountName(accountID);
     this.addressBookModel = this.addressBookEntry || '';
     this.walletAccount = this.wallet.getWalletAccount(accountID);
     this.accountType = this.walletAccount ? 'regular' : 'external';
 
-    this.account = await this.api.accountInfo(accountID);
+    let account: any;
+    try {
+      account = await this.api.accountInfo(accountID);
+    } catch (error) {
+      this.finishAccountLoadAfterError(generation, accountID);
+      throw error;
+    }
 
-    if (accountID !== this.accountID) {
+    if (!this.isCurrentAccountLoad(generation, accountID)) {
       // Navigated to a different account while account info was loading
-      this.onAccountDetailsLoadDone();
       return;
     }
+    this.account = account;
 
     if (!this.account) {
       this.loadingAccountDetails = false;
@@ -498,16 +520,20 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       this.pendingBlocks = [];
       this.loadingIncomingTxList = true;
 
-      if (this.settings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.settings.settings.minimumReceive);
-        pending = await this.api.pendingLimitSorted(accountID, 50, minAmount.toString(10));
-      } else {
-        pending = await this.api.pendingSorted(accountID, 50);
+      try {
+        if (this.settings.settings.minimumReceive) {
+          const minAmount = this.util.nano.mnanoToRaw(this.settings.settings.minimumReceive);
+          pending = await this.api.pendingLimitSorted(accountID, 50, minAmount.toString(10));
+        } else {
+          pending = await this.api.pendingSorted(accountID, 50);
+        }
+      } catch (error) {
+        this.finishAccountLoadAfterError(generation, accountID);
+        throw error;
       }
 
-      if (accountID !== this.accountID) {
+      if (!this.isCurrentAccountLoad(generation, accountID)) {
         // Navigated to a different account while incoming tx were loading
-        this.onAccountDetailsLoadDone();
         return;
       }
 
@@ -573,11 +599,15 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.account.balanceFiat = this.util.nano.rawToMnano(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
     this.account.pendingFiat = this.util.nano.rawToMnano(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
 
-    await this.getAccountHistory(accountID);
+    try {
+      await this.getAccountHistory(accountID, true, generation);
+    } catch (error) {
+      this.finishAccountLoadAfterError(generation, accountID);
+      throw error;
+    }
 
-    if (accountID !== this.accountID) {
+    if (!this.isCurrentAccountLoad(generation, accountID)) {
       // Navigated to a different account while account history was loading
-      this.onAccountDetailsLoadDone();
       return;
     }
 
@@ -585,42 +615,62 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.onAccountDetailsLoadDone();
   }
 
-  async loadNanoNymDetails(nnymAddress: string) {
+  private isCurrentAccountLoad(generation: number, accountID: string): boolean {
+    return this.accountLoadGeneration.isCurrent(generation, accountID) && accountID === this.accountID;
+  }
+
+  private finishAccountLoadAfterError(generation: number, accountID: string): void {
+    if (!this.isCurrentAccountLoad(generation, accountID)) return;
+    this.loadingAccountDetails = false;
+    this.loadingIncomingTxList = false;
+    this.loadingTxList = false;
+    this.onAccountDetailsLoadDone();
+  }
+
+  async loadNanoNymDetails(nnymAddress: string, generation = this.accountLoadGeneration.begin(this.accountID)) {
     const allNanoNyms = this.nanoNymManager.getSpendableNanoNymAccounts();
     const nanoNymAccount = allNanoNyms.find(n => n.id === nnymAddress);
 
     if (!nanoNymAccount) {
       this.loadingAccountDetails = false;
       this.notifications.sendError('NanoNym not found in this wallet');
-      setTimeout(() => this.route.navigate(['/accounts']), 2000);
+      setTimeout(() => {
+        if (this.isCurrentAccountLoad(generation, nnymAddress)) this.route.navigate(['/accounts']);
+      }, 2000);
       return;
     }
 
+    if (!this.isCurrentAccountLoad(generation, nnymAddress)) return;
     this.nanoNym = nanoNymAccount.nanoNym;
-    this.renderNanoNymUI(nnymAddress);
+    await this.renderNanoNymUI(nnymAddress, generation);
+    if (!this.isCurrentAccountLoad(generation, nnymAddress)) return;
     
     console.log(`[NanoNym Details] Rendered cached data, now refreshing from node...`);
     this.loadingAccountDetails = true;
 
-    this.nanoNymManager.refreshBalances(nanoNymAccount.nanoNym.index).then(() => {
+    this.nanoNymManager.refreshBalances(nanoNymAccount.nanoNym.index).then(async () => {
+      if (!this.isCurrentAccountLoad(generation, nnymAddress)) return;
       const updatedNanoNyms = this.nanoNymManager.getSpendableNanoNymAccounts();
       const updatedNanoNymAccount = updatedNanoNyms.find(n => n.id === nnymAddress);
       
       if (updatedNanoNymAccount) {
         this.nanoNym = updatedNanoNymAccount.nanoNym;
-        this.renderNanoNymUI(nnymAddress);
+        await this.renderNanoNymUI(nnymAddress, generation);
         console.log(`[NanoNym Details] Updated with fresh balances from node`);
       }
       
-      this.loadingAccountDetails = false;
+      if (this.isCurrentAccountLoad(generation, nnymAddress)) this.loadingAccountDetails = false;
     }).catch(error => {
+      if (!this.isCurrentAccountLoad(generation, nnymAddress)) return;
       console.error(`[NanoNym Details] Failed to refresh balances:`, error);
       this.loadingAccountDetails = false;
     });
   }
 
-  private async renderNanoNymUI(nnymAddress: string) {
-    this.qrCodeImage = await QRCode.toDataURL(nnymAddress, { scale: 7 });
+  private async renderNanoNymUI(nnymAddress: string, generation: number) {
+    const qrCodeImage = await QRCode.toDataURL(nnymAddress, { scale: 7 });
+    if (!this.isCurrentAccountLoad(generation, nnymAddress)) return;
+    this.qrCodeImage = qrCodeImage;
     this.addressBookEntry = this.nanoNym.label;
     this.addressBookModel = this.nanoNym.label;
 
@@ -642,7 +692,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     })).sort((a, b) => b.local_timestamp - a.local_timestamp);
 
     this.updateTodayYesterdayDateStrings();
-    this.onAccountDetailsLoadDone();
   }
 
   async toggleNanoNymStatus() {
@@ -721,12 +770,21 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.accountLoadGeneration.invalidate();
+    for (const timeoutId of [
+      this.timeoutIdAllowingManualRefresh,
+      this.timeoutIdAllowingInstantAutoRefresh,
+      this.timeoutIdQueuedAutoRefresh,
+    ]) {
+      if (timeoutId != null) clearTimeout(timeoutId);
+    }
     this.mobileAccountMenuModal.hide();
     this.mobileTransactionMenuModal.hide();
   }
 
-  async generateReceiveQR(accountID) {
+  async generateReceiveQR(accountID: string, generation = this.accountLoadGeneration.begin(accountID)) {
     const qrCode = await QRCode.toDataURL(`${accountID}`, { errorCorrectionLevel: 'M', scale: 16 });
+    if (!this.isCurrentAccountLoad(generation, accountID)) return;
     this.qrCodeImage = qrCode;
   }
 
@@ -737,7 +795,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.dateStringYesterday = formatDate( unixTimeNow - 86400000, 'MMM d, y', 'en-US' );
   }
 
-  async getAccountHistory(accountID, resetPage = true) {
+  async getAccountHistory(accountID: string, resetPage = true, generation = this.accountLoadGeneration.begin(accountID)) {
     if (resetPage) {
       this.accountHistory = [];
       this.pageSize = 25;
@@ -746,9 +804,15 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     this.loadingTxList = true;
     this.updateTodayYesterdayDateStrings();
 
-    const history = await this.api.accountHistory(accountID, this.pageSize, true);
+    let history;
+    try {
+      history = await this.api.accountHistory(accountID, this.pageSize, true);
+    } catch (error) {
+      if (this.isCurrentAccountLoad(generation, accountID)) this.loadingTxList = false;
+      throw error;
+    }
 
-    if (accountID !== this.accountID) {
+    if (!this.isCurrentAccountLoad(generation, accountID)) {
       // Navigated to a different account while account history was loading
       return;
     }
@@ -823,9 +887,15 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       this.accountHistory = this.accountHistory.filter(h => h.type !== 'change' && h.subtype !== 'epoch');
 
       if (additionalBlocksInfo.length) {
-        const blocksInfo = await this.api.blocksInfo(additionalBlocksInfo.map(b => b.link));
+        let blocksInfo;
+        try {
+          blocksInfo = await this.api.blocksInfo(additionalBlocksInfo.map(b => b.link));
+        } catch (error) {
+          if (this.isCurrentAccountLoad(generation, accountID)) this.loadingTxList = false;
+          throw error;
+        }
 
-        if (accountID !== this.accountID) {
+        if (!this.isCurrentAccountLoad(generation, accountID)) {
           // Navigated to a different account while block info was loading
           return;
         }

@@ -47,7 +47,7 @@ const routes: Routes = [
   { path: "sign", component: SignComponent },
   {
     path: "remote-signing",
-    loadChildren: () => import("./components/remote-signing/remote-signing.module").then(m => m.RemoteSigningModule),
+    loadComponent: () => import("./components/remote-signing/remote-signing.component").then(m => m.RemoteSigningComponent),
   },
   { path: "multisig", component: MultisigComponent },
   { path: "keygenerator", component: KeygeneratorComponent },

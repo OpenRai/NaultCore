@@ -1,4 +1,7 @@
+import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import {UtilService} from '../../services/util.service';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
@@ -10,7 +13,8 @@ import { TestIds } from '../../testing/test-ids';
 import { branding } from 'environments/branding';
 
 @Component({
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
   selector: 'app-send',
   templateUrl: './remote-signing.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,

@@ -8,7 +8,7 @@ describe('RemoteSigningComponent', () => {
 
   beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ RemoteSigningComponent ]
+      imports: [ RemoteSigningComponent ]
     })
     .compileComponents();
   }));

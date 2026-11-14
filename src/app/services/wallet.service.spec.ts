@@ -2,10 +2,36 @@ import { WalletWidgetComponent } from '../components/wallet-widget/wallet-widget
 import { DeriveAccountsComponent } from '../components/derive-accounts/derive-accounts.component';
 import { BehaviorSubject } from 'rxjs';
 import BigNumber from 'bignumber.js';
+import * as CryptoJS from 'crypto-js';
 
 import { WorkFrontierChangedError } from './work-pool.service';
 import { WalletService } from './wallet.service';
 import { classifyWalletTransaction } from './wallet-transaction-classifier';
+import { WalletPersistenceAdapter, WalletSecretAdapter } from './wallet-adapters';
+
+describe('Wallet persistence and secret adapters', () => {
+  it('reads, writes, and removes the existing JSON wallet record', () => {
+    const persistence = new WalletPersistenceAdapter();
+    const savedWallet = { type: 'seed', seed: 'encrypted-seed', accounts: [{ id: 'nano_1', index: 0 }] };
+
+    persistence.write('wallet-adapter-test', savedWallet);
+    expect(persistence.read('wallet-adapter-test')).toBe(JSON.stringify(savedWallet));
+    persistence.remove('wallet-adapter-test');
+    expect(persistence.read('wallet-adapter-test')).toBeNull();
+  });
+
+  it('keeps password encryption compatible with existing CryptoJS AES wallet exports', () => {
+    const adapter = new WalletSecretAdapter();
+    const password = 'correct horse battery staple';
+    const secret = 'ab'.repeat(32);
+    const legacyCiphertext = CryptoJS.AES.encrypt(secret, password).toString();
+
+    expect(adapter.decrypt(legacyCiphertext, password)).toBe(secret);
+    const ciphertext = adapter.encrypt(secret, password);
+    expect(CryptoJS.AES.decrypt(ciphertext, password).toString(CryptoJS.enc.Utf8)).toBe(secret);
+    expect(adapter.decrypt(ciphertext, 'wrong password')).toBeNull();
+  });
+});
 
 describe('wallet transaction classification', () => {
   const walletAccounts = ['nano_wallet'];

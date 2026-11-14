@@ -4,7 +4,6 @@ import {UtilService} from './util.service';
 import {ApiService} from './api.service';
 import {BigNumber} from 'bignumber.js';
 import {AddressBookService} from './address-book.service';
-import * as CryptoJS from 'crypto-js';
 import {WorkFrontierChangedError, WorkPoolService} from './work-pool.service';
 import {WebsocketService} from './websocket.service';
 import {NanoBlockService} from './nano-block.service';
@@ -22,6 +21,7 @@ import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './pa
 import { formatNotificationAmount } from '../utils/transaction-toast-amount';
 import { classifyWalletTransaction } from './wallet-transaction-classifier';
 import { WalletReconciliationCoordinator } from './wallet-reconciliation-coordinator';
+import { WalletPersistenceAdapter, WalletSecretAdapter } from './wallet-adapters';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -165,6 +165,8 @@ export class WalletService {
   private nanoNymStorage = inject(NanoNymStorageService);
   private injector = inject(Injector);
   private passkeys = inject(PasskeyUnlockService);
+  private persistence = inject(WalletPersistenceAdapter);
+  private secretAdapter = inject(WalletSecretAdapter);
 
   nano = 1000000000000000000000000;
   storeKey = `nanovault-wallet`;
@@ -552,7 +554,7 @@ export class WalletService {
 
   async patchOldSavedData() {
     // Look for saved accounts using an xrb_ prefix
-    const walletData = localStorage.getItem(this.storeKey);
+    const walletData = this.persistence.read(this.storeKey);
     if (!walletData) return;
 
     const walletJson = JSON.parse(walletData);
@@ -568,7 +570,7 @@ export class WalletService {
       walletJson.accounts = newAccounts;
     }
 
-    localStorage.setItem(this.storeKey, JSON.stringify(walletJson));
+    this.persistence.write(this.storeKey, walletJson);
 
     return;
   }
@@ -576,7 +578,7 @@ export class WalletService {
   async loadStoredWallet() {
     this.resetWallet();
 
-    const walletData = localStorage.getItem(this.storeKey);
+    const walletData = this.persistence.read(this.storeKey);
     if (!walletData) return this.wallet;
 
     const walletJson = JSON.parse(walletData);
@@ -668,7 +670,7 @@ export class WalletService {
     let secret = '';
     if (this.lifecycleState.kind === 'locked') secret = this.lifecycleState.encryptedSecret;
     if (this.lifecycleState.kind === 'unlocked') secret = this.lifecycleState.password
-      ? CryptoJS.AES.encrypt(this.lifecycleState.secret, this.lifecycleState.password).toString()
+      ? this.secretAdapter.encrypt(this.lifecycleState.secret, this.lifecycleState.password)
       : this.lifecycleState.encryptedSecret;
 
     if (this.softwareType() === 'seed') {
@@ -692,7 +694,7 @@ export class WalletService {
   lockWallet() {
     const state = this.unlockedState();
     if (!state || !state.secret) return false;
-    const encryptedSecret = state.password ? CryptoJS.AES.encrypt(state.secret, state.password).toString() : state.encryptedSecret;
+    const encryptedSecret = state.password ? this.secretAdapter.encrypt(state.secret, state.password) : state.encryptedSecret;
     if (!encryptedSecret) return false;
 
     this.wallet.accounts.forEach(a => {
@@ -713,9 +715,8 @@ export class WalletService {
     try {
       if (this.lifecycleState.kind !== 'locked') return false;
       const locked = this.lifecycleState;
-      const decryptedBytes = CryptoJS.AES.decrypt(locked.encryptedSecret, password);
-      const decryptedSeed = decryptedBytes.toString(CryptoJS.enc.Utf8);
-      if (!/^[0-9a-f]{64}$/i.test(decryptedSeed)) return false;
+      const decryptedSeed = this.secretAdapter.decrypt(locked.encryptedSecret, password);
+      if (!decryptedSeed || !/^[0-9a-f]{64}$/i.test(decryptedSeed)) return false;
       const secretBytes = this.util.hex.toUint8(decryptedSeed);
       const credentials = this.prepareAccountCredentials(locked.type, secretBytes);
 
@@ -1146,7 +1147,7 @@ export class WalletService {
   changePassword(password: string): boolean {
     const state = this.unlockedState();
     if (!state || !password) return false;
-    const candidate = { ...state, password, encryptedSecret: CryptoJS.AES.encrypt(state.secret, password).toString() };
+    const candidate = { ...state, password, encryptedSecret: this.secretAdapter.encrypt(state.secret, password) };
     try {
       this.persistWalletExport(this.generateWalletExportFor(candidate));
     } catch (error) {
@@ -1541,24 +1542,19 @@ export class WalletService {
   }
 
   private persistWalletExport(exportData: any) {
-
-    switch (this.appSettings.settings.walletStore) {
-      case 'none':
-        this.removeWalletData();
-        break;
-      default:
-      case 'localStorage':
-        localStorage.setItem(this.storeKey, JSON.stringify({
-          ...exportData,
-          ...(this.localWalletId ? { localWalletId: this.localWalletId } : {}),
-          ...(this.passkeyUnlockRecord ? { passkeyUnlock: this.passkeyUnlockRecord } : {}),
-        }));
-        break;
+    if (this.appSettings.settings.walletStore === 'none') {
+      this.removeWalletData();
+      return;
     }
+    this.persistence.write(this.storeKey, {
+      ...exportData,
+      ...(this.localWalletId ? { localWalletId: this.localWalletId } : {}),
+      ...(this.passkeyUnlockRecord ? { passkeyUnlock: this.passkeyUnlockRecord } : {}),
+    });
   }
 
   removeWalletData() {
-    localStorage.removeItem(this.storeKey);
+    this.persistence.remove(this.storeKey);
 
     // Clear NanoNym data
     try {
@@ -1586,7 +1582,7 @@ export class WalletService {
 
     if (state.kind === 'ledger') {
     } else {
-      if (state.kind === 'unlocked') data.seed = state.password ? CryptoJS.AES.encrypt(state.secret, state.password).toString() : state.encryptedSecret;
+      if (state.kind === 'unlocked') data.seed = state.password ? this.secretAdapter.encrypt(state.secret, state.password) : state.encryptedSecret;
       if (state.kind === 'locked') data.seed = state.encryptedSecret;
       data.locked = true;
     }

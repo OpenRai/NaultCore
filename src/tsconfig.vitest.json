@@ -38,6 +38,7 @@
     "app/services/wallet-context.service.spec.ts",
     "app/services/wallet-context.service.ts",
     "app/services/work-pool.service.spec.ts",
+    "app/services/work-account-status-projection.spec.ts",
     "app/services/work-pool.service.ts",
     "app/services/util.service.spec.ts",
     "app/services/util.service.ts",

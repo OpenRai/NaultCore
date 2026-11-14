@@ -5,6 +5,10 @@ import { ApiService } from './api.service';
 import { UtilService } from './util.service';
 import { AppSettingsService } from './app-settings.service';
 import { PowRoute, PowRoutingService } from './pow-routing.service';
+import { projectWorkAccountStatus, resolveWorkAccountPurpose } from './work-account-status-projection';
+import type { WorkAccountStatus, WorkPurpose } from './work-account-status-projection';
+
+export type { WorkAccountStatus, WorkPurpose } from './work-account-status-projection';
 
 export class WorkFrontierChangedError extends Error {
   constructor() {
@@ -27,21 +31,6 @@ export interface WorkAccountDemand {
   multiplier: number;
   priority?: number;
   purpose?: WorkPurpose;
-}
-
-export type WorkPurpose = 'frontier' | 'receive-open';
-
-export interface WorkAccountStatus {
-  account: string;
-  root: string;
-  purpose: WorkPurpose;
-  activity: 'idle' | 'active' | 'success' | 'error';
-  phase: 'idle' | 'local' | 'remote';
-  active: boolean;
-  queued: boolean;
-  cached: boolean;
-  activeElapsedMs: number;
-  lastError: string | null;
 }
 
 export interface WorkPoolState {
@@ -816,26 +805,29 @@ export class WorkPoolService {
     for (const [account, root] of this.accountRoots) {
       const activeRequest = this.activeRequest?.account === account ? this.activeRequest : null;
       const queuedRequest = this.requests.find(request => request.account === account && request.root === root) || null;
-      const purpose: WorkPurpose = (activeRequest?.tier || queuedRequest?.tier) === 'receive'
-        ? 'receive-open'
-        : (this.accountPurposes.get(account) || 'frontier');
+      const purpose = resolveWorkAccountPurpose(
+        activeRequest?.tier || null,
+        queuedRequest?.tier || null,
+        this.accountPurposes.get(account) || 'frontier',
+      );
       const multiplier = purpose === 'receive-open' ? 1 / 64 : 1;
       const lastError = this.lastErrorAccount === account && this.lastErrorRoot === root
         ? this.state$.value.lastError
         : null;
       const completed = this.lastCompleted?.account === account && this.lastCompleted.root === root;
-      statuses.set(account, {
+      statuses.set(account, projectWorkAccountStatus({
         account,
         root,
         purpose,
-        activity: activeRequest || queuedRequest ? 'active' : lastError ? 'error' : completed ? 'success' : 'idle',
+        hasActiveOrQueuedRequest: !!(activeRequest || queuedRequest),
         phase: activeRequest ? this.state$.value.phase : 'idle',
         active: !!activeRequest,
         queued: !!queuedRequest,
         cached: this.findValidEntry(root, multiplier, account) !== null,
         activeElapsedMs: activeRequest ? now - this.activeStartedAt : 0,
         lastError,
-      });
+        completed,
+      }));
     }
     this.accountStatusSubject.next(statuses);
   }

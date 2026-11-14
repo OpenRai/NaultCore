@@ -303,6 +303,7 @@
               "src/app/services/passkey-unlock.service.spec.ts",
               "src/app/services/wallet-context.service.spec.ts",
               "src/app/services/work-pool.service.spec.ts",
+              "src/app/services/work-account-status-projection.spec.ts",
               "src/app/services/util.service.spec.ts",
               "src/app/utils/transaction-toast-amount.spec.ts",
               "src/app/utils/nano-amount-format.spec.ts",

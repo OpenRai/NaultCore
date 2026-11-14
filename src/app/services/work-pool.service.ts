@@ -7,6 +7,8 @@ import { AppSettingsService } from './app-settings.service';
 import { PowRoute, PowRoutingService } from './pow-routing.service';
 import { projectWorkAccountStatus, resolveWorkAccountPurpose } from './work-account-status-projection';
 import type { WorkAccountStatus, WorkPurpose } from './work-account-status-projection';
+import { WorkPoolScheduler } from './work-pool-scheduler';
+import type { ScheduledWorkRequest } from './work-pool-scheduler';
 
 export type { WorkAccountStatus, WorkPurpose } from './work-account-status-projection';
 
@@ -45,12 +47,7 @@ export interface WorkPoolState {
   receiveHints: number;
 }
 
-interface WorkRequest {
-  id: number;
-  account: string | null;
-  root: string;
-  multiplier: number;
-  priority: number;
+interface WorkRequest extends ScheduledWorkRequest {
   tier: 'send' | 'receive';
   hinted: boolean;
   hintConsumed: boolean;
@@ -97,11 +94,9 @@ export class WorkPoolService {
   // Existing callers still see this property, but entries are now account/root scoped.
   workCache: StoredWorkEntry[] = [];
 
-  private requests: WorkRequest[] = [];
+  private readonly scheduler = new WorkPoolScheduler<WorkRequest>();
   private inFlight = new Map<string, Promise<string>>();
   private nextRequestId = 0;
-  private dispatchSequence = 0;
-  private lastServed = new Map<string | null, number>();
   private externalAccounts = new Set<string>();
   private accountRoots = new Map<string, string>();
   private accountPurposes = new Map<string, WorkPurpose>();
@@ -178,14 +173,14 @@ export class WorkPoolService {
         this.receiveHints.delete(key);
       }
     }
-    this.requests = this.requests.filter(request => {
+    this.scheduler.removeWhere(request => {
       const expectedRoot = request.account ? this.accountRoots.get(request.account) : undefined;
       if (request.account && ((expectedRoot && expectedRoot !== request.root) ||
           (!expectedRoot && previousAccounts.has(request.account)))) {
         request.reject(new WorkFrontierChangedError());
-        return false;
+        return true;
       }
-      return true;
+      return false;
     });
     if (this.activeRequest?.account) {
       const expectedRoot = this.accountRoots.get(this.activeRequest.account);
@@ -221,10 +216,10 @@ export class WorkPoolService {
       if (hint.account === account && hint.root !== root) this.receiveHints.delete(key);
     }
     if (this.suppressedPrecomputation.get(account) !== root) this.suppressedPrecomputation.delete(account);
-    this.requests = this.requests.filter(request => {
-      if (request.account !== account || request.root === root) return true;
+    this.scheduler.removeWhere(request => {
+      if (request.account !== account || request.root === root) return false;
       request.reject(new WorkFrontierChangedError());
-      return false;
+      return true;
     });
     if (this.activeRequest?.account === account && this.activeRequest.root !== root) {
       this.cancelActiveRequest(new WorkFrontierChangedError());
@@ -290,8 +285,8 @@ export class WorkPoolService {
         this.receiveHints.delete(key);
       }
     }
-    this.requests = this.requests.filter(request =>
-      !(request.hinted && request.account === account && (!root || request.root === root)));
+    this.scheduler.removeWhere(request =>
+      request.hinted && request.account === account && (!root || request.root === root));
     if (this.activeRequest?.hinted && this.activeRequest.account === account &&
         (!root || this.activeRequest.root === root)) {
       this.cancelActiveRequest(new Error('Receive work hint revoked'));
@@ -346,7 +341,7 @@ export class WorkPoolService {
 
   /** Cancels active and queued work after an explicit user request. */
   public cancelAllWork(): boolean {
-    if (!this.activeRequest && this.requests.length === 0) return false;
+    if (!this.activeRequest && this.scheduler.size === 0) return false;
     this.cancelPendingRequests(new Error('Proof of Work generation cancelled by the user'));
     this.state$.next({ ...this.state$.value, lastError: null });
     this.publishState();
@@ -382,7 +377,7 @@ export class WorkPoolService {
     const existing = this.inFlight.get(key);
     if (existing) {
       const request = this.findPendingRequest(root, multiplier, account);
-      if (interactive && request) request.priority = 100;
+      if (interactive && request) this.scheduler.reprioritize(request, 100);
       this.logWorkEvent('joined', root, multiplier, account, this.findPendingRequest(root, multiplier, account)?.id ?? null);
       return existing;
     }
@@ -393,8 +388,7 @@ export class WorkPoolService {
         pending.hinted = false;
         pending.hintConsumed = true;
       }
-      pending.priority = interactive ? 100 : Math.max(pending.priority, 50);
-      this.requests.sort((a, b) => b.priority - a.priority);
+      this.scheduler.reprioritize(pending, interactive ? 100 : Math.max(pending.priority, 50));
       this.logWorkEvent('joined', root, multiplier, account, pending.id);
       const promise = this.attachRequestListener(pending);
       this.inFlight.set(key, promise);
@@ -427,12 +421,7 @@ export class WorkPoolService {
   }
 
   private enqueue(request: WorkRequest): void {
-    const duplicate = this.requests.some(item =>
-      item.root === request.root && item.account === request.account && item.multiplier === request.multiplier &&
-      item.hinted === request.hinted);
-    if (duplicate) return;
-    this.requests.push(request);
-    this.requests.sort((a, b) => b.priority - a.priority);
+    if (!this.scheduler.enqueue(request)) return;
     this.logWorkEvent('queued', request.root, request.multiplier, request.account, request.id);
     this.processNext();
     this.publishState();
@@ -450,7 +439,7 @@ export class WorkPoolService {
       this.clearActiveTimers();
       this.worker?.terminate();
       this.worker = null;
-      if (request) this.requests.unshift(request);
+      if (request) this.scheduler.retryAtFront(request);
       this.state$.next({ ...this.state$.value, lastError: error.message });
       this.lastErrorAccount = request?.account || null;
       this.lastErrorRoot = request?.root || null;
@@ -460,31 +449,24 @@ export class WorkPoolService {
 
   private processNext(): void {
     if (this.activeRequest) return;
-    let request: WorkRequest | undefined;
-    while (this.requests.length && !request) {
-      // Priority selects the class; least recently served account selects its lane.
-      // Request id keeps FIFO order within a lane.
-      this.requests.sort((a, b) => b.priority - a.priority ||
-        (this.lastServed.get(a.account) ?? 0) - (this.lastServed.get(b.account) ?? 0) || a.id - b.id);
-      const candidate = this.requests.shift()!;
+    const request = this.scheduler.takeNext(candidate => {
       if (candidate.hinted && !candidate.hintConsumed) {
-        if (!this.consumeReceiveHint(candidate)) continue;
+        if (!this.consumeReceiveHint(candidate)) return false;
         candidate.hintConsumed = true;
       }
       const cached = this.findValidEntry(candidate.root, candidate.multiplier, candidate.account);
       if (cached) {
         candidate.resolve(cached.work);
-        continue;
+        return false;
       }
-      request = candidate;
-    }
+      return true;
+    });
     if (!request) {
       this.publishState();
       return;
     }
     this.activeRequest = request;
     const generationId = this.activeWorkerRequestId = ++this.workerRequestId;
-    this.lastServed.set(request.account, ++this.dispatchSequence);
     this.activeStartedAt = Date.now();
     this.remoteRetryAttempt = 0;
     this.lastErrorAccount = null;
@@ -620,8 +602,7 @@ export class WorkPoolService {
   }
 
   private cancelPendingRequests(error: Error): void {
-    for (const request of this.requests) request.reject(error);
-    this.requests = [];
+    for (const request of this.scheduler.clear()) request.reject(error);
     if (this.activeRequest) {
       this.activeRequest.reject(error);
       this.activeRequest = null;
@@ -653,8 +634,7 @@ export class WorkPoolService {
     this.worker = null;
     this.activeRequest = null;
     this.activeWorkerRequestId = 0;
-    this.requests.push(active);
-    this.requests.sort((a, b) => b.priority - a.priority);
+    this.scheduler.requeue(active);
     this.publishState();
   }
 
@@ -732,7 +712,7 @@ export class WorkPoolService {
     return this.activeRequest?.root === root && this.activeRequest.account === account &&
       this.activeRequest.multiplier === multiplier
       ? this.activeRequest
-      : this.requests.find(request => request.root === root && request.account === account && request.multiplier === multiplier);
+      : this.scheduler.find(request => request.root === root && request.account === account && request.multiplier === multiplier);
   }
 
   private attachRequestListener(request: WorkRequest): Promise<string> {
@@ -775,7 +755,7 @@ export class WorkPoolService {
     }
     this.state$.next({
       ready: this.workCache.length,
-      queued: this.requests.length,
+      queued: this.scheduler.size,
       activeRoot: this.activeRequest?.root || null,
       activeAccount: this.activeRequest?.account || null,
       activeElapsedMs: this.activeRequest ? Date.now() - this.activeStartedAt : 0,
@@ -804,7 +784,7 @@ export class WorkPoolService {
     const statuses = new Map<string, WorkAccountStatus>();
     for (const [account, root] of this.accountRoots) {
       const activeRequest = this.activeRequest?.account === account ? this.activeRequest : null;
-      const queuedRequest = this.requests.find(request => request.account === account && request.root === root) || null;
+      const queuedRequest = this.scheduler.find(request => request.account === account && request.root === root) || null;
       const purpose = resolveWorkAccountPurpose(
         activeRequest?.tier || null,
         queuedRequest?.tier || null,

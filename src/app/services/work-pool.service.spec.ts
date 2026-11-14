@@ -4,6 +4,45 @@ import { UtilService } from './util.service';
 import { WorkAccountStatus, WorkPoolService } from './work-pool.service';
 import { AppSettingsService } from './app-settings.service';
 import { PowRoutingService } from './pow-routing.service';
+import { WorkPoolScheduler } from './work-pool-scheduler';
+
+describe('WorkPoolScheduler', () => {
+  interface Request { id: number; account: string | null; root: string; multiplier: number; priority: number; hinted: boolean; }
+  const request = (id: number, account: string | null, priority = 50): Request => ({
+    id, account, root: `root-${id}`, multiplier: 1, priority, hinted: false,
+  });
+
+  it('deduplicates equivalent queued work and dispatches by priority then account fairness', () => {
+    const scheduler = new WorkPoolScheduler<Request>();
+    const firstA = request(1, 'a');
+    const secondA = request(2, 'a');
+    const firstB = request(3, 'b');
+    expect(scheduler.enqueue(firstA)).toBe(true);
+    expect(scheduler.enqueue({ ...firstA })).toBe(false);
+    scheduler.enqueue(secondA);
+    scheduler.enqueue(firstB);
+
+    expect(scheduler.takeNext(() => true)).toBe(firstA);
+    expect(scheduler.takeNext(() => true)).toBe(firstB);
+    expect(scheduler.takeNext(() => true)).toBe(secondA);
+  });
+
+  it('skips prepared-away work without advancing fairness and supports removal and retry ordering', () => {
+    const scheduler = new WorkPoolScheduler<Request>();
+    const discarded = request(1, 'a');
+    const queued = request(2, 'b');
+    const retry = request(3, 'c');
+    scheduler.enqueue(discarded);
+    scheduler.enqueue(queued);
+    expect(scheduler.takeNext(item => item !== discarded)).toBe(queued);
+    scheduler.retryAtFront(retry);
+    expect(scheduler.takeNext(() => true)).toBe(retry);
+    scheduler.enqueue(queued);
+    expect(scheduler.removeWhere(item => item.account === 'b')).toEqual([queued]);
+    expect(scheduler.clear()).toEqual([]);
+    expect(scheduler.size).toBe(0);
+  });
+});
 
 const sendThreshold = 'SEND-THRESHOLD';
 const receiveThreshold = 'RECEIVE-THRESHOLD';

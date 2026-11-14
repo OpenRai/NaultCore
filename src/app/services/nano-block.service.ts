@@ -7,11 +7,10 @@ import { NotificationService } from "./notification.service";
 import { AppSettingsService } from "./app-settings.service";
 import { LedgerService } from "./ledger.service";
 import { WalletAccount } from "./wallet.service";
-import { NanoNymCryptoService } from "./nanonym-crypto.service";
 import { BehaviorSubject } from "rxjs";
 import { tools as nanocurrencyWebTools } from "nanocurrency-web";
 import { processTransactionBlock } from './transaction-process-policy';
-const nacl = window["nacl"];
+import { LedgerBlockSignerAdapter, SoftwareBlockSignerAdapter } from './transaction-signer-adapters';
 
 @Injectable()
 export class NanoBlockService {
@@ -20,8 +19,9 @@ export class NanoBlockService {
   private workPool = inject(WorkPoolService);
   private notifications = inject(NotificationService);
   private ledgerService = inject(LedgerService);
+  private ledgerSigner = inject(LedgerBlockSignerAdapter);
+  private softwareSigner = inject(SoftwareBlockSignerAdapter);
   settings = inject(AppSettingsService);
-  private nanonymCrypto = inject(NanoNymCryptoService);
 
   representativeAccounts = [
     "nano_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs", // NanoCrawler
@@ -81,12 +81,9 @@ export class NanoBlockService {
           walletAccount.index,
           toAcct.frontier,
         );
-        const sig = await this.ledgerService.signBlock(
-          walletAccount.index,
-          ledgerBlock,
-        );
+        const signature = await this.ledgerSigner.sign(walletAccount.index, ledgerBlock);
         this.clearLedgerNotification();
-        blockData.signature = sig.signature;
+        blockData.signature = signature;
       } catch (err) {
         this.clearLedgerNotification();
         this.sendLedgerDeniedNotification();
@@ -249,12 +246,9 @@ export class NanoBlockService {
           walletAccount.index,
           fromAccount.frontier,
         );
-        const sig = await this.ledgerService.signBlock(
-          walletAccount.index,
-          ledgerBlock,
-        );
+        const signature = await this.ledgerSigner.sign(walletAccount.index, ledgerBlock);
         this.clearLedgerNotification();
-        blockData.signature = sig.signature;
+        blockData.signature = signature;
       } catch (err) {
         this.clearLedgerNotification();
         this.sendLedgerDeniedNotification(err);
@@ -342,12 +336,9 @@ export class NanoBlockService {
             toAcct.frontier,
           );
         }
-        const sig = await this.ledgerService.signBlock(
-          walletAccount.index,
-          ledgerBlock,
-        );
+        const signature = await this.ledgerSigner.sign(walletAccount.index, ledgerBlock);
         this.notifications.removeNotification("ledger-sign");
-        blockData.signature = sig.signature.toUpperCase();
+        blockData.signature = signature.toUpperCase();
       } catch (err) {
         this.notifications.removeNotification("ledger-sign");
         this.notifications.sendWarning(
@@ -451,12 +442,9 @@ export class NanoBlockService {
             console.log(err);
           }
         }
-        const sig = await this.ledgerService.signBlock(
-          walletAccount.index,
-          ledgerBlock,
-        );
+        const signature = await this.ledgerSigner.sign(walletAccount.index, ledgerBlock);
         this.clearLedgerNotification();
-        block.signature = sig.signature;
+        block.signature = signature;
       } catch (err) {
         this.clearLedgerNotification();
         this.sendLedgerDeniedNotification(err);
@@ -576,32 +564,7 @@ export class NanoBlockService {
 
   // Sign a state block, and insert the signature into the block.
   signStateBlock(walletAccount, blockData) {
-    const hashBytes = this.util.nano.hashStateBlock(blockData);
-
-    let signed: Uint8Array;
-
-    // Check if this is a stealth account (has isStealthAccount flag)
-    if (FEATURE_NANONYMS && walletAccount.isStealthAccount) {
-      // For stealth accounts, use scalar-based signing (@noble/ed25519)
-      // The privateKey is already a scalar (not a seed), so we cannot use nacl which would hash it
-      console.log('[NanoBlock] Signing stealth account block using scalar signing');
-
-      // Use the stored public key hex for verification
-      const publicKeyHex = walletAccount.publicKeyHex;
-      console.log('[NanoBlock] Stealth account public key:', publicKeyHex);
-
-      signed = this.nanonymCrypto.signBlockWithScalar(
-        walletAccount.secret,  // This is the scalar for stealth accounts
-        hashBytes,
-        publicKeyHex,  // Pass public key hex to verify scalar derives to correct key
-      );
-    } else {
-      // For regular accounts, use nacl (legacy behavior)
-      const privKey = walletAccount.keyPair.secretKey;
-      signed = nacl.sign.detached(hashBytes, privKey);
-    }
-
-    blockData.signature = this.util.hex.fromUint8(signed);
+    blockData.signature = this.softwareSigner.sign(walletAccount, blockData);
   }
 
   sendLedgerDeniedNotification(err = null) {

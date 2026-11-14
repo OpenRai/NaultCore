@@ -294,6 +294,7 @@
               "src/app/services/notification.service.spec.ts",
               "src/app/models/transaction.model.spec.ts",
               "src/app/services/transaction-history.service.spec.ts",
+              "src/app/services/transaction-process-policy.spec.ts",
               "src/app/services/audio-feedback.service.spec.ts",
               "src/app/services/app-settings.service.spec.ts",
               "src/app/services/recovery-verification.service.spec.ts",

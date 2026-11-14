@@ -9,6 +9,7 @@ import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {ActivatedRoute, Router} from '@angular/router';
 import {NanoBlockService} from '../../services/nano-block.service';
+import {processTransactionBlock} from '../../services/transaction-process-policy';
 import {ApiService} from '../../services/api.service';
 import {PriceService} from '../../services/price.service';
 import * as QRCode from 'qrcode';
@@ -614,15 +615,15 @@ export class SignComponent implements OnInit {
     // Process block
     const blockData: any = this.currentBlock;
     blockData.type = 'state';
-    const processResponse = await this.api.process(blockData, this.txType);
-    if (processResponse && processResponse.hash) {
+    const outcome = await processTransactionBlock(this.api, blockData, this.txType);
+    if (outcome.kind === 'accepted') {
       // Add new hash into the work pool but does not make much sense for this case
-      // this.workPool.addWorkToCache(processResponse.hash);
+      // this.workPool.addWorkToCache(outcome.hash);
       this.workPool.removeFromCache(workBlock, this.toAccountID || this.signatureAccount);
-      this.processedHash = processResponse.hash;
+      this.processedHash = outcome.hash;
       this.notificationService.sendSuccess('Successfully processed the block!');
     } else {
-      console.log(processResponse);
+      console.log(outcome.kind === 'rejected' ? outcome.response : outcome.error);
       this.notificationService.sendError('There was an error while processing the block! Please see the console.', {length: 0});
     }
     this.confirmingTransaction = false;

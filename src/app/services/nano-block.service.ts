@@ -10,6 +10,7 @@ import { WalletAccount } from "./wallet.service";
 import { NanoNymCryptoService } from "./nanonym-crypto.service";
 import { BehaviorSubject } from "rxjs";
 import { tools as nanocurrencyWebTools } from "nanocurrency-web";
+import { processTransactionBlock } from './transaction-process-policy';
 const nacl = window["nacl"];
 
 @Injectable()
@@ -105,15 +106,15 @@ export class NanoBlockService {
     blockData.work = await this.workPool.getWork(toAcct.frontier, 1, walletAccount.id, true);
     this.notifications.removeNotification("pow");
 
-    const processResponse = await this.api.process(blockData, TxType.change);
-    if (processResponse && processResponse.hash) {
-      walletAccount.frontier = processResponse.hash;
-      this.workPool.addWorkToCache(processResponse.hash, 1, walletAccount.id); // Precompute the next frontier.
+    const outcome = await processTransactionBlock(this.api, blockData, TxType.change);
+    if (outcome.kind === 'accepted') {
+      walletAccount.frontier = outcome.hash;
+      this.workPool.addWorkToCache(outcome.hash, 1, walletAccount.id); // Precompute the next frontier.
       this.workPool.removeFromCache(toAcct.frontier, walletAccount.id);
-      return processResponse.hash;
-    } else {
-      return null;
+      return outcome.hash;
     }
+    if (outcome.kind === 'rejected') return null;
+    throw outcome.error;
   }
 
   // This might be used in the future to send state changes on the blocks instead of normal true/false
@@ -273,15 +274,15 @@ export class NanoBlockService {
     blockData.work = await this.workPool.getWork(fromAccount.frontier, 1, walletAccount.id, true);
     this.notifications.removeNotification("pow");
 
-    const processResponse = await this.api.process(blockData, TxType.send);
-    if (!processResponse || !processResponse.hash)
-      throw new Error(processResponse.error || `Node returned an error`);
+    const outcome = await processTransactionBlock(this.api, blockData, TxType.send);
+    if (outcome.kind === 'rejected') throw new Error(outcome.reason);
+    if (outcome.kind === 'failed') throw outcome.error;
 
-    walletAccount.frontier = processResponse.hash;
-    this.workPool.addWorkToCache(processResponse.hash, 1, walletAccount.id); // Precompute the next frontier.
+    walletAccount.frontier = outcome.hash;
+    this.workPool.addWorkToCache(outcome.hash, 1, walletAccount.id); // Precompute the next frontier.
     this.workPool.removeFromCache(fromAccount.frontier, walletAccount.id);
 
-    return processResponse.hash;
+    return outcome.hash;
   }
 
   async generateReceive(walletAccount, sourceBlock, ledger = false) {
@@ -369,13 +370,14 @@ export class NanoBlockService {
     console.log("Get work for receive block");
     blockData.work = await this.workPool.getWork(workBlock, 1 / 64, walletAccount.id); // low PoW threshold since receive block
     this.notifications.removeNotification("pow");
-    const processResponse = await this.api.process(
+    const outcome = await processTransactionBlock(
+      this.api,
       blockData,
       openEquiv ? TxType.open : TxType.receive,
     );
-    console.log(`[NanoBlock] api.process() response for ${openEquiv ? 'open' : 'receive'} block:`, processResponse);
-    if (processResponse && processResponse.hash) {
-      walletAccount.frontier = processResponse.hash;
+    console.log(`[NanoBlock] api.process() response for ${openEquiv ? 'open' : 'receive'} block:`, outcome.kind === 'failed' ? outcome.error : outcome.response);
+    if (outcome.kind === 'accepted') {
+      walletAccount.frontier = outcome.hash;
       // Add new hash into the work pool, high PoW threshold since we don't know what the next one will be
       // Skip adding new work cache directly; the next wallet reconciliation
       // checks pending state and decides what work is needed.
@@ -386,11 +388,12 @@ export class NanoBlockService {
       if (openEquiv) {
         this.informNewRep();
       }
-      return processResponse.hash;
-    } else {
-      console.error(`[NanoBlock] api.process() failed to return hash. Response was:`, processResponse);
+      return outcome.hash;
+    } else if (outcome.kind === 'rejected') {
+      console.error(`[NanoBlock] api.process() failed to return hash. Response was:`, outcome.response);
       return null;
     }
+    throw outcome.error;
   }
 
   // for signing block when offline

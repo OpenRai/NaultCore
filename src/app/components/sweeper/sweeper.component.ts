@@ -7,6 +7,7 @@ import {UtilService, TxType} from '../../services/util.service';
 import {WorkPoolService} from '../../services/work-pool.service';
 import {AppSettingsService} from '../../services/app-settings.service';
 import {NanoBlockService} from '../../services/nano-block.service';
+import {processTransactionBlock} from '../../services/transaction-process-policy';
 import * as nanocurrency from 'nanocurrency';
 import { wallet } from 'nanocurrency-web';
 import * as bip39 from 'bip39';
@@ -291,19 +292,20 @@ export class SweeperComponent implements OnInit {
       // A successful process response is the completion boundary. The optional
       // block_info lookup can lag or stall while the destination is receiving,
       // so it must not keep the sweep UI in PROCESSING.
-      const data = await this.api.process(block.block, TxType.send);
-      if (!data.hash) {
+      const outcome = await processTransactionBlock(this.api, block.block, TxType.send);
+      if (outcome.kind === 'rejected') {
         this.notificationService.sendWarning(`Failed processing block.`);
-        this.appendLog('The node rejected the transfer from source account ' + address + ': ' + data.error);
+        this.appendLog('The node rejected the transfer from source account ' + address + ': ' + outcome.reason);
         return;
       }
+      if (outcome.kind === 'failed') throw outcome.error;
 
-      this.workPool.updateAccountFrontier(address, data.hash);
-      this.workPool.suppressPrecomputation(address, data.hash);
+      this.workPool.updateAccountFrontier(address, outcome.hash);
+      this.workPool.suppressPrecomputation(address, outcome.hash);
       const nanoAmountSent = this.util.nano.rawToMnano(this.adjustedBalance);
       this.totalSwept = this.util.big.add(this.totalSwept, nanoAmountSent);
       this.notificationService.sendInfo('Account ' + address + ' was swept and Ӿ' + nanoAmountSent.toString(10) + ' transferred to ' + this.destinationAccount, {length: 15000});
-      this.appendLog('Transfer accepted by the node: Ӿ' + nanoAmountSent.toString(10) + ' sent from source account ' + address + ' to destination account ' + this.destinationAccount + '. Block: ' + data.hash);
+      this.appendLog('Transfer accepted by the node: Ӿ' + nanoAmountSent.toString(10) + ' sent from source account ' + address + ' to destination account ' + this.destinationAccount + '. Block: ' + outcome.hash);
       console.log(this.adjustedBalance + ' raw transferred to ' + this.destinationAccount);
     } catch (error) {
       this.notificationService.sendWarning(`Failed processing block.`);
@@ -343,10 +345,10 @@ export class SweeperComponent implements OnInit {
       this.previous = block.hash;
 
       // publish block for each iteration
-      const data = await this.api.process(block.block, this.subType === 'open' ? TxType.open : TxType.receive);
-      if (data.hash) {
-        this.workPool.updateAccountFrontier(receiveAddress, data.hash);
-        this.appendLog('Pending receive accepted by the node. Receive block: ' + data.hash);
+      const outcome = await processTransactionBlock(this.api, block.block, this.subType === 'open' ? TxType.open : TxType.receive);
+      if (outcome.kind === 'accepted') {
+        this.workPool.updateAccountFrontier(receiveAddress, outcome.hash);
+        this.appendLog('Pending receive accepted by the node. Receive block: ' + outcome.hash);
 
         // continue with the next pending
         this.keyCount += 1;
@@ -360,9 +362,11 @@ export class SweeperComponent implements OnInit {
           this.appendLog('All pending funds received; preparing the final transfer.');
           this.pendingCallback(this.previous);
         }
-      } else {
+      } else if (outcome.kind === 'rejected') {
         this.notificationService.sendWarning(`Failed processing block`);
-        this.appendLog('The node rejected the receive block: ' + data.error);
+        this.appendLog('The node rejected the receive block: ' + outcome.reason);
+      } else {
+        throw outcome.error;
       }
     } catch (error) {
       if (error.message === 'invalid_hash') {

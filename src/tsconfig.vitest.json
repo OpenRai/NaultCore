@@ -27,6 +27,7 @@
     "app/services/notification.service.spec.ts",
     "app/models/transaction.model.spec.ts",
     "app/services/transaction-history.service.spec.ts",
+    "app/services/transaction-process-policy.spec.ts",
     "app/services/audio-feedback.service.spec.ts",
     "app/services/app-settings.service.spec.ts",
     "app/services/recovery-verification.service.spec.ts",

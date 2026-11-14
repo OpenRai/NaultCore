@@ -60,8 +60,6 @@ import { ChangeRepWidgetComponent } from './components/change-rep-widget/change-
 import { SweeperComponent } from './components/sweeper/sweeper.component';
 import { QrScanComponent } from './components/qr-scan/qr-scan.component';
 import {SignComponent} from './components/sign/sign.component';
-import {RemoteSigningComponent} from './components/remote-signing/remote-signing.component';
-import {RemoteSignService} from './services/remote-sign.service';
 import { InstallWidgetComponent } from './components/install-widget/install-widget.component';
 import { QrModalComponent } from './components/qr-modal/qr-modal.component';
 import { QrModalService, QR_MODAL_COMPONENT } from './services/qr-modal.service';
@@ -119,7 +117,6 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     SweeperComponent,
     QrScanComponent,
     SignComponent,
-    RemoteSigningComponent,
     QrModalComponent,
     ConverterComponent,
     QrGeneratorComponent,
@@ -178,7 +175,6 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NodeService,
     LedgerService,
     DesktopService,
-    RemoteSignService,
     NinjaService,
     NgbActiveModal,
     QrModalService,

@@ -17,7 +17,6 @@ import { RepresentativesComponent } from "./components/representatives/represent
 import { SweeperComponent } from "./components/sweeper/sweeper.component";
 import { QrScanComponent } from "./components/qr-scan/qr-scan.component";
 import { SignComponent } from "./components/sign/sign.component";
-import { RemoteSigningComponent } from "./components/remote-signing/remote-signing.component";
 import { ConverterComponent } from "./components/converter/converter.component";
 import { QrGeneratorComponent } from "./components/qr-generator/qr-generator.component";
 import { environment } from "../environments/environment";
@@ -46,7 +45,10 @@ const routes: Routes = [
   { path: "transaction/:transaction", component: TransactionDetailsComponent },
   { path: "sweeper", component: SweeperComponent },
   { path: "sign", component: SignComponent },
-  { path: "remote-signing", component: RemoteSigningComponent },
+  {
+    path: "remote-signing",
+    loadChildren: () => import("./components/remote-signing/remote-signing.module").then(m => m.RemoteSigningModule),
+  },
   { path: "multisig", component: MultisigComponent },
   { path: "keygenerator", component: KeygeneratorComponent },
   { path: "converter", component: ConverterComponent },

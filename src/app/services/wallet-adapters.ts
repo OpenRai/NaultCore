@@ -26,7 +26,7 @@ export class WalletSecretAdapter {
 
   decrypt(encryptedSecret: string, password: string): string | null {
     try {
-      return CryptoJS.AES.decrypt(encryptedSecret, password).toString(CryptoJS.enc.Utf8);
+      return CryptoJS.AES.decrypt(encryptedSecret, password).toString(CryptoJS.enc.Utf8) || null;
     } catch {
       return null;
     }

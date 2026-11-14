@@ -20,6 +20,7 @@ import { distinctUntilChanged, map } from 'rxjs/operators';
 import { environment } from 'environments/environment';
 import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './passkey-unlock.service';
 import { formatNotificationAmount } from '../utils/transaction-toast-amount';
+import { classifyWalletTransaction } from './wallet-transaction-classifier';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -379,16 +380,6 @@ export class WalletService {
       // or showing a foreground notification.
       if (!await this.verifyConfirmedTransaction(transaction)) return;
       console.log('New Transaction', transaction);
-      let shouldNotify = false;
-      if (this.appSettings.settings.minimumReceive) {
-        const minAmount = this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive);
-        if ((new BigNumber(transaction.amount)).gte(minAmount)) {
-          shouldNotify = true;
-        }
-      } else {
-        shouldNotify = true;
-      }
-
       const walletAccountIDs = this.wallet.accounts.map(a => a.id);
 
       // Include stealth account addresses in transaction detection
@@ -400,23 +391,15 @@ export class WalletService {
         allAccountIDs = [...walletAccountIDs, ...stealthAccountIDs];
       }
 
-      const isConfirmedIncomingTransactionForOwnWalletAccount = (
-          (transaction.block.type === 'state')
-        && (transaction.block.subtype === 'send')
-        && ( allAccountIDs.includes(transaction.block.link_as_account) === true )
-      );
-
-      const isConfirmedSendTransactionFromOwnWalletAccount = (
-          (transaction.block.type === 'state')
-        && (transaction.block.subtype === 'send')
-        && ( allAccountIDs.includes(transaction.block.account) === true )
-      );
-
-      const isConfirmedReceiveTransactionFromOwnWalletAccount = (
-          (transaction.block.type === 'state')
-        && (transaction.block.subtype === 'receive')
-        && ( allAccountIDs.includes(transaction.block.account) === true )
-      );
+      const minimumReceiveRaw = this.appSettings.settings.minimumReceive
+        ? this.util.nano.mnanoToRaw(this.appSettings.settings.minimumReceive)
+        : null;
+      const {
+        incomingToWallet: isConfirmedIncomingTransactionForOwnWalletAccount,
+        sentFromWallet: isConfirmedSendTransactionFromOwnWalletAccount,
+        receivedByWallet: isConfirmedReceiveTransactionFromOwnWalletAccount,
+        shouldNotify,
+      } = classifyWalletTransaction(transaction, allAccountIDs, minimumReceiveRaw);
 
       if (isConfirmedIncomingTransactionForOwnWalletAccount === true) {
         if (shouldNotify === true) {
@@ -434,7 +417,6 @@ export class WalletService {
         }
         await this.processStateBlock(transaction);
       } else if (isConfirmedSendTransactionFromOwnWalletAccount === true) {
-        shouldNotify = true;
         await this.processStateBlock(transaction);
 
         // If this is a stealth account transaction, refresh its balance
@@ -450,7 +432,7 @@ export class WalletService {
           }
         }
       } else if (isConfirmedReceiveTransactionFromOwnWalletAccount === true) {
-        shouldNotify = true;
+        // The classifier marks wallet receives as notifications regardless of the threshold.
       }
 
       // Find if the source or destination is a tracked address in the address book

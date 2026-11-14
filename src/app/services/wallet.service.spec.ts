@@ -5,6 +5,49 @@ import BigNumber from 'bignumber.js';
 
 import { WorkFrontierChangedError } from './work-pool.service';
 import { WalletService } from './wallet.service';
+import { classifyWalletTransaction } from './wallet-transaction-classifier';
+
+describe('wallet transaction classification', () => {
+  const walletAccounts = ['nano_wallet'];
+
+  it('classifies incoming sends and applies the minimum receive amount', () => {
+    const transaction = { amount: '100', block: { type: 'state', subtype: 'send', account: 'nano_sender', link_as_account: 'nano_wallet' } };
+
+    expect(classifyWalletTransaction(transaction, walletAccounts, new BigNumber(100))).toEqual({
+      incomingToWallet: true,
+      sentFromWallet: false,
+      receivedByWallet: false,
+      shouldNotify: true,
+    });
+    expect(classifyWalletTransaction(transaction, walletAccounts, new BigNumber(101)).shouldNotify).toBe(false);
+  });
+
+  it('classifies sends and receives from wallet accounts as notifyable', () => {
+    const send = { amount: '1', block: { type: 'state', subtype: 'send', account: 'nano_wallet', link_as_account: 'nano_external' } };
+    const receive = { amount: '1', block: { type: 'state', subtype: 'receive', account: 'nano_wallet' } };
+    const minimum = new BigNumber(100);
+
+    expect(classifyWalletTransaction(send, walletAccounts, minimum).sentFromWallet).toBe(true);
+    expect(classifyWalletTransaction(send, walletAccounts, minimum).shouldNotify).toBe(true);
+    expect(classifyWalletTransaction(receive, walletAccounts, minimum).receivedByWallet).toBe(true);
+    expect(classifyWalletTransaction(receive, walletAccounts, minimum).shouldNotify).toBe(true);
+  });
+
+  it('keeps notification eligibility independent of wallet ownership for tracked accounts', () => {
+    const transaction = { amount: '1000', block: { type: 'open', subtype: 'receive', account: 'nano_external' } };
+
+    expect(classifyWalletTransaction(transaction, walletAccounts, null)).toEqual({
+      incomingToWallet: false, sentFromWallet: false, receivedByWallet: false, shouldNotify: true,
+    });
+    expect(classifyWalletTransaction(transaction, walletAccounts, new BigNumber(1001)).shouldNotify).toBe(false);
+  });
+
+  it('classifies feature-gated addresses when the caller includes them', () => {
+    const transaction = { amount: '1', block: { type: 'state', subtype: 'send', account: 'nano_stealth', link_as_account: 'nano_external' } };
+
+    expect(classifyWalletTransaction(transaction, ['nano_wallet', 'nano_stealth'], null).sentFromWallet).toBe(true);
+  });
+});
 
 function createServiceForStateTests(): any {
   const service: any = Object.create(WalletService.prototype);

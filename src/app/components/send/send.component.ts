@@ -31,6 +31,22 @@ import { formatNanoAmount } from '../../utils/nano-amount-format';
 
 const nacl = typeof window !== 'undefined' ? window["nacl"] : null;
 
+type ReviewedSendIntent = Readonly<{
+  mode: 'regular' | 'nanonym';
+  sourceId: string;
+  destinationId: string;
+  amount: BigNumber;
+  walletAccount: any;
+  useLedger: boolean;
+  sendNostrNotification: boolean;
+  nanoNymNotification?: Readonly<{
+    ephemeralPublicKey: Uint8Array;
+    notificationUri: string;
+  }>;
+  stealthAccounts?: readonly Readonly<StealthAccount>[];
+  nanoNymIndex?: number;
+}>;
+
 @Component({
   standalone: false,
   selector: "app-send",
@@ -829,41 +845,31 @@ export class SendComponent implements OnInit {
   async confirmTransaction() {
     if (this.confirmingTransaction) return;
     this.confirmingTransaction = true;
-    // Freeze editing during unlock as well as during signing.
-    if (this.isSpendingFromNanoNym) {
+    const intent = this.captureReviewedSendIntent();
+    if (!intent) {
+      this.confirmingTransaction = false;
+      return;
+    }
+
+    if (intent.mode === 'nanonym') {
       try {
-        return await this.confirmNanoNymSpend();
+        return await this.confirmNanoNymSpend(intent);
       } finally {
         this.confirmingTransaction = false;
       }
     }
 
-    const sourceId = this.fromAccountID;
-    const destinationId = this.isNanoNymAddress ? this.stealthAddress : this.getDestinationID();
-    const amount = this.rawAmount;
     try {
-      const walletAccount = this.walletService.getWalletAccount(sourceId);
-      if (!walletAccount) throw new Error('Unable to find sending account in wallet');
       if (this.walletService.isLocked()) {
         const wasUnlocked = await this.walletService.requestWalletUnlock();
         if (wasUnlocked === false) return;
       }
-      if (sourceId !== this.fromAccountID || amount !== this.rawAmount ||
-        destinationId !== (this.isNanoNymAddress ? this.stealthAddress : this.getDestinationID())) {
-        this.activePanel = 'send';
-        return this.notificationService.sendWarning('The payment changed. Review it again before sending.');
-      }
-
-      // Use stealth address for NanoNym, otherwise use regular destination
-      const destinationID = this.isNanoNymAddress
-        ? this.stealthAddress
-        : this.getDestinationID();
 
       const newHash = await this.nanoBlock.generateSend(
-        walletAccount,
-        destinationID,
-        this.rawAmount,
-        this.walletService.isLedgerWallet(),
+        intent.walletAccount,
+        intent.destinationId,
+        intent.amount,
+        intent.useLedger,
       );
 
       if (newHash) {
@@ -876,12 +882,12 @@ export class SendComponent implements OnInit {
         }
 
         // If NanoNym, send Nostr notification (if enabled)
-        if (this.isNanoNymAddress && this.settings.settings.useNostr) {
-          await this.sendNostrNotification(newHash);
+        if (intent.nanoNymNotification && intent.sendNostrNotification) {
+          await this.sendNostrNotification(newHash, intent.amount, intent.nanoNymNotification);
         }
 
         this.notificationService.removeNotification("success-send");
-        const sentAmountLabel = formatNotificationAmount(new BigNumber(this.rawAmount), this.settings?.settings?.minimumReceive);
+        const sentAmountLabel = formatNotificationAmount(intent.amount, this.settings?.settings?.minimumReceive);
         this.notificationService.sendSuccess(
           `Successfully sent ${sentAmountLabel}!`,
           { identifier: "success-send" },
@@ -901,6 +907,76 @@ export class SendComponent implements OnInit {
     } finally {
       this.confirmingTransaction = false;
     }
+  }
+
+  private captureReviewedSendIntent(): ReviewedSendIntent | null {
+    const sourceId = this.fromAccountID;
+    const amount = new BigNumber(this.rawAmount);
+    const destinationId = this.isNanoNymAddress ? this.stealthAddress : this.getDestinationID();
+    if (!sourceId || !destinationId || !amount.isFinite() || amount.lte(0)) {
+      this.notificationService.sendWarning('Review a valid source, destination, and amount before sending.');
+      return null;
+    }
+
+    if (this.isSpendingFromNanoNym) {
+      const stealthAccounts = this.selectedStealthAccounts.map(account => Object.freeze({
+        ...account,
+        publicKey: account.publicKey.slice(),
+        privateKey: account.privateKey.slice(),
+        ephemeralPublicKey: account.ephemeralPublicKey.slice(),
+        balance: new BigNumber(account.balance),
+      }));
+      if (stealthAccounts.length === 0) {
+        this.notificationService.sendWarning('Select stealth accounts to spend from.');
+        return null;
+      }
+      const nanoNymIndex = (this.selectedSpendableAccount as any)?.index ?? stealthAccounts[0].parentNanoNymIndex;
+      return Object.freeze({
+        mode: 'nanonym',
+        sourceId,
+        destinationId: this.getDestinationID(),
+        amount,
+        walletAccount: null,
+        useLedger: false,
+        sendNostrNotification: false,
+        stealthAccounts: Object.freeze(stealthAccounts),
+        nanoNymIndex,
+      });
+    }
+
+    const currentWalletAccount = this.walletService.getWalletAccount(sourceId);
+    if (!currentWalletAccount) {
+      this.notificationService.sendError('Unable to find sending account in wallet');
+      return null;
+    }
+    const walletAccount = {
+      ...currentWalletAccount,
+      secret: currentWalletAccount.secret instanceof Uint8Array
+        ? currentWalletAccount.secret.slice()
+        : currentWalletAccount.secret,
+      keyPair: currentWalletAccount.keyPair && Object.fromEntries(
+        Object.entries(currentWalletAccount.keyPair).map(([key, value]) => [
+          key,
+          value instanceof Uint8Array ? value.slice() : value,
+        ]),
+      ),
+    };
+    const nanoNymNotification = this.isNanoNymAddress && this.nanoNymParsedKeys && this.ephemeralPublicKey
+      ? Object.freeze({
+          ephemeralPublicKey: this.ephemeralPublicKey.slice(),
+          notificationUri: this.nanoNymParsedKeys.notificationUri,
+        })
+      : undefined;
+    return Object.freeze({
+      mode: 'regular',
+      sourceId,
+      destinationId,
+      amount,
+      walletAccount,
+      useLedger: this.walletService.isLedgerWallet(),
+      sendNostrNotification: !!nanoNymNotification && !!this.settings.settings.useNostr,
+      nanoNymNotification,
+    });
   }
 
   /**
@@ -1017,10 +1093,7 @@ export class SendComponent implements OnInit {
    * Confirm and execute spending from NanoNym stealth accounts (Section 8)
    * Sends multiple transactions, one from each selected stealth account
    */
-  async confirmNanoNymSpend() {
-    const sourceId = this.fromAccountID;
-    const requestedDestination = this.getDestinationID();
-    const requestedAmount = this.rawAmount;
+  async confirmNanoNymSpend(intent: ReviewedSendIntent) {
     if (this.walletService.isLocked()) {
       const wasUnlocked = await this.walletService.requestWalletUnlock();
       if (wasUnlocked === false) {
@@ -1028,28 +1101,23 @@ export class SendComponent implements OnInit {
       }
     }
 
-    if (sourceId !== this.fromAccountID || requestedDestination !== this.getDestinationID() || requestedAmount !== this.rawAmount) {
-      this.activePanel = 'send';
-      return this.notificationService.sendWarning('The payment changed. Review it again before sending.');
-    }
-    const destinationID = requestedDestination;
-
     this.confirmingTransaction = true;
 
     try {
-      console.log(`[Send-NanoNym] Sending from ${this.selectedStealthAccounts.length} stealth accounts`);
+      const stealthAccounts = intent.stealthAccounts!;
+      console.log(`[Send-NanoNym] Sending from ${stealthAccounts.length} stealth accounts`);
 
       let totalSent = new BigNumber(0);
       let successCount = 0;
       const txHashes: string[] = [];
 
       // Initialize progress tracking
-      this.sendProgress.total = this.selectedStealthAccounts.length;
+      this.sendProgress.total = stealthAccounts.length;
       this.sendProgress.current = 0;
 
       // Phase 3: Just-in-time opening - ensure all stealth accounts are opened before spending
       console.log('[Send-NanoNym] Phase 3: Ensuring stealth accounts are opened...');
-      const accountsReady = await this.ensureStealthAccountsOpened(this.selectedStealthAccounts);
+      const accountsReady = await this.ensureStealthAccountsOpened(stealthAccounts as StealthAccount[]);
 
       if (!accountsReady) {
         this.notificationService.sendError('Cannot open stealth accounts. Please try again in a moment.');
@@ -1058,8 +1126,8 @@ export class SendComponent implements OnInit {
       }
 
       // Send from each stealth account sequentially
-      for (let i = 0; i < this.selectedStealthAccounts.length; i++) {
-        const stealthAccount = this.selectedStealthAccounts[i];
+      for (let i = 0; i < stealthAccounts.length; i++) {
+        const stealthAccount = stealthAccounts[i];
         this.sendProgress.current = i + 1;
 
         // Fetch current account info from node to get accurate balance and frontier
@@ -1097,7 +1165,7 @@ export class SendComponent implements OnInit {
         }
 
         // Calculate how much to send from this account
-        const remaining = this.rawAmount.minus(totalSent);
+        const remaining = intent.amount.minus(totalSent);
         const amountToSend = BigNumber.min(accountBalance, remaining);
 
         console.log(`[Send-NanoNym] Account ${this.sendProgress.current}/${this.sendProgress.total}:`, {
@@ -1133,7 +1201,7 @@ export class SendComponent implements OnInit {
         // Send the transaction
         const txHash = await this.nanoBlock.generateSend(
           tempAccount,
-          destinationID,
+          intent.destinationId,
           amountToSend,
           false // Never ledger for stealth accounts
         );
@@ -1145,9 +1213,9 @@ export class SendComponent implements OnInit {
           successCount++;
 
           // Update balance after each transaction to show incremental progress
-          const nanoNymAccount = this.selectedSpendableAccount as any;
-          await this.nanoNymManager.refreshBalances(nanoNymAccount.index);
-          stealthAccount.done = true;
+          await this.nanoNymManager.refreshBalances(intent.nanoNymIndex);
+          const reviewedAccount = this.selectedStealthAccounts.find(account => account.address === stealthAccount.address);
+          if (reviewedAccount) reviewedAccount.done = true;
         } else {
           console.error(`[Send-NanoNym] ❌ Transaction ${i + 1} failed`);
           // Continue trying other accounts even if one fails
@@ -1172,8 +1240,7 @@ export class SendComponent implements OnInit {
         });
 
         // Refresh NanoNym balances
-        const nanoNymAccount = this.selectedSpendableAccount as any;
-        await this.nanoNymManager.refreshBalances(nanoNymAccount.index);
+        await this.nanoNymManager.refreshBalances(intent.nanoNymIndex);
 
         this.resetForm();
       } else {
@@ -1372,8 +1439,14 @@ export class SendComponent implements OnInit {
     }
   }
 
-  async sendNostrNotification(txHash: string) {
-    if (!this.ephemeralPublicKey || !this.nanoNymParsedKeys) {
+  async sendNostrNotification(
+    txHash: string,
+    amount: BigNumber = this.rawAmount,
+    reviewedNotification = this.nanoNymParsedKeys && this.ephemeralPublicKey
+      ? { ephemeralPublicKey: this.ephemeralPublicKey, notificationUri: this.nanoNymParsedKeys.notificationUri }
+      : null,
+  ) {
+    if (!reviewedNotification) {
       console.error("Missing ephemeral key or NanoNym keys for notification");
       return;
     }
@@ -1383,22 +1456,22 @@ export class SendComponent implements OnInit {
       const notification = {
         version: 2 as const,
         protocol: "nanonym" as const,
-        R: this.bytesToHex(this.ephemeralPublicKey),
+        R: this.bytesToHex(reviewedNotification.ephemeralPublicKey),
         tx_hash: txHash.toLowerCase(),
-        amount_raw: this.rawAmount.toFixed(0),
+        amount_raw: amount.toFixed(0),
       };
 
       console.log("[Send] Preparing Nostr notification:", {
         tx_hash: txHash,
-        ephemeralPublicKey_hex: this.bytesToHex(this.ephemeralPublicKey),
-        receiver_notification_uri: this.nanoNymParsedKeys.notificationUri,
+        ephemeralPublicKey_hex: this.bytesToHex(reviewedNotification.ephemeralPublicKey),
+        receiver_notification_uri: reviewedNotification.notificationUri,
         notification: notification,
       });
 
       const acceptedRelays = await this.nostrService.sendNotificationToUri(
         notification,
         senderNostrKey.private,
-        this.nanoNymParsedKeys.notificationUri,
+        reviewedNotification.notificationUri,
       );
       console.log(
         `[Send] Nostr notification sent to ${acceptedRelays.length} relays:`,

@@ -70,6 +70,8 @@ describe('SendComponent - regular wallet balance refresh', () => {
     const walletAccount = { id: 'nano_source' };
 
     return {
+      captureReviewedSendIntent: (SendComponent.prototype as any).captureReviewedSendIntent,
+      confirmNanoNymSpend: SendComponent.prototype.confirmNanoNymSpend,
       isSpendingFromNanoNym: false,
       walletService: {
         wallet: { accounts: [walletAccount] },
@@ -113,18 +115,120 @@ describe('SendComponent - regular wallet balance refresh', () => {
     expect(component.notificationService.sendSuccess).toHaveBeenCalled();
     expect(component.notificationService.sendError).not.toHaveBeenCalled();
   });
-  it('blocks duplicate confirmation and source changes during wallet unlock', async () => {
+  it('executes the reviewed source, destination, and amount if component state changes during unlock', async () => {
     const component = createRegularSendContext(vi.fn(() => Promise.resolve()));
     component.walletService.isLocked = () => true;
-    component.walletService.requestWalletUnlock = vi.fn(async () => {
-      expect(component.confirmingTransaction).toBe(true);
-      component.fromAccountID = 'nano_removed_or_replaced';
-      return true;
-    });
+    let finishUnlock!: (unlocked: boolean) => void;
+    component.walletService.requestWalletUnlock = vi.fn(() => new Promise(resolve => {
+      finishUnlock = resolve;
+    }));
+    let destination = 'nano_destination';
+    component.getDestinationID = () => destination;
+    const confirmation = SendComponent.prototype.confirmTransaction.call(component);
+    expect(component.confirmingTransaction).toBe(true);
+
+    // Duplicate confirmation remains blocked while the original review waits
+    // for wallet unlock.
     await SendComponent.prototype.confirmTransaction.call(component);
     expect(component.nanoBlock.generateSend).not.toHaveBeenCalled();
-    expect(component.notificationService.sendWarning).toHaveBeenCalledWith('The payment changed. Review it again before sending.');
+
+    component.fromAccountID = 'nano_removed_or_replaced';
+    component.rawAmount = new BigNumber(9);
+    destination = 'nano_changed_destination';
+    component.isNanoNymAddress = true;
+    component.stealthAddress = 'nano_changed_stealth_destination';
+    component.isSpendingFromNanoNym = true;
+    finishUnlock(true);
+    await confirmation;
+
+    expect(component.nanoBlock.generateSend).toHaveBeenCalledTimes(1);
+    expect(component.nanoBlock.generateSend).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'nano_source' }),
+      'nano_destination',
+      new BigNumber(1),
+      false,
+    );
+    expect(component.notificationService.sendWarning).not.toHaveBeenCalled();
     expect(component.confirmingTransaction).toBe(false);
+  });
+
+  it('does not send when wallet unlock is cancelled', async () => {
+    const component = createRegularSendContext(vi.fn(() => Promise.resolve()));
+    component.walletService.isLocked = () => true;
+    component.walletService.requestWalletUnlock = vi.fn(async () => false);
+
+    await SendComponent.prototype.confirmTransaction.call(component);
+
+    expect(component.nanoBlock.generateSend).not.toHaveBeenCalled();
+    expect(component.resetForm).not.toHaveBeenCalled();
+    expect(component.confirmingTransaction).toBe(false);
+  });
+
+  it('rejects an invalid reviewed amount before requesting unlock', async () => {
+    const component = createRegularSendContext(vi.fn(() => Promise.resolve()));
+    component.rawAmount = new BigNumber(0);
+    component.walletService.isLocked = () => true;
+    component.walletService.requestWalletUnlock = vi.fn();
+
+    await SendComponent.prototype.confirmTransaction.call(component);
+
+    expect(component.walletService.requestWalletUnlock).not.toHaveBeenCalled();
+    expect(component.nanoBlock.generateSend).not.toHaveBeenCalled();
+    expect(component.notificationService.sendWarning).toHaveBeenCalled();
+    expect(component.confirmingTransaction).toBe(false);
+  });
+
+  it('sends the reviewed NanoNym destination, amount, and stealth account after unlock', async () => {
+    const stealthAccount = {
+      address: 'nano_stealth_reviewed',
+      publicKey: new Uint8Array([1]),
+      privateKey: new Uint8Array([2]),
+      ephemeralPublicKey: new Uint8Array([3]),
+      txHash: 'reviewed-source-hash',
+      amountRaw: '500',
+      receivedAt: 1,
+      parentNanoNymIndex: 7,
+      balance: new BigNumber(500),
+    };
+    const component = createRegularSendContext(vi.fn(() => Promise.resolve())) as any;
+    component.confirmingTransaction = false;
+    component.isSpendingFromNanoNym = true;
+    component.sendProgress = { current: 0, total: 0 };
+    component.fromAccountID = 'nano_nym_source';
+    component.getDestinationID = () => component.toAccountID;
+    component.toAccountID = 'nano_reviewed_destination';
+    component.rawAmount = new BigNumber(300);
+    component.nano = 1000000000000000000000000;
+    component.selectedStealthAccounts = [stealthAccount];
+    component.selectedSpendableAccount = { index: 7 };
+    component.walletService.isLocked = () => true;
+    let finishUnlock!: (unlocked: boolean) => void;
+    component.walletService.requestWalletUnlock = vi.fn(() => new Promise(resolve => {
+      finishUnlock = resolve;
+    }));
+    component.ensureStealthAccountsOpened = vi.fn(async () => true);
+    component.nodeApi = {
+      accountInfo: vi.fn(async () => ({ frontier: 'A'.repeat(64), balance: '500', pending: '0' })),
+    };
+    component.util = { hex: { fromUint8: () => 'public-key' } };
+    component.nanoNymManager = { refreshBalances: vi.fn(async () => undefined) };
+    component.settings = { settings: { minimumReceive: 0 } };
+
+    const confirmation = SendComponent.prototype.confirmTransaction.call(component);
+    component.toAccountID = 'nano_changed_destination';
+    component.rawAmount = new BigNumber(450);
+    component.selectedStealthAccounts = [];
+    component.selectedSpendableAccount = { index: 99 };
+    finishUnlock(true);
+    await confirmation;
+
+    expect(component.nanoBlock.generateSend).toHaveBeenCalledTimes(1);
+    const [temporaryAccount, destination, amount, ledger] = component.nanoBlock.generateSend.mock.calls[0];
+    expect(temporaryAccount.id).toBe('nano_stealth_reviewed');
+    expect(destination).toBe('nano_reviewed_destination');
+    expect(amount).toEqual(new BigNumber(300));
+    expect(ledger).toBe(false);
+    expect(component.nanoNymManager.refreshBalances).toHaveBeenCalledWith(7);
   });
 
 });

@@ -1,4 +1,5 @@
-import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {ActivatedRoute, ChildActivationEnd, Router, NavigationEnd} from '@angular/router';
 import {formatDate} from '@angular/common';
 import {AddressBookService} from '../../services/address-book.service';
@@ -31,6 +32,7 @@ import { WorkAccountStatus, WorkPoolService } from '../../services/work-pool.ser
   styleUrls: ['./account-details.component.css']
 })
 export class AccountDetailsComponent implements OnInit, OnDestroy {
+  private readonly destroyRef = inject(DestroyRef);
   readonly branding = branding;
   private router = inject(ActivatedRoute);
   private route = inject(Router);
@@ -74,8 +76,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
   walletAccount = null;
   workStatus: WorkAccountStatus | null = null;
-  workStatusSub = null;
-  walletStateSub = null;
   pendingBlockSnapshotSignature = '';
 
   timeoutIdAllowingManualRefresh: any = null;
@@ -102,8 +102,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
   qrCodeImage = null;
 
-  routerSub = null;
-  priceSub = null;
 
   initialLoadDone = false;
   manualRefreshAllowed = true;
@@ -151,7 +149,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       const route = this.route;
 
       // to detect when the account changes if the view is already active
-      route.events.subscribe((val) => {
+      route.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((val) => {
         if (val instanceof NavigationEnd) {
           this.clearRemoteVars(); // reset the modal content for remote signing
         }
@@ -172,19 +170,19 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     this.showFullDetailsOnSmallViewports = (params.compact !== '1');
 
-    this.routerSub = this.route.events.subscribe(event => {
+    this.route.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       if (event instanceof ChildActivationEnd) {
         this.loadAccountDetails(); // Reload the state when navigating to itself from the transactions page
         this.showFullDetailsOnSmallViewports = (this.router.snapshot.queryParams.compact !== '1');
         this.mobileTransactionMenuModal.hide();
       }
     });
-    this.priceSub = this.price.lastPrice$.subscribe(event => {
+    this.price.lastPrice$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(event => {
       this.account.balanceFiat = this.util.nano.rawToMnano(this.account.balance || 0).times(this.price.price.lastPrice).toNumber();
       this.account.pendingFiat = this.util.nano.rawToMnano(this.account.pending || 0).times(this.price.price.lastPrice).toNumber();
     });
 
-    this.walletStateSub = this.wallet.walletState$.subscribe(snapshot => {
+    this.wallet.walletState$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(snapshot => {
       // Direct links can mount before persisted wallet accounts have hydrated.
       if (this.accountID && !this.accountID.startsWith('nnym_')) {
         this.walletAccount = this.wallet.getWalletAccount(this.accountID) || null;
@@ -198,7 +196,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
       }
       this.pendingBlockSnapshotSignature = signature;
     });
-    this.workStatusSub = this.workPool.accountStatus$.subscribe(statuses => {
+    this.workPool.accountStatus$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(statuses => {
       this.workStatus = this.accountID ? (statuses.get(this.accountID) || null) : null;
     });
 
@@ -218,7 +216,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
 
     this.populateRepresentativeList();
 
-    this.repService.walletReps$.subscribe(async reps => {
+    this.repService.walletReps$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async reps => {
       if ( reps[0] === null ) {
         // initial state from new BehaviorSubject([null])
         return;
@@ -725,18 +723,6 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.mobileAccountMenuModal.hide();
     this.mobileTransactionMenuModal.hide();
-    if (this.workStatusSub) {
-      this.workStatusSub.unsubscribe();
-    }
-    if (this.walletStateSub) {
-      this.walletStateSub.unsubscribe();
-    }
-    if (this.routerSub) {
-      this.routerSub.unsubscribe();
-    }
-    if (this.priceSub) {
-      this.priceSub.unsubscribe();
-    }
   }
 
   async generateReceiveQR(accountID) {

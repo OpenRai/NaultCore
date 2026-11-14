@@ -12,6 +12,8 @@
     "app/services/nanonym-manager.service.spec.ts",
     "app/services/nano-block.service.spec.ts",
     "app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
+    "app/components/account-details/account-identity-panel/account-identity-panel.component.spec.ts",
+    "app/components/account-details/nanonym-status-balance-panel/nanonym-status-balance-panel.component.spec.ts",
     "app/services/nanonym-account-selection.service.ts",
     "app/services/nanonym-crypto.service.ts",
     "app/services/nostr-send-queue.service.ts",

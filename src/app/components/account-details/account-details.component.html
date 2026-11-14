@@ -93,67 +93,25 @@
           </div>
         }
 
-            <div uk-grid>
-            @if ((settings.settings.identiconsStyle !== 'none')) {
-              <app-nano-identicon scale="12" [accountID]="accountID" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
-            }
-            <div class="account-identity uk-width-1-1 uk-width-expand@s">
-              @if (walletAccount && (addressBookEntry || showEditAddressBook)) {
-                <div
-                  class="account-type-label"
-                  [class.editing-name]="showEditAddressBook"
-                  >
-                  {{ ('general.account' | transloco) + ' #' + walletAccount.index }}
-                </div>
-              }
-              @if (!walletAccount) {
-                <div
-                  class="account-type-label"
-                  [class.editing-name]="showEditAddressBook"
-                  >
-                  {{ 'account-details.external-address' | transloco }}
-                </div>
-              }
-              <div uk-grid>
-                @if (showEditAddressBook) {
-                  <div class="uk-width-1-1">
-                    <div class="uk-margin">
-                      <div class="uk-inline uk-width-1-1">
-                        <a class="uk-form-icon uk-form-icon-flip uk-text-success" (click)="saveAddressBook()" uk-icon="icon: check" uk-tooltip [title]="'general.save' | transloco"></a>
-                        <a class="uk-form-icon uk-form-icon-flip uk-text-danger" style="margin-right: 26px;" (click)="showEditAddressBook = false" uk-tooltip [title]="'general.cancel' | transloco" uk-icon="icon: close"></a>
-                        <input class="uk-input" (keyup.enter)="saveAddressBook()" [(ngModel)]="addressBookModel" [placeholder]="'account-details.address-book-name-leave-blank-to-remove' | transloco" type="text" style="padding-right: 60px;" maxlength="64">
-                      </div>
-                    </div>
-                  </div>
-                }
-                @if (!showEditAddressBook) {
-                  <div class="uk-width-1-1">
-                    <div class="uk-width-1-1">
-                      <div uk-grid>
-                        <h3 class="uk-width-auto uk-card-title uk-text-truncate" style="max-width: calc(100% - 35px);">{{ getAccountDisplayLabel() }}</h3>
-                        <div class="uk-width-auto" style="padding-left: 10px; margin-top: 3px;">
-                          <a style="display: contents;"><span uk-icon="icon: pencil;" uk-tooltip (click)="showEditAddressBook = !showEditAddressBook" [title]="'general.edit' | transloco"></span></a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-                <div class="uk-width-1-1 uk-margin-small-top">
-                  <div uk-grid>
-                    <div class="nano-address-monospace uk-width-auto uk-text-small uk-text-truncate" style="max-width: calc(100% - 60px);">
-                      <app-nano-account-id [accountID]="accountID"></app-nano-account-id>
-                    </div>
-                    <div class="nano-address-actions uk-width-auto" style="margin-top: 0;">
-                      <ul class="uk-iconnav">
-                        <li><a ngxClipboard [cbContent]="accountID" (cbOnSuccess)="copied()" uk-icon="icon: copy" [title]="'general.copy' | transloco" uk-tooltip></a></li>
-                        <li><a (click)="qrModal.show()" [title]="'general.show-qr-code' | transloco" uk-tooltip class="icon-qr-code"></a></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            <app-account-identity-panel
+              [accountID]="accountID"
+              [displayLabel]="getAccountDisplayLabel()"
+              [typeLabel]="walletAccount ? ((addressBookEntry || showEditAddressBook) ? (('general.account' | transloco) + ' #' + walletAccount.index) : '') : ('account-details.external-address' | transloco)"
+              [iconStyle]="settings.settings.identiconsStyle"
+              [editing]="showEditAddressBook"
+              [model]="addressBookModel"
+              [placeholder]="'account-details.address-book-name-leave-blank-to-remove' | transloco"
+              [saveLabel]="'general.save' | transloco"
+              [cancelLabel]="'general.cancel' | transloco"
+              [editLabel]="'general.edit' | transloco"
+              [copyLabel]="'general.copy' | transloco"
+              [showQrLabel]="'general.show-qr-code' | transloco"
+              (editingChange)="showEditAddressBook = $event"
+              (modelChange)="addressBookModel = $event"
+              (save)="saveAddressBook()"
+              (copied)="copied()"
+              (showQr)="qrModal.show()"
+            />
           </div>
           <ng-container *ngTemplateOutlet="accountActions"></ng-container>
         </div>
@@ -663,104 +621,41 @@
       <div class="uk-card uk-card-default uk-margin" [class.hide-on-small-viewports]="nanoNym && (showFullDetailsOnSmallViewports === false)">
         <!-- 3.1 Header Section -->
         <div class="account-details-header uk-card-header uk-visible-toggle">
-          <div uk-grid>
-            @if ((settings.settings.identiconsStyle !== 'none')) {
-              <app-nano-identicon scale="12" [accountID]="accountID" [settingIdenticonsStyle]="settings.settings.identiconsStyle" class="nano-identicon"></app-nano-identicon>
-            }
-            <div class="uk-width-1-1 uk-width-expand@s">
-              <div class="account-type-label" [class.editing-name]="showEditAddressBook">
-                {{ 'account-details.nanonym-account' | transloco }}
-              </div>
-              <div uk-grid>
-                <!-- Label editing -->
-                @if (showEditAddressBook) {
-                  <div class="uk-width-1-1">
-                    <div class="uk-margin">
-                      <div class="uk-inline uk-width-1-1">
-                        <a class="uk-form-icon uk-form-icon-flip uk-text-success" (click)="saveAddressBook()" uk-icon="icon: check" uk-tooltip [title]="'general.save' | transloco"></a>
-                        <a class="uk-form-icon uk-form-icon-flip uk-text-danger" style="margin-right: 26px;" (click)="showEditAddressBook = false" uk-tooltip [title]="'general.cancel' | transloco" uk-icon="icon: close"></a>
-                        <input class="uk-input" (keyup.enter)="saveAddressBook()" [(ngModel)]="addressBookModel" [placeholder]="'account-details.nanonym-label-placeholder' | transloco" type="text" style="padding-right: 60px;" maxlength="64">
-                      </div>
-                    </div>
-                  </div>
-                }
-                @if (!showEditAddressBook) {
-                  <div class="uk-width-1-1">
-                    <div class="uk-width-1-1">
-                      <div uk-grid>
-                        <h3 class="uk-width-auto uk-card-title uk-text-truncate" style="max-width: calc(100% - 35px);">
-                          {{ nanoNym.label }}
-                        </h3>
-                        <div class="uk-width-auto" style="padding-left: 10px; margin-top: 3px;">
-                          <a style="display: contents;"><span uk-icon="icon: pencil;" uk-tooltip (click)="showEditAddressBook = !showEditAddressBook" [title]="'general.edit' | transloco"></span></a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-                <!-- NanoNym address with copy/QR -->
-                <div class="uk-width-1-1 uk-margin-small-top">
-                  <div uk-grid>
-                    <div class="nano-address-monospace uk-width-auto uk-text-small uk-text-truncate" style="max-width: calc(100% - 60px);">
-                      <app-nano-account-id [accountID]="accountID"></app-nano-account-id>
-                    </div>
-                    <div class="nano-address-actions uk-width-auto" style="margin-top: 0;">
-                      <ul class="uk-iconnav">
-                        <li><a ngxClipboard [cbContent]="accountID" (cbOnSuccess)="copied()" uk-icon="icon: copy" [title]="'general.copy' | transloco" uk-tooltip></a></li>
-                        <li><a (click)="qrModal.show()" [title]="'general.show-qr-code' | transloco" uk-tooltip class="icon-qr-code"></a></li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <app-account-identity-panel
+            [accountID]="accountID"
+            [displayLabel]="nanoNym.label"
+            [typeLabel]="'account-details.nanonym-account' | transloco"
+            [iconStyle]="settings.settings.identiconsStyle"
+            [editing]="showEditAddressBook"
+            [model]="addressBookModel"
+            [placeholder]="'account-details.nanonym-label-placeholder' | transloco"
+            [saveLabel]="'general.save' | transloco"
+            [cancelLabel]="'general.cancel' | transloco"
+            [editLabel]="'general.edit' | transloco"
+            [copyLabel]="'general.copy' | transloco"
+            [showQrLabel]="'general.show-qr-code' | transloco"
+            (editingChange)="showEditAddressBook = $event"
+            (modelChange)="addressBookModel = $event"
+            (save)="saveAddressBook()"
+            (copied)="copied()"
+            (showQr)="qrModal.show()"
+          />
         </div>
         <!-- 3.2 Status + Balance Section -->
-        <div class="uk-card-header uk-form-horizontal uk-width-expand">
-          <div uk-grid>
-            <!-- Status Section -->
-            <div class="nanonym-status-section uk-width-1-1@s uk-width-1-2@l">
-              <div class="details-header">{{ 'account-details.nanonym-status' | transloco }}</div>
-              <div class="status-display">
-                <div class="status-badge" [class.status-active]="nanoNym.status === 'active'" [class.status-archived]="nanoNym.status === 'archived'">
-                  <span class="status-icon" uk-icon="icon: {{ nanoNym.status === 'active' ? 'check' : 'ban' }}; ratio: 0.8;"></span>
-                  <span class="status-text">
-                    {{ nanoNym.status === 'active' ? ('account-details.nanonym-active' | transloco) : ('account-details.nanonym-archived' | transloco) }}
-                  </span>
-                </div>
-                <button class="uk-button uk-button-small uk-button-default uk-margin-small-top" (click)="toggleNanoNymStatus()">
-                  {{ nanoNym.status === 'active' ? ('account-details.archive-nanonym' | transloco) : ('account-details.reactivate-nanonym' | transloco) }}
-                </button>
-              </div>
-            </div>
-            <!-- Balance Section -->
-            <div class="balance-details uk-width-1-1@s uk-width-1-2@l">
-              <div class="details-header">{{ 'general.balance' | transloco }}</div>
-              @if (!loadingAccountDetails) {
-                <div>
-                  <div class="account-amounts-primary">
-                    <div class="account-amounts-primary-confirmed">
-                      <span class="amount-currency-symbol xno-symbol"></span>
-                      <app-nano-amount [raw]="nanoNym.balance" context="preview"></app-nano-amount>
-                    </div>
-                  </div>
-                </div>
-                <div class="account-amounts-converted text-half-muted">
-                  {{ (nanoNymBalanceFiat | fiat: settings.settings.displayCurrency) }}
-                </div>
-                <div class="payment-count-summary uk-margin-small-top uk-text-muted uk-text-small">
-                  <span uk-icon="icon: credit-card; ratio: 0.7;"></span>
-                  {{ nanoNym.paymentCount }} {{ nanoNym.paymentCount === 1 ? 'payment' : 'payments' }}
-                </div>
-              } @else {
-                <div class="uk-margin-small-top">
-                  <div uk-spinner="ratio: 0.5;" style="vertical-align: 2px;"></div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
+        <app-nanonym-status-balance-panel
+          [nanoNym]="nanoNym"
+          [loading]="loadingAccountDetails"
+          [balanceFiatText]="nanoNymBalanceFiat | fiat: settings.settings.displayCurrency"
+          [statusTitle]="'account-details.nanonym-status' | transloco"
+          [activeLabel]="'account-details.nanonym-active' | transloco"
+          [archivedLabel]="'account-details.nanonym-archived' | transloco"
+          [archiveActionLabel]="'account-details.archive-nanonym' | transloco"
+          [reactivateActionLabel]="'account-details.reactivate-nanonym' | transloco"
+          [balanceTitle]="'general.balance' | transloco"
+          (toggleStatus)="toggleNanoNymStatus()"
+        >
+          <app-nano-amount nanonymBalance [raw]="nanoNym.balance" context="preview"></app-nano-amount>
+        </app-nanonym-status-balance-panel>
       </div>
       <!-- Phase 4: Advanced Options -->
       <div class="uk-card-header uk-form-horizontal">

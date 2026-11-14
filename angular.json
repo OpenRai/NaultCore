@@ -313,6 +313,8 @@
               "src/app/services/qr-modal.service.spec.ts",
               "src/app/services/deeplink.service.spec.ts",
               "src/app/components/account-details/account-load-generation.spec.ts",
+              "src/app/components/account-details/account-identity-panel/account-identity-panel.component.spec.ts",
+              "src/app/components/account-details/nanonym-status-balance-panel/nanonym-status-balance-panel.component.spec.ts",
               "src/app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
               "src/app/components/configure-wallet/configure-wallet.component.spec.ts",
               "src/app/components/configure-app/configure-app.component.spec.ts",
@@ -342,6 +344,8 @@
               "src/app/services/nostr-sync-state.service.spec.ts",
               "src/app/services/nostr-notification.service.spec.ts",
               "src/app/services/nanonym-manager.service.spec.ts",
+              "src/app/components/account-details/account-identity-panel/account-identity-panel.component.spec.ts",
+              "src/app/components/account-details/nanonym-status-balance-panel/nanonym-status-balance-panel.component.spec.ts",
               "src/app/components/helpers/nano-account-id/nano-account-id.component.spec.ts",
               "src/app/services/nano-block.service.spec.ts"
             ],

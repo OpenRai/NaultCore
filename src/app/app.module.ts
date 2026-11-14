@@ -87,6 +87,8 @@ import { WalletComponent } from './components/wallet/wallet.component';
 import { TransactionTableComponent } from './components/transaction-table/transaction-table.component';
 import { TransactionHistoryService } from './services/transaction-history.service';
 import { NanoAmountComponent } from './components/nano-amount/nano-amount.component';
+import { AccountIdentityPanelComponent } from './components/account-details/account-identity-panel/account-identity-panel.component';
+import { NanonymStatusBalancePanelComponent } from './components/account-details/nanonym-status-balance-panel/nanonym-status-balance-panel.component';
 
 @NgModule({
   declarations: [
@@ -141,6 +143,8 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     NanoIdenticonComponent,
     AccountSummaryComponent,
     TransactionAccountPickerComponent,
+    AccountIdentityPanelComponent,
+    NanonymStatusBalancePanelComponent,
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,

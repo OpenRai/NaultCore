@@ -1,4 +1,5 @@
 export * from './address-book.service';
+export * from './app-startup-coordinator.service';
 export * from './api.service';
 export * from './app-settings.service';
 export * from './desktop.service';

@@ -1,33 +1,25 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, Renderer2, Injector, inject, ChangeDetectionStrategy, ApplicationRef, DestroyRef } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, inject, ChangeDetectionStrategy, ApplicationRef, DestroyRef } from '@angular/core';
 import {Title} from '@angular/platform-browser';
 import {WalletService} from './services/wallet.service';
-import {AddressBookService} from './services/address-book.service';
 import {AppSettingsService, AppearanceMode} from './services/app-settings.service';
 import {WebsocketService} from './services/websocket.service';
 import {PriceService} from './services/price.service';
 import {UtilService} from './services/util.service';
 import {NotificationService} from './services/notification.service';
-import {AudioFeedbackService} from './services/audio-feedback.service';
 import {ThemeService} from './services/theme.service';
-import {WorkPoolService} from './services/work-pool.service';
 import {Router} from '@angular/router';
 import {SwUpdate} from '@angular/service-worker';
-import {debounceTime, filter, first, switchMap} from 'rxjs/operators';
+import {debounceTime, first, switchMap} from 'rxjs/operators';
 import {Subject, interval} from 'rxjs';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {RepresentativeService} from './services/representative.service';
 import {NodeService} from './services/node.service';
-import { DesktopService, LedgerService } from './services';
 import { environment } from 'environments/environment';
-import { DeeplinkService } from './services/deeplink.service';
-import { TranslocoService } from '@jsverse/transloco';
 import { version } from 'environments/version';
 import { TestIds } from './testing/test-ids';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
 import { branding } from 'environments/branding';
-import { PowRoutingService } from './services/pow-routing.service';
-import { STARTUP_RUNTIME_ADAPTERS, StartupService } from './services/startup.service';
 import { WalletContextService } from './services/wallet-context.service';
+import { AppStartupCoordinatorService } from './services/app-startup-coordinator.service';
 
 
 @Component({
@@ -39,13 +31,10 @@ import { WalletContextService } from './services/wallet-context.service';
 })
 export class AppComponent implements OnInit {
   walletService = inject(WalletService);
-  private addressBook = inject(AddressBookService);
   settings = inject(AppSettingsService);
   private websocket = inject(WebsocketService);
   private notifications = inject(NotificationService);
-  private audio = inject(AudioFeedbackService);
   nodeService = inject(NodeService);
-  private representative = inject(RepresentativeService);
   private router = inject(Router);
 
   get walletSectionActive(): boolean {
@@ -59,21 +48,12 @@ export class AppComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private readonly versionClicks = new Subject<void>();
   private updateCheckInFlight = false;
-  private workPool = inject(WorkPoolService);
-  private powRouting = inject(PowRoutingService);
   theme = inject(ThemeService);
-  readonly startup = inject(StartupService);
-  private startupAdapters = inject(STARTUP_RUNTIME_ADAPTERS);
+  private startupCoordinator = inject(AppStartupCoordinatorService);
   private walletContext = inject(WalletContextService);
   price = inject(PriceService);
   private util = inject(UtilService);
-  private desktop = inject(DesktopService);
-  private ledger = inject(LedgerService);
-  private renderer = inject(Renderer2);
-  private deeplinkService = inject(DeeplinkService);
-  private translate = inject(TranslocoService);
   private titleService = inject(Title);
-  private injector = inject(Injector);
   // Instantiation deliberately registers the narrow E2E-only unlock bridge.
   private e2eUnlockBridge = inject(E2eUnlockBridgeService);
 
@@ -100,8 +80,6 @@ export class AppComponent implements OnInit {
   nanoPrice = this.price.price;
   totalBalance$ = this.walletService.totalBalance$;
   totalBalanceFiat$ = this.walletService.totalBalanceFiat$;
-  fiatTimeout = 5 * 60 * 1000; // Update fiat prices every 5 minutes
-  inactiveSeconds = 0;
   innerWidth = 0;
   innerHeight = 0;
   innerHeightWithoutMobileBar = 0;
@@ -200,143 +178,9 @@ get appearanceAutoLabel(): string {
   }
 
   async ngOnInit() {
-    await this.startup.runPhase('runtime', () => this.onWindowResize(window));
-
-    await this.startup.runPhase('settings', async () => {
-      this.settings.loadAppSettings();
-      this.audio.syncPreference();
-      this.powRouting.syncFromSettings();
-      await this.powRouting.resolveRoute().catch((error) => {
-        console.debug('PoW route resolution failed:', error);
-      });
-      this.checkTestnetParameter();
-      this.theme.start();
-      await this.patchXrbToNanoPrefixData();
-      this.translate.setActiveLang(this.settings.settings.language);
-    });
-
-    await this.startup.runPhase('cache', () => {
-      this.addressBook.loadAddressBook();
-      this.workPool.loadWorkCache();
-    });
-
-    await this.startup.runPhase('wallet', async () => {
-      await this.walletService.loadStoredWallet();
-      for (const entry of this.addressBook.addressBook) {
-        if (entry.trackTransactions) this.walletService.trackAddress(entry.account);
-      }
-
-      if (this.walletService.isConfigured() && (window.location.pathname === '/' || window.location.pathname.endsWith('index.html'))) {
-        if (this.walletService.walletState.selectedAccountId) {
-          this.router.navigate([`account/${this.walletService.walletState.selectedAccountId}`], { queryParams: {'compact': 1}, replaceUrl: true });
-        } else {
-          this.router.navigate(['accounts'], { replaceUrl: true });
-        }
-      }
-      if (this.walletService.walletState.selectedAccountId) {
-        this.walletService.selectAccount(this.walletService.walletState.selectedAccountId);
-      }
-      try {
-        await this.walletService.refreshWalletState('startup');
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        this.startup.reportNetwork('failed', `Wallet refresh: ${reason}`);
-        console.debug('Wallet startup refresh failed; continuing with hydrated wallet.', reason);
-      }
-    });
-
-    await this.startup.runPhase('features', async () => {
-      if (FEATURE_NANONYMS) {
-        try {
-          const { NanoNymManagerService } = require('./services/nanonym-manager.service');
-          const manager = this.injector.get(NanoNymManagerService) as { startMonitoringAll(): Promise<void> };
-          if (this.startupAdapters.nostrStart) await this.startupAdapters.nostrStart();
-          await manager.startMonitoringAll();
-        } catch (e) { /* NanoNym manager not available */ }
-      }
-
-      const path = localStorage.getItem('path');
-      if (path) {
-        const search = localStorage.getItem('query');
-        const fragment = localStorage.getItem('fragment');
-        localStorage.removeItem('path');
-        localStorage.removeItem('query');
-        localStorage.removeItem('fragment');
-        if (search && search.length) {
-          const queryParams = {};
-          new URLSearchParams(search).forEach((value, key) => queryParams[key] = value);
-          this.router.navigate([path], { queryParams, replaceUrl: true });
-        } else if (fragment && fragment.length) {
-          this.router.navigate([path], { fragment, replaceUrl: true });
-        } else {
-          this.router.navigate([path], { replaceUrl: true });
-        }
-      }
-      this.representative.loadRepresentativeList();
-    });
-
-    await this.startup.runPhase('network', async () => {
-      this.websocket.connectionState$.subscribe((state) => {
-        if (state === 'open') this.startup.reportNetwork('ready');
-        else if (state === 'connecting' || state === 'reconnecting') this.startup.reportNetwork('connecting');
-        else if (state === 'error' || state === 'closed') this.startup.reportNetwork('failed', state);
-        else this.startup.reportNetwork('unavailable', state);
-      });
-      this.startup.reportNetwork('connecting');
-      if (this.startupAdapters.httpReady) {
-        try {
-          await this.startupAdapters.httpReady();
-        } catch (error) {
-          const reason = error instanceof Error ? error.message : String(error);
-          this.startup.reportNetwork('failed', `HTTP adapter: ${reason}`);
-        }
-      }
-      try {
-        if (this.startupAdapters.websocketConnect) this.startupAdapters.websocketConnect();
-        else this.websocket.connect();
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        this.startup.reportNetwork('failed', `WebSocket adapter: ${reason}`);
-      }
-    });
-
-    await this.startup.runPhase('readiness', async () => {
-      if (this.walletService.isLocked() && this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption !== 'manual') {
-        this.notifications.sendWarning(`New incoming transaction(s) - `, { action: 'unlock-wallet', length: 10000, identifier: 'pending-locked' });
-      } else if (this.walletService.hasPendingTransactions() && this.settings.settings.pendingOption === 'manual') {
-        this.notifications.sendWarning(`Incoming transaction(s) found - Set to be received manually`, { length: 10000, identifier: 'pending-locked' });
-      }
-
-      window.addEventListener('beforeunload', () => {
-        if (!this.walletService.isLocked()) this.walletService.lockWallet();
-      });
-      window.addEventListener('unload', () => {
-        if (!this.walletService.isLocked()) this.walletService.lockWallet();
-      });
-
-      this.desktop.on('deeplink', (e, deeplink) => {
-        if (!this.deeplinkService.navigate(deeplink)) this.notifications.sendWarning('This URI has an invalid address.', { length: 5000 });
-      });
-      this.desktop.send('deeplink-ready');
-
-      this.initializeUpdateChecks();
-
-      setInterval(() => {
-        this.inactiveSeconds += 1;
-        if (!this.settings.settings.lockInactivityMinutes || this.walletService.isLocked() || !this.walletService.hasPasswordProtectedWallet()) return;
-        if (this.inactiveSeconds >= this.settings.settings.lockInactivityMinutes * 60) {
-          this.walletService.lockWallet();
-          this.notifications.sendSuccess(`Wallet locked after ${this.settings.settings.lockInactivityMinutes} minutes of inactivity`, { identifier: 'wallet-locked' });
-        }
-      }, 1000);
-
-      if (this.settings.settings.serverAPI) {
-        try {
-          await this.updateFiatPrices();
-        } catch (err) {
-          this.notifications.sendWarning(`There was an issue retrieving latest nano price.  Ensure your AdBlocker is disabled on this page then reload to see accurate FIAT values.`, { length: 0, identifier: `price-adblock` });
-        }
-      }
+    await this.startupCoordinator.start({
+      onResize: () => this.onWindowResize(window),
+      initializeUpdateChecks: () => this.initializeUpdateChecks(),
     });
   }
 
@@ -351,21 +195,6 @@ get appearanceAutoLabel(): string {
     } else {
       this.innerHeightWithoutMobileBar = this.innerHeight;
     }
-  }
-
-  /*
-    This is important as it looks through saved data using hardcoded xrb_ prefixes
-    (Your wallet, address book, rep list, etc) and updates them to nano_ prefix for v19 RPC
-   */
-  async patchXrbToNanoPrefixData() {
-    // If wallet is version 2, data has already been patched.  Otherwise, patch all data
-    if (this.settings.settings.walletVersion >= 2) return;
-
-    await this.walletService.patchOldSavedData(); // Change saved xrb_ addresses to nano_
-    this.addressBook.patchXrbPrefixData();
-    this.representative.patchXrbPrefixData();
-
-    this.settings.setAppSetting('walletVersion', 2); // Update wallet version so we do not patch in the future.
   }
 
   applySwUpdate() {
@@ -481,7 +310,7 @@ get appearanceAutoLabel(): string {
   }
 
   updateIdleTime() {
-    this.inactiveSeconds = 0; // Action has happened, reset the inactivity timer
+    this.startupCoordinator.resetIdleTime();
   }
 
   retryConnection() {
@@ -493,31 +322,4 @@ get appearanceAutoLabel(): string {
     this.notifications.sendInfo(`Attempting to reconnect to nano node`);
   }
 
-  async updateFiatPrices() {
-    const displayCurrency = this.settings.getAppSetting(`displayCurrency`) || 'USD';
-    await this.price.getPrice(displayCurrency);
-    this.walletService.reloadFiatBalances();
-    setTimeout(() => this.updateFiatPrices(), this.fiatTimeout);
-  }
-
-  /**
-   * Check for testnet URL parameter and switch to testnet mode if present.
-   * Hidden feature: ?testnet=true or ?testnet=1
-   */
-  checkTestnetParameter() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const testnetParam = urlParams.get('testnet');
-
-    if (testnetParam === 'true' || testnetParam === '1') {
-      const currentServer = this.settings.settings.serverName;
-
-      // Only switch if not already on testnet
-      if (currentServer !== 'testnet') {
-        console.log('Testnet mode activated via URL parameter');
-        this.settings.setAppSetting('serverName', 'testnet');
-        this.settings.loadServerSettings();
-        this.notifications.sendInfo('Testnet mode enabled - Connected to local testnet node (port 17076)');
-      }
-    }
-  }
 }

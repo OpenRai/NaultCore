@@ -14,6 +14,7 @@
     "app/app-update-checks.spec.ts",
     "app/components/recovery-disclosure/recovery-disclosure.component.spec.ts",
     "app/services/startup.service.spec.ts",
+    "app/services/app-startup-coordinator.service.spec.ts",
     "app/services/api.service.spec.ts",
     "app/pipes/account.pipe.spec.ts",
     "app/pipes/amount-split.pipe.spec.ts",

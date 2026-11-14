@@ -281,6 +281,7 @@
               "src/app/app-update-checks.spec.ts",
               "src/app/components/recovery-disclosure/recovery-disclosure.component.spec.ts",
               "src/app/services/startup.service.spec.ts",
+              "src/app/services/app-startup-coordinator.service.spec.ts",
               "src/app/services/api.service.spec.ts",
               "src/app/pipes/account.pipe.spec.ts",
               "src/app/pipes/amount-split.pipe.spec.ts",

@@ -6,6 +6,11 @@ import { installStartupNetworkMocks } from './startup-network-mocks';
 
 test('creates the reusable E2E wallet storage snapshot', async ({ page }) => {
   const wallet = getE2ETestWallet();
+  const browserErrors: string[] = [];
+  page.on('pageerror', error => browserErrors.push(error.stack || error.message));
+  page.on('console', message => {
+    if (message.type() === 'error') browserErrors.push(message.text());
+  });
   await installStartupNetworkMocks(page);
 
   await page.addInitScript(storageValue => {
@@ -16,7 +21,12 @@ test('creates the reusable E2E wallet storage snapshot', async ({ page }) => {
   }, wallet.workCache);
   await page.goto('/');
 
-  await expect(page.locator('text=Wallet Locked')).toBeVisible({ timeout: 15000 });
+  try {
+    await expect(page.locator('text=Wallet Locked')).toBeVisible({ timeout: 15000 });
+  } catch (error) {
+    const original = error instanceof Error ? error.message : String(error);
+    throw new Error(`${original}\nBrowser errors:\n${browserErrors.join('\n') || '(none captured)'}`);
+  }
   const storedAccounts = await page.evaluate(() => {
     const stored = localStorage.getItem('nanovault-wallet');
     return stored ? JSON.parse(stored).accounts.map((account: {id: string}) => account.id) : [];

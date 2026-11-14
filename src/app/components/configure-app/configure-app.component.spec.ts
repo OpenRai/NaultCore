@@ -150,9 +150,6 @@ describe('ConfigureAppComponent', () => {
       nano: {
         rawToMnano: vi.fn((raw) => raw),
       },
-      array: {
-        findWithAttr: vi.fn(() => 0),
-      },
     };
 
     mockPrice = {
@@ -211,6 +208,19 @@ describe('ConfigureAppComponent', () => {
     fixture = TestBed.createComponent(ConfigureAppComponent);
     component = fixture.componentInstance;
     component.ngOnInit();
+  });
+
+  describe('Representative suggestions', () => {
+    it('keeps the first representative for each account in suggestions', () => {
+      const first = { id: 'rep-1', name: 'Representative One' };
+      const duplicate = { id: 'rep-1', name: 'Duplicate One' };
+      const second = { id: 'rep-2', name: 'Representative Two' };
+      component.representativeList = [first, duplicate, second];
+
+      component.searchRepresentatives();
+
+      expect(component.representativeResults$.value).toEqual([first, second]);
+    });
   });
 
   describe('Ordinary Preference Autosave', () => {

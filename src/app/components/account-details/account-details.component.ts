@@ -1004,7 +1004,7 @@ export class AccountDetailsComponent implements OnInit, OnDestroy {
     const matches = this.representativeList
       .filter(a => a.name.toLowerCase().indexOf(search.toLowerCase()) !== -1)
       // remove duplicate accounts
-      .filter((item, pos, self) => this.util.array.findWithAttr(self, 'id', item.id) === pos)
+      .filter((item, pos, self) => self.findIndex(candidate => candidate.id === item.id) === pos)
       .slice(0, 5);
 
     this.representativeResults$.next(matches);

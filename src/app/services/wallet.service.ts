@@ -21,6 +21,7 @@ import { environment } from 'environments/environment';
 import { PasskeyEnvelope, PasskeyUnlockRecord, PasskeyUnlockService } from './passkey-unlock.service';
 import { formatNotificationAmount } from '../utils/transaction-toast-amount';
 import { classifyWalletTransaction } from './wallet-transaction-classifier';
+import { WalletReconciliationCoordinator } from './wallet-reconciliation-coordinator';
 
 export type WalletType = 'seed' | 'ledger' | 'privateKey' | 'expandedKey';
 type SoftwareWalletType = Exclude<WalletType, 'ledger'>;
@@ -149,12 +150,6 @@ export interface WalletApiAccount extends BaseApiAccount {
   id?: string;
 }
 
-interface ReconciliationWaiter {
-  generation: number;
-  resolve: (snapshot: WalletStateSnapshot) => void;
-  reject: (error: unknown) => void;
-}
-
 @Injectable()
 export class WalletService {
   private util = inject(UtilService);
@@ -200,11 +195,7 @@ export class WalletService {
   private authoritativeAccountKey: string|null = null;
   private readonly walletStateSubject: BehaviorSubject<WalletStateSnapshot>;
   readonly walletState$: Observable<WalletStateSnapshot>;
-  private reconciliationRequestedGeneration = 0;
-  private reconciliationCompletedGeneration = 0;
-  private reconciliationPromise: Promise<void>|null = null;
-  private reconciliationReason = 'initialization';
-  private reconciliationWaiters: ReconciliationWaiter[] = [];
+  private reconciliationCoordinator: WalletReconciliationCoordinator<WalletStateSnapshot>|null = null;
 
   processingPending = false;
   successfulBlocks = [];
@@ -310,63 +301,32 @@ export class WalletService {
   }
 
   async refreshWalletState(reason = 'manual'): Promise<WalletStateSnapshot> {
-    const generation = ++this.reconciliationRequestedGeneration;
-    this.reconciliationReason = reason;
-    const result = new Promise<WalletStateSnapshot>((resolve, reject) => {
-      this.reconciliationWaiters.push({ generation, resolve, reject });
-    });
+    if (!this.reconciliationCoordinator) {
+      this.reconciliationCoordinator = new WalletReconciliationCoordinator(
+        requestedReason => this.reconcileWalletState(requestedReason),
+      );
+    }
+    return this.reconciliationCoordinator.request(reason);
+  }
 
-    if (!this.reconciliationPromise) {
-      this.reconciliationPromise = this.runReconciliation().finally(() => {
-        this.reconciliationPromise = null;
+  private async reconcileWalletState(reason: string): Promise<WalletStateSnapshot> {
+    this.publishWalletState({ status: 'loading', reason });
+
+    try {
+      await this.reloadBalancesFromNode();
+      this.authoritativeAccountKey = this.wallet.accounts.map(account => account.id).sort().join(',');
+      const snapshot = this.publishWalletState({ status: 'ready', reason });
+      // Pending processing must not hold the reconciliation coordinator open.
+      void this.processPendingBlocks();
+      return snapshot;
+    } catch (error) {
+      this.publishWalletState({
+        status: 'error',
+        reason,
+        error: error instanceof Error ? error.message : 'Wallet state refresh failed',
       });
+      throw error;
     }
-
-    return result;
-  }
-
-  private async runReconciliation(): Promise<void> {
-    while (this.reconciliationCompletedGeneration < this.reconciliationRequestedGeneration) {
-      const generation = this.reconciliationRequestedGeneration;
-      const reason = this.reconciliationReason;
-      this.publishWalletState({ status: 'loading', reason });
-
-      try {
-        await this.reloadBalancesFromNode();
-        this.authoritativeAccountKey = this.wallet.accounts.map(account => account.id).sort().join(',');
-        this.reconciliationCompletedGeneration = generation;
-        const snapshot = this.publishWalletState({ status: 'ready', reason });
-        this.resolveReconciliationWaiters(generation, snapshot);
-        // Pending processing must not hold the reconciliation coordinator open.
-        void this.processPendingBlocks();
-      } catch (error) {
-        this.reconciliationCompletedGeneration = generation;
-        this.publishWalletState({
-          status: 'error',
-          reason,
-          error: error instanceof Error ? error.message : 'Wallet state refresh failed',
-        });
-        this.rejectReconciliationWaiters(generation, error);
-      }
-    }
-  }
-
-  private resolveReconciliationWaiters(generation: number, snapshot: WalletStateSnapshot): void {
-    const remaining: ReconciliationWaiter[] = [];
-    this.reconciliationWaiters.forEach(waiter => {
-      if (waiter.generation <= generation) waiter.resolve(snapshot);
-      else remaining.push(waiter);
-    });
-    this.reconciliationWaiters = remaining;
-  }
-
-  private rejectReconciliationWaiters(generation: number, error: unknown): void {
-    const remaining: ReconciliationWaiter[] = [];
-    this.reconciliationWaiters.forEach(waiter => {
-      if (waiter.generation <= generation) waiter.reject(error);
-      else remaining.push(waiter);
-    });
-    this.reconciliationWaiters = remaining;
   }
 
   constructor() {

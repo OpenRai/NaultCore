@@ -70,10 +70,6 @@ function createServiceForStateTests(): any {
   service.walletStateSubject = new BehaviorSubject(
     service.createWalletStateSnapshot({ status: 'idle', reason: 'test' })
   );
-  service.reconciliationRequestedGeneration = 0;
-  service.reconciliationCompletedGeneration = 0;
-  service.reconciliationPromise = null;
-  service.reconciliationWaiters = [];
   service.processPendingBlocks = async () => undefined;
   return service;
 }

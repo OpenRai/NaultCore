@@ -66,6 +66,7 @@ import { QrModalService, QR_MODAL_COMPONENT } from './services/qr-modal.service'
 import { NgbModule, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import {MusigService} from './services/musig.service';
 import { E2eUnlockBridgeService } from './services/e2e-unlock-bridge.service';
+import { RemoteSignService } from './services/remote-sign.service';
 
 // QR code module
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
@@ -180,6 +181,7 @@ import { NanoAmountComponent } from './components/nano-amount/nano-amount.compon
     QrModalService,
     { provide: QR_MODAL_COMPONENT, useValue: QrModalComponent },
     DeeplinkService,
+    RemoteSignService,
     MusigService,
     E2eUnlockBridgeService,
     NoPaddingZerosPipe

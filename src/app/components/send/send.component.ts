@@ -865,8 +865,14 @@ export class SendComponent implements OnInit {
         if (wasUnlocked === false) return;
       }
 
+      const walletAccount = this.captureWalletAccount(intent.sourceId);
+      if (!walletAccount) {
+        this.notificationService.sendError('Unable to find sending account in wallet');
+        return;
+      }
+
       const newHash = await this.nanoBlock.generateSend(
-        intent.walletAccount,
+        walletAccount,
         intent.destinationId,
         intent.amount,
         intent.useLedger,
@@ -949,18 +955,6 @@ export class SendComponent implements OnInit {
       this.notificationService.sendError('Unable to find sending account in wallet');
       return null;
     }
-    const walletAccount = {
-      ...currentWalletAccount,
-      secret: currentWalletAccount.secret instanceof Uint8Array
-        ? currentWalletAccount.secret.slice()
-        : currentWalletAccount.secret,
-      keyPair: currentWalletAccount.keyPair && Object.fromEntries(
-        Object.entries(currentWalletAccount.keyPair).map(([key, value]) => [
-          key,
-          value instanceof Uint8Array ? value.slice() : value,
-        ]),
-      ),
-    };
     const nanoNymNotification = this.isNanoNymAddress && this.nanoNymParsedKeys && this.ephemeralPublicKey
       ? Object.freeze({
           ephemeralPublicKey: this.ephemeralPublicKey.slice(),
@@ -972,11 +966,28 @@ export class SendComponent implements OnInit {
       sourceId,
       destinationId,
       amount,
-      walletAccount,
+      walletAccount: null,
       useLedger: this.walletService.isLedgerWallet(),
       sendNostrNotification: !!nanoNymNotification && !!this.settings.settings.useNostr,
       nanoNymNotification,
     });
+  }
+
+  private captureWalletAccount(sourceId: string): any | null {
+    const currentWalletAccount = this.walletService.getWalletAccount(sourceId);
+    if (!currentWalletAccount) return null;
+    return {
+      ...currentWalletAccount,
+      secret: currentWalletAccount.secret instanceof Uint8Array
+        ? currentWalletAccount.secret.slice()
+        : currentWalletAccount.secret,
+      keyPair: currentWalletAccount.keyPair && Object.fromEntries(
+        Object.entries(currentWalletAccount.keyPair).map(([key, value]) => [
+          key,
+          value instanceof Uint8Array ? value.slice() : value,
+        ]),
+      ),
+    };
   }
 
   /**

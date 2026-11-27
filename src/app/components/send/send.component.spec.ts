@@ -71,6 +71,7 @@ describe('SendComponent - regular wallet balance refresh', () => {
 
     return {
       captureReviewedSendIntent: (SendComponent.prototype as any).captureReviewedSendIntent,
+      captureWalletAccount: (SendComponent.prototype as any).captureWalletAccount,
       confirmNanoNymSpend: SendComponent.prototype.confirmNanoNymSpend,
       isSpendingFromNanoNym: false,
       walletService: {
@@ -150,6 +151,32 @@ describe('SendComponent - regular wallet balance refresh', () => {
     );
     expect(component.notificationService.sendWarning).not.toHaveBeenCalled();
     expect(component.confirmingTransaction).toBe(false);
+  });
+
+  it('reads signing credentials from the wallet after unlock while keeping the reviewed payment', async () => {
+    const component = createRegularSendContext(vi.fn(() => Promise.resolve()));
+    component.walletService.isLocked = () => true;
+    const lockedAccount = { id: 'nano_source', secret: null, keyPair: null };
+    const unlockedAccount = { id: 'nano_source', secret: new Uint8Array([7]), keyPair: { privateKey: new Uint8Array([8]) } };
+    component.walletService.getWalletAccount = vi.fn(() => lockedAccount);
+    let finishUnlock!: (unlocked: boolean) => void;
+    component.walletService.requestWalletUnlock = vi.fn(() => new Promise(resolve => {
+      finishUnlock = resolve;
+    }));
+
+    const confirmation = SendComponent.prototype.confirmTransaction.call(component);
+    component.walletService.getWalletAccount = vi.fn(() => unlockedAccount);
+    finishUnlock(true);
+    await confirmation;
+
+    expect(component.nanoBlock.generateSend).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'nano_source', secret: expect.any(Uint8Array) }),
+      'nano_destination',
+      new BigNumber(1),
+      false,
+    );
+    expect(component.notificationService.sendError).not.toHaveBeenCalled();
+    expect(component.notificationService.sendSuccess).toHaveBeenCalled();
   });
 
   it('does not send when wallet unlock is cancelled', async () => {
